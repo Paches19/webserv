@@ -1,11 +1,10 @@
 #include "../include/ConfigFile.hpp"
 
-ConfigFile::ConfigFile() : _size(0) { }
+ConfigFile::ConfigFile() { }
 
 ConfigFile::ConfigFile(const ConfigFile &other)
 {
 	this->_path = other._path;
-	this->_size = other._size;
 }
 
 ConfigFile &ConfigFile::operator=(const ConfigFile &rhs)
@@ -13,11 +12,10 @@ ConfigFile &ConfigFile::operator=(const ConfigFile &rhs)
 	if (this == &rhs)
 		return (*this);
 	this->_path = rhs._path;
-	this->_size = rhs._size;
 	return (*this);
 }
 
-ConfigFile::ConfigFile(std::string const path) : _path(path), _size(0) { }
+ConfigFile::ConfigFile(std::string const path) : _path(path) { }
 
 ConfigFile::~ConfigFile() { }
 
@@ -57,9 +55,4 @@ std::string	ConfigFile::readFile(std::string path)
 std::string ConfigFile::getPath()
 {
 	return (this->_path);
-}
-
-int ConfigFile::getSize()
-{
-	return (this->_size);
 }

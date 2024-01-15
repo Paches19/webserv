@@ -6,7 +6,6 @@
 class ConfigFile {
 	private:
 		std::string		_path;
-		size_t			_size;
 		ConfigFile();
 		ConfigFile(const ConfigFile &other);
 		ConfigFile &operator=(const ConfigFile &rhs);
@@ -20,7 +19,6 @@ class ConfigFile {
 		std::string	readFile(std::string path);
 
 		std::string getPath();
-		int getSize();
 };
 
 #endif
