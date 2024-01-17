@@ -2,7 +2,9 @@ NAME 	= 	webserv
 
 SRCS 	= 	src/main.cpp \
 			src/ConfigFile.cpp \
-			src/ConfigParser.cpp
+			src/ConfigParser.cpp \
+			src/VirtualServers.cpp \
+			src/Location.cpp
 
 HEADERS	=	include/WebServer.hpp
 

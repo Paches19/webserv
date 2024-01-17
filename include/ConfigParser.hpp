@@ -3,9 +3,12 @@
 
 # include "WebServer.hpp"
 
+class VirtualServers;
+
 class ConfigParser
 {
 	private:
+		std::vector<VirtualServers>	_servers;
 		std::vector<std::string>	_server_config;
 		size_t						_nb_server;
 		ConfigParser(const ConfigParser &other);
@@ -17,10 +20,6 @@ class ConfigParser
 
 		int initParser(const std::string &config_file);
 		void splitServers(std::string &content);
-		void removeComments(std::string &content);
-		void removeWhiteSpace(std::string &content);
-		size_t findStartServer(size_t start, std::string &content);
-		size_t findEndServer(size_t start, std::string &content);
 		int print();
 
 		class ErrorException : public std::exception
