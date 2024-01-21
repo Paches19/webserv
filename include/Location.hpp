@@ -10,21 +10,23 @@ class Location
 		std::string					_root;
 		bool						_autoindex;
 		std::string					_index;
-		std::vector<short>			_methods; // GET+ POST- DELETE- PUT- HEAD-
+		std::vector<short>			_methods; // GET, POST, DELETE, PUT, HEAD
 		std::string					_return;
 		std::string					_alias;
 		std::vector<std::string>	_cgi_path;
 		std::vector<std::string>	_cgi_ext;
 		unsigned long				_client_max_body_size;
 
+		Location();
+		int _checkLocation(Location &location) const;
+
 	public:
 		std::map<std::string, std::string> _ext_path;
-
-		Location();
-		Location(const Location &other);
 		Location &operator=(const Location &rhs);
+		Location(const Location &other);
 		~Location();
-
+		Location(std::string &path, std::vector<std::string> &paramtr, std::string &r);
+		// Setters
 		void setPath(std::string parametr);
 		void setRootLocation(std::string parametr);
 		void setMethods(std::vector<std::string> methods);
@@ -36,7 +38,7 @@ class Location
 		void setCgiExtension(std::vector<std::string> extension);
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
-
+		// Getters
 		const std::string &getPath() const;
 		const std::string &getRootLocation() const;
 		const std::vector<short> &getMethods() const;
@@ -48,9 +50,25 @@ class Location
 		const std::vector<std::string> &getCgiExtension() const;
 		const std::map<std::string, std::string> &getExtensionPath() const;
 		const unsigned long &getMaxBodySize() const;
-
-		std::string getPrintMethods() const; // for checking only
-
+		std::string getPrintMethods() const;
+		static void checkToken(std::string &parametr);
+		static int ft_stoi(std::string str);
+		
+		class ErrorException : public std::exception
+		{
+			private:
+				std::string _message;
+			public:
+				ErrorException(std::string message) throw()
+				{
+					_message = "CONFIG LOCATION ERROR: " + message;
+				}
+				virtual const char* what() const throw()
+				{
+					return (_message.c_str());
+				}
+				virtual ~ErrorException() throw() {}
+		};
 };
 
 #endif

@@ -1,4 +1,3 @@
-
 #include "../include/WebServer.hpp"
 
 int main(int argc, char **argv) 
@@ -9,8 +8,8 @@ int main(int argc, char **argv)
 			std::string		config;
 			ConfigParser	cluster;
 	
-			/* configuration file as argument or default path */
-			config = (argc == 1 ? "configs/default.conf" : argv[1]);
+			// Configuration file as argument or default path
+			config = (argc == 1 ? "config/default.conf" : argv[1]);
 			cluster.initParser(config);
 			cluster.print();
 		}
@@ -26,4 +25,3 @@ int main(int argc, char **argv)
 	}
     return (0);
 }
-

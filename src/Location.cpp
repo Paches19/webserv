@@ -1,206 +1,399 @@
 #include "../include/Location.hpp"
 
-Location::Location()
-{
-	this->_path = "";
-	this->_root = "";
-	this->_autoindex = false;
-	this->_index = "";
-	this->_return = "";
-	this->_alias = "";
-	this->_client_max_body_size = MAX_CONTENT_LENGTH;
-	this->_methods.reserve(5);
-	this->_methods.push_back(1);
-	this->_methods.push_back(0);
-	this->_methods.push_back(0);
-	this->_methods.push_back(0);
-	this->_methods.push_back(0);
-}
+Location::Location() { }
 
 Location::Location(const Location &other)
 {
-	this->_path = other._path;
-	this->_root = other._root;
-	this->_autoindex = other._autoindex;
-	this->_index = other._index;
-	this->_cgi_path = other._cgi_path;
-	this->_cgi_ext = other._cgi_ext;
-	this->_return = other._return;
-	this->_alias = other._alias;
-    this->_methods = other._methods;
-	this->_ext_path = other._ext_path;
-	this->_client_max_body_size = other._client_max_body_size;
+	_path = other._path;
+	_root = other._root;
+	_autoindex = other._autoindex;
+	_index = other._index;
+	_cgi_path = other._cgi_path;
+	_cgi_ext = other._cgi_ext;
+	_return = other._return;
+	_alias = other._alias;
+    _methods = other._methods;
+	_ext_path = other._ext_path;
+	_client_max_body_size = other._client_max_body_size;
 }
 
 Location &Location::operator=(const Location &rhs)
 {
 	if (this != &rhs)
 	{
-		this->_path = rhs._path;
-		this->_root = rhs._root;
-		this->_autoindex = rhs._autoindex;
-		this->_index = rhs._index;
-		this->_cgi_path = rhs._cgi_path;
-		this->_cgi_ext = rhs._cgi_ext;
-		this->_return = rhs._return;
-		this->_alias = rhs._alias;
-		this->_methods = rhs._methods;
-		this->_ext_path = rhs._ext_path;
-		this->_client_max_body_size = rhs._client_max_body_size;
+		_path = rhs._path;
+		_root = rhs._root;
+		_autoindex = rhs._autoindex;
+		_index = rhs._index;
+		_cgi_path = rhs._cgi_path;
+		_cgi_ext = rhs._cgi_ext;
+		_return = rhs._return;
+		_alias = rhs._alias;
+		_methods = rhs._methods;
+		_ext_path = rhs._ext_path;
+		_client_max_body_size = rhs._client_max_body_size;
     }
 	return (*this);
 }
 
 Location::~Location() { }
 
-/* set functions */
+Location::Location(std::string &path, std::vector<std::string> &parametr, std::string &r)
+{
+	std::vector<std::string> methods;
+
+	bool flag_methods = false;
+	bool flag_autoindex = false;
+	int valid;
+	_path = "";
+	_root = r;
+	_autoindex = false;
+	_index = "";
+	_return = "";
+	_alias = "";
+	_client_max_body_size = MAX_CONTENT_LENGTH;
+	_methods.reserve(5);
+	_methods.push_back(1); // GET
+	_methods.push_back(0); // POST
+	_methods.push_back(0); // DELETE
+	_methods.push_back(0); // PUT
+	_methods.push_back(0); // HEAD
+
+	setPath(path);
+	for (size_t i = 0; i < parametr.size(); i++)
+	{
+		if (parametr[i] == "root" && (i + 1) < parametr.size())
+		{
+			if (!getRootLocation().empty())
+				throw ErrorException("Root of location is duplicated");
+			checkToken(parametr[++i]);
+			if (ConfigFile::getTypePath(parametr[i]) == 2)
+				setRootLocation(parametr[i]);
+			else
+				setRootLocation(_root + parametr[i]);
+		}
+		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())
+		{
+			if (flag_methods)
+				throw ErrorException("Allow_methods of location is duplicated");
+			std::vector<std::string> methods;
+			while (++i < parametr.size())
+			{
+				if (parametr[i].find(";") != std::string::npos)
+				{
+					checkToken(parametr[i]);
+					methods.push_back(parametr[i]);
+					break ;
+				}
+				else
+				{
+					methods.push_back(parametr[i]);
+					if (i + 1 >= parametr.size())
+						throw ErrorException("Token is invalid");
+				}
+			}
+			setMethods(methods);
+			flag_methods = true;
+		}
+		else if (parametr[i] == "autoindex" && (i + 1) < parametr.size())
+		{
+			if (path == "/cgi-bin")
+				throw ErrorException("Parametr autoindex not allow for CGI");
+			if (flag_autoindex)
+				throw ErrorException("Autoindex of location is duplicated");
+			checkToken(parametr[++i]);
+			setAutoindex(parametr[i]);
+			flag_autoindex = true;
+		}
+		else if (parametr[i] == "index" && (i + 1) < parametr.size())
+		{
+			if (!getIndexLocation().empty())
+				throw ErrorException("Index of location is duplicated");
+			checkToken(parametr[++i]);
+			setIndexLocation(parametr[i]);
+		}
+		else if (parametr[i] == "return" && (i + 1) < parametr.size())
+		{
+			if (path == "/cgi-bin")
+				throw ErrorException("Parametr return not allow for CGI");
+			if (!getReturn().empty())
+				throw ErrorException("Return of location is duplicated");
+			checkToken(parametr[++i]);
+			setReturn(parametr[i]);
+		}
+		else if (parametr[i] == "alias" && (i + 1) < parametr.size())
+		{
+			if (path == "/cgi-bin")
+				throw ErrorException("Parametr alias not allow for CGI");
+			if (!getAlias().empty())
+				throw ErrorException("Alias of location is duplicated");
+			checkToken(parametr[++i]);
+			setAlias(parametr[i]);
+		}
+		else if (parametr[i] == "cgi_ext" && (i + 1) < parametr.size())
+		{
+			std::vector<std::string> extension;
+			while (++i < parametr.size())
+			{
+				if (parametr[i].find(";") != std::string::npos)
+				{
+					checkToken(parametr[i]);
+					extension.push_back(parametr[i]);
+					break ;
+				}
+				else
+				{
+					extension.push_back(parametr[i]);
+					if (i + 1 >= parametr.size())
+						throw ErrorException("Token is invalid");
+				}
+			}
+			setCgiExtension(extension);
+		}
+		else if (parametr[i] == "cgi_path" && (i + 1) < parametr.size())
+		{
+			std::vector<std::string> path;
+			while (++i < parametr.size())
+			{
+				if (parametr[i].find(";") != std::string::npos)
+				{
+					checkToken(parametr[i]);
+					path.push_back(parametr[i]);
+					break ;
+				}
+				else
+				{
+					path.push_back(parametr[i]);
+					if (i + 1 >= parametr.size())
+						throw ErrorException("Token is invalid");
+				}
+				if (parametr[i].find("/python") == std::string::npos && parametr[i].find("/bash") == std::string::npos)
+					throw ErrorException("cgi_path is invalid");
+			}
+			setCgiPath(path);
+		}
+		else if (i < parametr.size())
+			throw ErrorException("Parametr in a location is invalid");
+	}
+	if (getPath() != "/cgi-bin" && getIndexLocation().empty())
+		setIndexLocation(_index);
+	valid = _checkLocation(*this);
+	if (valid == 1)
+		throw ErrorException("Failed CGI validation");
+	else if (valid == 2)
+		throw ErrorException("Failed path in location validation");
+	else if (valid == 3)
+		throw ErrorException("Failed redirection file in location validation");
+	else if (valid == 4)
+		throw ErrorException("Failed alias file in location validation");
+}
+
+void Location::checkToken(std::string &parametr)
+{
+	size_t pos = parametr.rfind(';');
+	if (pos != parametr.size() - 1)
+		throw ErrorException("Token is invalid");
+	parametr.erase(pos);
+}
+
+int Location::ft_stoi(std::string str)
+{
+    std::stringstream ss(str);
+    if (str.length() > 10)
+        throw std::exception();
+    for (size_t i = 0; i < str.length(); ++i)
+    {
+        if(!isdigit(str[i]))
+            throw std::exception();
+    }
+    int res;
+    ss >> res;
+    return (res);
+}
+
+int Location::_checkLocation(Location &location) const
+{
+	if (location.getPath() == "/cgi-bin")
+	{
+		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
+			return (1);
+		if (ConfigFile::checkFile(location.getIndexLocation(), 4) < 0)
+		{
+			std::string path = location.getRootLocation() + location.getPath() + location.getIndexLocation();
+			if (ConfigFile::getTypePath(path) != 1)
+			{				
+				std::string root = getcwd(NULL, 0);
+				location.setRootLocation(root);
+				path = root + location.getPath() + location.getIndexLocation();
+			}
+			if (path.empty() || ConfigFile::getTypePath(path) != 1 || ConfigFile::checkFile(path, 4) < 0)
+				return (1);
+		}
+		if (location.getCgiPath().size() != location.getCgiExtension().size())
+			return (1);
+		std::vector<std::string>::const_iterator it;
+		for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); ++it)
+		{
+			if (ConfigFile::getTypePath(*it) < 0)
+				return (1);
+		}
+		std::vector<std::string>::const_iterator it_path;
+		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
+		{
+			std::string tmp = *it;
+			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh")
+				return (1);
+			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
+			{
+				std::string tmp_path = *it_path;
+				if (tmp == ".py" || tmp == "*.py")
+				{
+					if (tmp_path.find("python") != std::string::npos)
+						location._ext_path.insert(std::make_pair(".py", tmp_path));
+				}
+				else if (tmp == ".sh" || tmp == "*.sh")
+				{
+					if (tmp_path.find("bash") != std::string::npos)
+						location._ext_path[".sh"] = tmp_path;
+				}
+			}
+		}
+		if (location.getCgiPath().size() != location.getExtensionPath().size())
+			return (1);
+	}
+	else
+	{
+		if (location.getPath()[0] != '/')
+			return (2);
+		if (location.getRootLocation().empty()) {
+			location.setRootLocation(_root);
+		}
+		if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath(), location.getIndexLocation()))
+			return (5);
+		if (!location.getReturn().empty())
+		{
+			if (ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getReturn()))
+				return (3);
+		}
+		if (!location.getAlias().empty())
+		{
+			if (ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getAlias()))
+			 	return (4);
+		}
+	}
+	return (0);
+}
+
 void Location::setPath(std::string parametr)
 {
-	this->_path = parametr;
+	_path = parametr;
 }
 
 void Location::setRootLocation(std::string parametr)
 {
 	if (ConfigFile::getTypePath(parametr) != 2)
-		throw VirtualServers::ErrorException("root of location");
-	this->_root = parametr;
+		throw ErrorException("root of location");
+	_root = parametr;
 }
 
 void Location::setMethods(std::vector<std::string> methods)
 {
-	this->_methods[0] = 0;
-	this->_methods[1] = 0;
-	this->_methods[2] = 0;
-	this->_methods[3] = 0;
-	this->_methods[4] = 0;
+	_methods[0] = 0;
+	_methods[1] = 0;
+	_methods[2] = 0;
+	_methods[3] = 0;
+	_methods[4] = 0;
 
 	for (size_t i = 0; i < methods.size(); i++)
 	{
 		if (methods[i] == "GET")
-			this->_methods[0] = 1;
+			_methods[0] = 1;
 		else if (methods[i] == "POST")
-			this->_methods[1] = 1;
+			_methods[1] = 1;
 		else if (methods[i] == "DELETE")
-			this->_methods[2] = 1;
+			_methods[2] = 1;
 		else if (methods[i] == "PUT")
-			this->_methods[3] = 1;
+			_methods[3] = 1;
 		else if (methods[i] == "HEAD")
-			this->_methods[4] = 1;
+			_methods[4] = 1;
 		else
-			throw VirtualServers::ErrorException("Allow method not supported " + methods[i]);
+			throw ErrorException("Allow method not supported " + methods[i]);
 	}
 }
 
 void Location::setAutoindex(std::string parametr)
 {
 	if (parametr == "on" || parametr == "off")
-		this->_autoindex = (parametr == "on");
+		_autoindex = (parametr == "on");
 	else
-		throw VirtualServers::ErrorException("Wrong autoindex");
+		throw ErrorException("Wrong autoindex");
 }
 
 void Location::setIndexLocation(std::string parametr)
 {
-	this->_index = parametr;
+	if (parametr[0] != '/')
+		parametr = "/" + parametr;
+	_index = parametr;
 }
 
 void Location::setReturn(std::string parametr)
 {
-	this->_return = parametr;
+	_return = parametr;
 }
 
 void Location::setAlias(std::string parametr)
 {
-	this->_alias = parametr;
+	_alias = parametr;
 }
 
 void Location::setCgiPath(std::vector<std::string> path)
 {
-	this->_cgi_path = path;
+	_cgi_path = path;
 }
 
 void Location::setCgiExtension(std::vector<std::string> extension)
 {
-	this->_cgi_ext = extension;
+	_cgi_ext = extension;
 }
 
 void Location::setMaxBodySize(std::string parametr)
 {
-	unsigned long body_size = 0;
-
 	for (size_t i = 0; i < parametr.length(); i++)
 	{
 		if (parametr[i] < '0' || parametr[i] > '9')
-			throw VirtualServers::ErrorException("Wrong syntax: client_max_body_size");
+			throw ErrorException("Wrong syntax: client_max_body_size");
 	}
-	if (!VirtualServers::ft_stoi(parametr))
-		throw VirtualServers::ErrorException("Wrong syntax: client_max_body_size");
-	body_size = VirtualServers::ft_stoi(parametr);
-	this->_client_max_body_size = body_size;
+	if (!ft_stoi(parametr))
+		throw ErrorException("Wrong syntax: client_max_body_size");
+	_client_max_body_size = ft_stoi(parametr);
 }
 
-void Location::setMaxBodySize(unsigned long parametr)
-{
-	this->_client_max_body_size = parametr;
-}
+void Location::setMaxBodySize(unsigned long parametr) { _client_max_body_size = parametr; }
 
-/* get functions */
-const std::string &Location::getPath() const
-{
-	return (this->_path);
-}
+const std::string &Location::getPath() const { return (_path); }
 
-const std::string &Location::getRootLocation() const
-{
-	return (this->_root);
-}
+const std::string &Location::getRootLocation() const { return (_root); }
 
-const std::string &Location::getIndexLocation() const
-{
-	return (this->_index);
-}
+const std::string &Location::getIndexLocation() const { return (_index); }
 
-const std::vector<short> &Location::getMethods() const
-{
-	return (this->_methods);
-}
+const std::vector<short> &Location::getMethods() const { return (_methods); }
 
-const std::vector<std::string> &Location::getCgiPath() const
-{
-	return (this->_cgi_path);
-}
+const std::vector<std::string> &Location::getCgiPath() const { return (_cgi_path); }
 
-const std::vector<std::string> &Location::getCgiExtension() const
-{
-	return (this->_cgi_ext);
-}
+const std::vector<std::string> &Location::getCgiExtension() const { return (_cgi_ext); }
 
-const bool &Location::getAutoindex() const
-{
-	return (this->_autoindex);
-}
+const bool &Location::getAutoindex() const { return (_autoindex); }
 
-const std::string &Location::getReturn() const
-{
-	return (this->_return);
-}
+const std::string &Location::getReturn() const { return (_return); }
 
-const std::string &Location::getAlias() const
-{
-	return (this->_alias);
-}
+const std::string &Location::getAlias() const { return (_alias); }
 
-const std::map<std::string, std::string> &Location::getExtensionPath() const
-{
-	return (this->_ext_path);
-}
+const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_ext_path); }
 
-const unsigned long &Location::getMaxBodySize() const
-{
-	return (this->_client_max_body_size);
-}
+const unsigned long &Location::getMaxBodySize() const { return (_client_max_body_size); }
 
-/* for printing allowed methods*/
+//****************************************************
+// To print methods.  Remove before send the project
 std::string Location::getPrintMethods() const
 {
 	std::string res;

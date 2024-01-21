@@ -1,114 +1,99 @@
 #include "../include/ConfigParser.hpp"
 
-ConfigParser::ConfigParser()
-{
-	this->_nb_server = 0;
-}
+ConfigParser::ConfigParser() { _nb_server = 0; }
 
 ConfigParser::ConfigParser(const ConfigParser &other)
 {
-	this->_nb_server = other._nb_server;
-	this->_server_config = other._server_config;
+	_nb_server = other._nb_server;
+	_server_config = other._server_config;
 }
 
 ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
 {
 	if (this == &rhs)
 		return (*this);
-	this->_nb_server = rhs._nb_server;
-	this->_server_config = rhs._server_config;
+	_nb_server = rhs._nb_server;
+	_server_config = rhs._server_config;
 	return (*this);
 }
 
 ConfigParser::~ConfigParser() { }
 
-/* printing parametrs of servers from config file */
+/************************ PRINTING servers configurations ************************/
 int ConfigParser::print()
 {
-	std::cout << "------------- Config -------------" << std::endl;
-	for (size_t i = 0; i < _server_config.size(); i++)
-	{
-		std::cout << "Server #" << i + 1 << std::endl;
-		std::cout << _server_config[i] << std::endl;
-		std::cout << "-----------------------------" << std::endl;
-	}
-
-	std::cout << "------------- Config -------------" << std::endl;
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
-		std::cout << "Server #" << i + 1 << std::endl;
-		std::cout << "Server name: " << _servers[i].getServerName() << std::endl;
-		std::cout << "Root: " << _servers[i].getRoot() << std::endl;
-		std::cout << "Index: " << _servers[i].getIndex() << std::endl;
-		std::cout << "Port: " << _servers[i].getPort() << std::endl;
-		std::cout << "Max BSize: " << _servers[i].getClientMaxBodySize() << std::endl;
-		std::cout << "Error pages: " << _servers[i].getErrorPages().size() << std::endl;
+		std::cout << YELLOW <<  "SERVER #" << i + 1 << RESET << std::endl;
+		std::cout << CYAN << "Server name: " << RESET << _servers[i].getServerName() << std::endl;
+		std::cout << CYAN << "Root: " << RESET << _servers[i].getRoot() << std::endl;
+		std::cout << CYAN << "Index: " << RESET << _servers[i].getIndex() << std::endl;
+		std::cout << CYAN <<  "Port: " << RESET << _servers[i].getPort() << std::endl;
+		std::cout << CYAN << "Max BSize: " << RESET << _servers[i].getClientMaxBodySize() << std::endl;
+		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
 		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
 		while (it != _servers[i].getErrorPages().end())
 		{
-			std::cout << (*it).first << " - " << it->second << std::endl;
+			std::cout << "   " << LIGHTRED << (*it).first << " - " << RESET << it->second << std::endl;
 			++it;
 		}
-		std::cout << "Locations: " << _servers[i].getLocations().size() << std::endl;
+		std::cout << CYAN << "Locations: " << _servers[i].getLocations().size() << std::endl;
 		std::vector<Location>::const_iterator itl = _servers[i].getLocations().begin();
 		while (itl != _servers[i].getLocations().end())
 		{
-			std::cout << "name location: " << itl->getPath() << std::endl;
-			std::cout << "methods: " << itl->getPrintMethods() << std::endl;
-			std::cout << "index: " << itl->getIndexLocation() << std::endl;
+			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
+			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
+			std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
 			if (itl->getCgiPath().empty())
 			{
-				std::cout << "root: " << itl->getRootLocation() << std::endl;
+				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;
 				if (!itl->getReturn().empty())
-					std::cout << "return: " << itl->getReturn() << std::endl;
+					std::cout << LIGHTRED << "      return: " << RESET << itl->getReturn() << std::endl;
 				if (!itl->getAlias().empty())
-					std::cout << "alias: " << itl->getAlias() << std::endl;
+					std::cout << LIGHTRED << "      alias: " << RESET << itl->getAlias() << std::endl;
 			}
 			else
 			{
-				std::cout << "cgi root: " << itl->getRootLocation() << std::endl;
-				std::cout << "sgi_path: " << itl->getCgiPath().size() << std::endl;
-				std::cout << "sgi_ext: " << itl->getCgiExtension().size() << std::endl;
+				std::cout << LIGHTRED << "      cgi root: " << RESET << itl->getRootLocation() << std::endl;
+				std::cout << LIGHTRED << "      sgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
+				std::cout << LIGHTRED << "      sgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
 			}
 			++itl;
 		}
 		itl = _servers[i].getLocations().begin();
-		std::cout << "-----------------------------" << std::endl;
 	}
 	return (0);
 }
+/*********************************************************************************/
 
-
-/*remove comments from char # to \n */
-void removeComments(std::string &content)
+// Remove comments from char # to \n and empty lines
+void removeCommentsAndEmptyLines(std::string &content)
 {
-	size_t pos;
+    std::string result;
+    std::istringstream iss(content);
+    std::string line;
 
-	pos = content.find('#');
-	while (pos != std::string::npos)
+    while (std::getline(iss, line))
 	{
-		size_t pos_end;
-		pos_end = content.find('\n', pos);
-		content.erase(pos, pos_end - pos);
-		pos = content.find('#');
-	}
+        size_t firstCharPos = line.find_first_not_of(" \t");
+        if (firstCharPos != std::string::npos)
+		{
+			int comment = line.find('#');
+			if (comment != -1)
+				line = line.substr(firstCharPos, comment - firstCharPos);
+			else
+				line = line.substr(firstCharPos);
+			result += line;
+			if (line != "")
+				result += '\n';	
+        }
+    }
+	if (!result.empty() && result[result.length() - 1] == '\n')
+		result.erase(result.length() - 1);
+    content = result;
 }
 
-/* deleting whitespaces in the start, end and in the content if more than one */
-void removeWhiteSpace(std::string &content)
-{
-	size_t	i = 0;
-
-	while (content[i] && isspace(content[i]))
-		i++;
-	content = content.substr(i);
-	i = content.length() - 1;
-	while (i > 0 && isspace(content[i]))
-		i--;
-	content = content.substr(0, i + 1);
-}
-
-/* finding a server begin and return the index of { start of server */
+// Finding the keyword "server" and returning the index of "{" (start of server)
 size_t findStartServer (size_t start, std::string &content)
 {
 	size_t i;
@@ -118,7 +103,7 @@ size_t findStartServer (size_t start, std::string &content)
 		if (content[i] == 's')
 			break ;
 		if (!isspace(content[i]))
-			throw  ConfigParser::ErrorException("Wrong character out of server scope{}");
+			throw ConfigParser::ErrorException("Wrong character out of server scope{}");
 	}
 	if (!content[i])
 		return (start);
@@ -133,7 +118,7 @@ size_t findStartServer (size_t start, std::string &content)
 		throw  ConfigParser::ErrorException("Wrong character out of server scope{}");
 }
 
-/* finding a server end and return the index of } end of server */
+// Finding "}" (the end of a server) and returning its index
 size_t findEndServer (size_t start, std::string &content)
 {
 	size_t	i;
@@ -154,14 +139,14 @@ size_t findEndServer (size_t start, std::string &content)
 	return (start);
 }
 
-/* spliting servers on separetly strings in vector */
+// Spliting servers on separetly strings in vector
 void ConfigParser::splitServers(std::string &content)
 {
 	size_t start = 0;
 	size_t end = 1;
 
-	removeComments(content);
-	removeWhiteSpace(content);
+	removeCommentsAndEmptyLines(content);
+	
 	if (content.find("server", 0) == std::string::npos)
 		throw ErrorException("Server did not find");
 	while (start != end && start < content.length())
@@ -176,12 +161,13 @@ void ConfigParser::splitServers(std::string &content)
 	}
 }
 
-/* checking and read config file, split servers to strings and creating vector of servers */
+// The main function
 int ConfigParser::initParser(const std::string &config_file)
 {
 	std::string		content;
 	ConfigFile		file(config_file);
-
+	
+	// Checking and read config file
 	if (file.checkPath(file.getPath()) == -1)
 		throw ErrorException("File is invalid");
 	if (file.checkFile(file.getPath(), 4) == -1)
@@ -189,21 +175,19 @@ int ConfigParser::initParser(const std::string &config_file)
 	content = file.readFile(config_file);
 	if (content.empty())
 		throw ErrorException("File is empty");
-	
+	//Splitting servers to strings
 	splitServers(content);
 
-/************************PRINTING servers from config file************************/
-	for (size_t i = 0; i < this->_nb_server; i++)
-	{
-		std::cout << "------------------------------ SERVER #" << i + 1 << " ------------------------" << std::endl;
-		std::cout << _server_config[i] << std::endl;
-	}
-	std::cout << "---------------------------------- END SERVERS --------------------------------" << std::endl;
-/*********************************************************************************/
+//	for (size_t i = 0; i < this->_nb_server; i++)
+//	{
+//		std::cout << "---   SERVER #" << i + 1 << "   ---" << std::endl;
+//		std::cout << _server_config[i] << std::endl;
+//		std::cout << "--- END  SERVER #" << i + 1  << " ---\n" << std::endl;
+//	}
 
 	if (this->_server_config.size() != this->_nb_server)
 		throw ErrorException("There is a problem with server configuration");
-
+	// Creating vector of servers
 	for (size_t i = 0; i < this->_nb_server; i++)
 	{
 		VirtualServers server(_server_config[i]);

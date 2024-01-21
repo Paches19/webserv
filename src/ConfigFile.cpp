@@ -2,16 +2,13 @@
 
 ConfigFile::ConfigFile() { }
 
-ConfigFile::ConfigFile(const ConfigFile &other)
-{
-	this->_path = other._path;
-}
+ConfigFile::ConfigFile(const ConfigFile &other) { _path = other._path; }
 
 ConfigFile &ConfigFile::operator=(const ConfigFile &rhs)
 {
 	if (this == &rhs)
 		return (*this);
-	this->_path = rhs._path;
+	_path = rhs._path;
 	return (*this);
 }
 
@@ -19,25 +16,24 @@ ConfigFile::ConfigFile(std::string const path) : _path(path) { }
 
 ConfigFile::~ConfigFile() { }
 
-/* define is path is file(1), folder(2) or something else(3) */
 int ConfigFile::checkPath(std::string const path)
 {
 	struct stat	buffer;
 	int			result;
 	
 	result = stat(path.c_str(), &buffer);
-	if (result == 0 && (buffer.st_mode & S_IFREG))
+	if (result == 0)
 			return (1);
 	return (-1);
 }
 
-/* checks is the file exists and accessable */
+// Check is the file exists and accessable
 int	ConfigFile::checkFile(std::string const path, int mode)
 {
 	return (access(path.c_str(), mode));
 }
 
-/* reading from file to string */
+// Read from file to string
 std::string	ConfigFile::readFile(std::string path)
 {
 	if (path.empty() || path.length() == 0)
@@ -45,35 +41,30 @@ std::string	ConfigFile::readFile(std::string path)
 	std::ifstream config_file(path.c_str());
 	if (!config_file || !config_file.is_open())
 		return (NULL);
-
 	std::stringstream stream_binding;
 	stream_binding << config_file.rdbuf();
 	return (stream_binding.str());
 }
 
-/* Get functions */
 std::string ConfigFile::getPath()
 {
-	return (this->_path);
+	return (_path);
 }
 
+// Get if path is file(1), folder(2) or something else(3)
 int ConfigFile::getTypePath(std::string const path)
 {
 	struct stat	buffer;
-	int			result;
-	
-	result = stat(path.c_str(), &buffer);
-	if (result == 0)
+
+	if (stat(path.c_str(), &buffer) == 0)
 	{
 		if (buffer.st_mode & S_IFREG)
 			return (1);
-		else if (buffer.st_mode & S_IFDIR)
+		if (buffer.st_mode & S_IFDIR)
 			return (2);
-		else
-			return (3);
+		return (3);
 	}
-	else
-		return (-1);
+	return (-1);
 }
 
 int ConfigFile::isFileExistAndReadable(std::string const path, std::string const index)
