@@ -113,7 +113,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			{
 				if (i + 1 >= parametrs.size())
 					throw ErrorException("Wrong character out of server scope{}");
-				errorodes.push_back(parametrs[i]);
+				errorCodes.push_back(parametrs[i]);
 				if (parametrs[i].find(';') != std::string::npos)
 					break ;
 			}
