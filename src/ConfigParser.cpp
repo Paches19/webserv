@@ -195,3 +195,5 @@ int ConfigParser::initParser(const std::string &configFile)
 	}
 	return (0);
 }
+
+std::vector<VirtualServers> &ConfigParser::getServers() { return (_servers); }

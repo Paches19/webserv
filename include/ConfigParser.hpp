@@ -20,6 +20,7 @@ class ConfigParser
 
 		int initParser(const std::string &configFile);
 		void splitServers(std::string &content);
+		std::vector<VirtualServers> &getServers();
 		int print();
 
 		class ErrorException : public std::exception
