@@ -8,14 +8,14 @@ class Location;
 class VirtualServers
 {
 	private:
-		uint16_t				_listen;
-		std::string				_server_name;
+		uint16_t				_port;
+		std::string				_serverName;
 		std::string				_root;
 		std::string				_index;
 		bool					_autoindex;
 		std::vector<Location>	_locations;
-		std::map<short, std::string>	_error_pages;
-		unsigned long			_client_max_body_size;
+		std::map<short, std::string>	_errorPages;
+		unsigned long			_clientMaxBodySize;
 		std::string				_return;
 		
 		VirtualServers();

@@ -5,7 +5,7 @@
 
 class ConfigFile {
 	private:
-		std::string		_path;
+		std::string	_path;
 		ConfigFile();
 		ConfigFile(const ConfigFile &other);
 		ConfigFile &operator=(const ConfigFile &rhs);

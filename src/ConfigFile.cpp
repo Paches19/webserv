@@ -38,12 +38,12 @@ std::string	ConfigFile::readFile(std::string path)
 {
 	if (path.empty() || path.length() == 0)
 		return (NULL);
-	std::ifstream config_file(path.c_str());
-	if (!config_file || !config_file.is_open())
+	std::ifstream configFile(path.c_str());
+	if (!configFile || !configFile.is_open())
 		return (NULL);
-	std::stringstream stream_binding;
-	stream_binding << config_file.rdbuf();
-	return (stream_binding.str());
+	std::stringstream streamBinding;
+	streamBinding << configFile.rdbuf();
+	return (streamBinding.str());
 }
 
 std::string ConfigFile::getPath()

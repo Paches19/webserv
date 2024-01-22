@@ -9,8 +9,8 @@ class ConfigParser
 {
 	private:
 		std::vector<VirtualServers>	_servers;
-		std::vector<std::string>	_server_config;
-		size_t						_nb_server;
+		std::vector<std::string>	_serverConfig;
+		size_t						_nbServer;
 		ConfigParser(const ConfigParser &other);
 		ConfigParser &operator=(const ConfigParser &rhs);
 
@@ -18,7 +18,7 @@ class ConfigParser
 		ConfigParser();
 		~ConfigParser();
 
-		int initParser(const std::string &config_file);
+		int initParser(const std::string &configFile);
 		void splitServers(std::string &content);
 		int print();
 
