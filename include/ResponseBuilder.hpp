@@ -10,10 +10,12 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef RESPONSEBUILDER_HPP
-# define RESPONSEBUILDER_HPP
+#ifndef RESPONSE_BUILDER_HPP
+# define RESPONSE_BUILDER_HPP
 
-# include "WebServer.hpp"
+# include <string>
+# include <map>
+# include <sstream>
 
 class ResponseBuilder
 {

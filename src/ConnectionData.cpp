@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/ConnectionData.hpp"
+#include "ConnectionData.hpp"
 
 ConnectionData::ConnectionData() : readBuffer(1024),
 	writeBuffer(1024),  headerReceived(false), accumulatedBytes(0) {}

@@ -1,7 +1,19 @@
-#ifndef LOCATION_HPP
-#define LOCATION_HPP
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Location.hpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:41:07 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:41:07 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#include "WebServer.hpp"
+#ifndef LOCATION_HPP
+# define LOCATION_HPP
+
+# include "WebServer.hpp"
 
 class Location
 {
@@ -13,15 +25,15 @@ class Location
 		std::vector<short>			_methods; // GET, POST, DELETE, PUT, HEAD
 		std::string					_return;
 		std::string					_alias;
-		std::vector<std::string>	_cgiPath;
-		std::vector<std::string>	_cgiExt;
-		unsigned long				_clientMaxBodySize;
+		std::vector<std::string>	_cgi_path;
+		std::vector<std::string>	_cgi_ext;
+		unsigned long				_client_max_body_size;
 
 		Location();
 		int _checkLocation(Location &location) const;
 
 	public:
-		std::map<std::string, std::string> extPath;
+		std::map<std::string, std::string> _ext_path;
 		Location &operator=(const Location &rhs);
 		Location(const Location &other);
 		~Location();
@@ -71,4 +83,4 @@ class Location
 		};
 };
 
-#endif
+#endif // LOCATION_HPP

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/ResponseBuilder.hpp"
+#include "ResponseBuilder.hpp"
 
 ResponseBuilder::ResponseBuilder() : _statusCode(200) {}
 

@@ -1,19 +1,31 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConfigParser.cpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:38:56 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:57:14 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/ConfigParser.hpp"
 
-ConfigParser::ConfigParser() { _nbServer = 0; }
+ConfigParser::ConfigParser() { _nb_server = 0; }
 
 ConfigParser::ConfigParser(const ConfigParser &other)
 {
-	_nbServer = other._nbServer;
-	_serverConfig = other._serverConfig;
+	_nb_server = other._nb_server;
+	_server_config = other._server_config;
 }
 
 ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
 {
 	if (this == &rhs)
 		return (*this);
-	_nbServer = rhs._nbServer;
-	_serverConfig = rhs._serverConfig;
+	_nb_server = rhs._nb_server;
+	_server_config = rhs._server_config;
 	return (*this);
 }
 
@@ -155,45 +167,45 @@ void ConfigParser::splitServers(std::string &content)
 		end = findEndServer(start, content);
 		if (start == end)
 			throw ErrorException("There is a problem with scope");
-		_serverConfig.push_back(content.substr(start, end - start + 1));
-		_nbServer++;
+		_server_config.push_back(content.substr(start, end - start + 1));
+		_nb_server++;
 		start = end + 1;
 	}
 }
 
 // The main function
-int ConfigParser::initParser(const std::string &configFile)
+int ConfigParser::initParser(const std::string &config_file)
 {
 	std::string		content;
-	ConfigFile		file(configFile);
+	ConfigFile		file(config_file);
 	
 	// Checking and read config file
 	if (file.checkPath(file.getPath()) == -1)
 		throw ErrorException("File is invalid");
 	if (file.checkFile(file.getPath(), 4) == -1)
 		throw ErrorException("File is not accessible");
-	content = file.readFile(configFile);
+	content = file.readFile(config_file);
 	if (content.empty())
 		throw ErrorException("File is empty");
 	//Splitting servers to strings
 	splitServers(content);
 
-//	for (size_t i = 0; i < this->_nbServer; i++)
+//	for (size_t i = 0; i < this->_nb_server; i++)
 //	{
 //		std::cout << "---   SERVER #" << i + 1 << "   ---" << std::endl;
-//		std::cout << _serverConfig[i] << std::endl;
+//		std::cout << _server_config[i] << std::endl;
 //		std::cout << "--- END  SERVER #" << i + 1  << " ---\n" << std::endl;
 //	}
 
-	if (this->_serverConfig.size() != this->_nbServer)
+	if (this->_server_config.size() != this->_nb_server)
 		throw ErrorException("There is a problem with server configuration");
 	// Creating vector of servers
-	for (size_t i = 0; i < this->_nbServer; i++)
+	for (size_t i = 0; i < this->_nb_server; i++)
 	{
-		VirtualServers server(_serverConfig[i]);
+		VirtualServers server(_server_config[i]);
 		this->_servers.push_back(server);
 	}
 	return (0);
 }
 
-std::vector<VirtualServers> &ConfigParser::getServers() { return (_servers); }
+std::vector<VirtualServers> ConfigParser::getServers() { return _servers; }

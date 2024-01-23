@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   VirtualServers.hpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:41:20 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:41:20 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef VIRTUALSERVERS_HPP
 # define VIRTUALSERVERS_HPP
 
@@ -9,13 +21,13 @@ class VirtualServers
 {
 	private:
 		uint16_t				_port;
-		std::string				_serverName;
+		std::string				_server_name;
 		std::string				_root;
 		std::string				_index;
 		bool					_autoindex;
 		std::vector<Location>	_locations;
-		std::map<short, std::string>	_errorPages;
-		unsigned long			_clientMaxBodySize;
+		std::map<short, std::string>	_error_pages;
+		unsigned long			_client_max_body_size;
 		std::string				_return;
 		
 		VirtualServers();
@@ -64,4 +76,4 @@ class VirtualServers
 		};
 };
 
-#endif
+#endif // VIRTUALSERVERS_HPP

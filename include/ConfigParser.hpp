@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConfigParser.hpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:40:57 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:56:32 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CONFIGPARSER_HPP
 # define CONFIGPARSER_HPP
 
@@ -9,8 +21,8 @@ class ConfigParser
 {
 	private:
 		std::vector<VirtualServers>	_servers;
-		std::vector<std::string>	_serverConfig;
-		size_t						_nbServer;
+		std::vector<std::string>	_server_config;
+		size_t						_nb_server;
 		ConfigParser(const ConfigParser &other);
 		ConfigParser &operator=(const ConfigParser &rhs);
 
@@ -18,10 +30,11 @@ class ConfigParser
 		ConfigParser();
 		~ConfigParser();
 
-		int initParser(const std::string &configFile);
+		int initParser(const std::string &config_file);
 		void splitServers(std::string &content);
-		std::vector<VirtualServers> &getServers();
 		int print();
+		
+		std::vector<VirtualServers> getServers();
 
 		class ErrorException : public std::exception
 		{
@@ -40,4 +53,4 @@ class ConfigParser
 		};
 };
 
-#endif
+#endif //CONFIGPARSER_HPP

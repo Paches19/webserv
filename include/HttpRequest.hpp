@@ -10,10 +10,17 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef HTTPREQUEST_HPP
-# define HTTPREQUEST_HPP
+#ifndef HTTP_REQUEST_HPP
+# define HTTP_REQUEST_HPP
 
-# include "WebServer.hpp"
+# include <map>
+# include <sys/socket.h>
+# include <iostream>
+# include <unistd.h>
+# include <sstream>
+# include <string>
+# include <vector>
+# include <algorithm>
 
 class HttpRequest
 {
@@ -45,4 +52,4 @@ class HttpRequest
 		void invalidRequest();
 };
 
-#endif // HTTPREQUEST_HPP
+#endif // HTTP_REQUEST_HPP

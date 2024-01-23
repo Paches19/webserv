@@ -10,10 +10,19 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONNECTIONDATA_HPP
-# define CONNECTIONDATA_HPP
+#ifndef CONNECTION_DATA_HPP
+# define CONNECTION_DATA_HPP
 
-# include "WebServer.hpp"
+# include <map>
+# include <sys/socket.h>
+# include <string>
+# include <vector>
+# include <iostream>
+# include <unistd.h>
+#include <sstream>
+# include "Socket.hpp"
+# include "HttpRequest.hpp"
+# include "ResponseBuilder.hpp"
 
 class ConnectionData
 {

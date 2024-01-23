@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/HttpRequest.hpp"
+#include "HttpRequest.hpp"
 
 HttpRequest::HttpRequest(const std::string& rawRequest)
 {

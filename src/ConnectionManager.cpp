@@ -6,11 +6,11 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:03:30 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/23 12:55:40 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/ConnectionManager.hpp"
+#include "ConnectionManager.hpp"
 
 ConnectionManager::ConnectionManager() {}
 
@@ -45,30 +45,46 @@ void ConnectionManager::readData(Socket& socket)
 {
 	ConnectionData& data(connections[socket.getSocketFd()]);
 
+	std::cout << "socketLectura: " << socket.getSocketFd() << std::endl;
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	if (bytesRead > 0)
+	std::cout << "bytesRead: " << bytesRead << std::endl;
+	std::cout << "Buff: " << std::string(data.readBuffer.begin(), data.readBuffer.end()) << std::endl;
+	if (!data.readBuffer.empty())
 	{
-		data.accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
-		int contentLength = 0;
+		std::cout << "ReadBuffer no vacio:" << std::endl << std::endl;
+		data.accumulatedBytes += bytesRead + data.readBuffer.size(); // Añadir a la cuenta de bytes acumulados
+		// int contentLength = 0;
 		
-		if (!data.headerReceived && isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
+		// if (!data.headerReceived && isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
+		// {
+		// 	std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
+		// 	data.headerReceived = true;
+		// 	contentLength = getContentLength(data.readBuffer, data.accumulatedBytes);
+		// 	if (contentLength > 0)
+		// 	{
+		// 		// Redimensionar readBuffer para acomodar el cuerpo de la solicitud
+		// 		data.readBuffer.resize(data.accumulatedBytes + contentLength);
+		// 	}
+		// }
+		// if (data.headerReceived && ((data.accumulatedBytes == data.readBuffer.size())
+		// 	&& contentLength > 0))
+		if (isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
 		{
-			data.headerReceived = true;
-			contentLength = getContentLength(data.readBuffer, data.accumulatedBytes);
-			if (contentLength > 0)
-			{
-				// Redimensionar readBuffer para acomodar el cuerpo de la solicitud
-				data.readBuffer.resize(data.accumulatedBytes + contentLength);
-			}
-		}
-		if (data.headerReceived && ((data.accumulatedBytes == data.readBuffer.size())
-			&& contentLength > 0))
-		{
+			std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data.readBuffer.begin(),
 				data.readBuffer.end()));
-
+			std::cout << "Request:" << std::endl << std::endl;
+			std::cout << "Method: " << request.getMethod() << std::endl;
+			std::cout << "URL: " << request.getURL() << std::endl;
+			std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
+			std::cout << "Headers :" << std::endl;
+			std::map<std::string, std::string> headers = request.getHeaders();
+			std::map<std::string, std::string>::const_iterator it;
+			for (it = headers.begin(); it != headers.end(); ++it)
+				std::cout << it->first << ": " << it->second << std::endl;
+			std::cout << std::endl;
 			if (request.isValidRequest())
 			{
 				// Procesar la solicitud y preparar la respuesta
@@ -82,8 +98,8 @@ void ConnectionManager::readData(Socket& socket)
 				std::string errorResponse = request.errorMessage();
 				data.writeBuffer.assign(errorResponse.begin(), errorResponse.end());
 			}
-			data.readBuffer.clear();
-			data.readBuffer.resize(1024); // Volver al tamaño inicial
+			// data.readBuffer.clear();
+			data.readBuffer.resize(1024);
 			data.accumulatedBytes = 0;
 			data.headerReceived = false;
 		}
@@ -95,8 +111,12 @@ void ConnectionManager::readData(Socket& socket)
 	} 
 	else 
 	{
-		// Error en la lectura
+		// data.readBuffer.clear();
+		data.readBuffer.resize(1024); // Volver al tamaño inicial
+		data.accumulatedBytes = 0;
+		data.headerReceived = false;
 	}
+	
 }
 
 void ConnectionManager::writeData(Socket& socket) 
@@ -121,6 +141,7 @@ void ConnectionManager::writeData(Socket& socket)
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer,
 	size_t accumulatedBytes)
 {
+	accumulatedBytes = 1024;
 	const std::string endOfHeader = "\r\n\r\n";
 	return std::search(buffer.begin(), buffer.begin() + accumulatedBytes,
 		endOfHeader.begin(), endOfHeader.end()) != buffer.begin() + accumulatedBytes;

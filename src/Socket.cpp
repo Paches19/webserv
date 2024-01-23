@@ -6,11 +6,11 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 13:46:20 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/23 12:33:34 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Socket.hpp"
+#include "Socket.hpp"
 
 Socket::Socket() : _socketFd(-1) {}
 
@@ -62,7 +62,7 @@ bool Socket::accept(Socket& newSocket) const
 	sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 
-	int new_sockfd = ::accept(_socketFd, (sockaddr *)&client_addr, &client_len);
+	int new_sockfd = ::accept(this->_socketFd, (sockaddr *)&client_addr, &client_len);
 	if (new_sockfd < 0)
 		return false;
 
@@ -106,6 +106,7 @@ int Socket::receive(char* buffer, int length) const
 
 void Socket::close()
 {
+	std::cout << "Socket cerrado: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

@@ -6,13 +6,14 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:34:17 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 13:46:44 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/22 16:44:17 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/WebServer.hpp"
+#include "Server.hpp"
+#include "WebServer.hpp"
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) 
 {
 	if (argc == 1 || argc == 2)
 	{

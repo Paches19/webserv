@@ -1,19 +1,29 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   WebServer.hpp                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:41:48 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
 # include <string>
 # include <map>
 # include <vector>
-# include <algorithm>
 # include <iostream>
 # include <fstream>
 # include <sstream>
 # include <sys/stat.h>
 # include <unistd.h>
 # include <stdint.h>
-# include <poll.h>
 # include <netinet/in.h>
-# include <sys/socket.h>
+
 
 # define RESET          "\x1B[0m"
 # define RED            "\x1B[31m"
@@ -31,11 +41,5 @@
 # include "ConfigFile.hpp"
 # include "VirtualServers.hpp"
 # include "Location.hpp"
-# include "Socket.hpp"
-# include "ConnectionManager.hpp"
-# include "HttpRequest.hpp"
-# include "ResponseBuilder.hpp"
-# include "ConnectionData.hpp"
-# include "Server.hpp"
 
-#endif
+#endif // WEBSERVER_HPP

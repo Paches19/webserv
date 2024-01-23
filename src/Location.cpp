@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Location.cpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/22 12:39:09 by adpachec          #+#    #+#             */
+/*   Updated: 2024/01/22 12:39:09 by adpachec         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/Location.hpp"
 
 Location::Location() { }
@@ -8,13 +20,13 @@ Location::Location(const Location &other)
 	_root = other._root;
 	_autoindex = other._autoindex;
 	_index = other._index;
-	_cgiPath = other._cgiPath;
-	_cgiExt = other._cgiExt;
+	_cgi_path = other._cgi_path;
+	_cgi_ext = other._cgi_ext;
 	_return = other._return;
 	_alias = other._alias;
     _methods = other._methods;
-	extPath = other.extPath;
-	_clientMaxBodySize = other._clientMaxBodySize;
+	_ext_path = other._ext_path;
+	_client_max_body_size = other._client_max_body_size;
 }
 
 Location &Location::operator=(const Location &rhs)
@@ -25,13 +37,13 @@ Location &Location::operator=(const Location &rhs)
 		_root = rhs._root;
 		_autoindex = rhs._autoindex;
 		_index = rhs._index;
-		_cgiPath = rhs._cgiPath;
-		_cgiExt = rhs._cgiExt;
+		_cgi_path = rhs._cgi_path;
+		_cgi_ext = rhs._cgi_ext;
 		_return = rhs._return;
 		_alias = rhs._alias;
 		_methods = rhs._methods;
-		extPath = rhs.extPath;
-		_clientMaxBodySize = rhs._clientMaxBodySize;
+		_ext_path = rhs._ext_path;
+		_client_max_body_size = rhs._client_max_body_size;
     }
 	return (*this);
 }
@@ -51,7 +63,7 @@ Location::Location(std::string &path, std::vector<std::string> &parametr, std::s
 	_index = "";
 	_return = "";
 	_alias = "";
-	_clientMaxBodySize = MAX_CONTENT_LENGTH;
+	_client_max_body_size = MAX_CONTENT_LENGTH;
 	_methods.reserve(5);
 	_methods.push_back(1); // GET
 	_methods.push_back(0); // POST
@@ -249,12 +261,12 @@ int Location::_checkLocation(Location &location) const
 				if (tmp == ".py" || tmp == "*.py")
 				{
 					if (tmp_path.find("python") != std::string::npos)
-						location.extPath.insert(std::make_pair(".py", tmp_path));
+						location._ext_path.insert(std::make_pair(".py", tmp_path));
 				}
 				else if (tmp == ".sh" || tmp == "*.sh")
 				{
 					if (tmp_path.find("bash") != std::string::npos)
-						location.extPath[".sh"] = tmp_path;
+						location._ext_path[".sh"] = tmp_path;
 				}
 			}
 		}
@@ -348,12 +360,12 @@ void Location::setAlias(std::string parametr)
 
 void Location::setCgiPath(std::vector<std::string> path)
 {
-	_cgiPath = path;
+	_cgi_path = path;
 }
 
 void Location::setCgiExtension(std::vector<std::string> extension)
 {
-	_cgiExt = extension;
+	_cgi_ext = extension;
 }
 
 void Location::setMaxBodySize(std::string parametr)
@@ -365,10 +377,10 @@ void Location::setMaxBodySize(std::string parametr)
 	}
 	if (!ft_stoi(parametr))
 		throw ErrorException("Wrong syntax: client_max_body_size");
-	_clientMaxBodySize = ft_stoi(parametr);
+	_client_max_body_size = ft_stoi(parametr);
 }
 
-void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = parametr; }
+void Location::setMaxBodySize(unsigned long parametr) { _client_max_body_size = parametr; }
 
 const std::string &Location::getPath() const { return (_path); }
 
@@ -378,9 +390,9 @@ const std::string &Location::getIndexLocation() const { return (_index); }
 
 const std::vector<short> &Location::getMethods() const { return (_methods); }
 
-const std::vector<std::string> &Location::getCgiPath() const { return (_cgiPath); }
+const std::vector<std::string> &Location::getCgiPath() const { return (_cgi_path); }
 
-const std::vector<std::string> &Location::getCgiExtension() const { return (_cgiExt); }
+const std::vector<std::string> &Location::getCgiExtension() const { return (_cgi_ext); }
 
 const bool &Location::getAutoindex() const { return (_autoindex); }
 
@@ -388,9 +400,9 @@ const std::string &Location::getReturn() const { return (_return); }
 
 const std::string &Location::getAlias() const { return (_alias); }
 
-const std::map<std::string, std::string> &Location::getExtensionPath() const { return (extPath); }
+const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_ext_path); }
 
-const unsigned long &Location::getMaxBodySize() const { return (_clientMaxBodySize); }
+const unsigned long &Location::getMaxBodySize() const { return (_client_max_body_size); }
 
 //****************************************************
 // To print methods.  Remove before send the project
