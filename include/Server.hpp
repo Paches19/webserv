@@ -13,17 +13,11 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include <iostream>
-# include <unistd.h>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <string>
-# include <vector>
-# include <poll.h>
-# include "Socket.hpp"
-# include "ConnectionManager.hpp"
-# include "VirtualServers.hpp"
+# include "WebServer.hpp"
 
+class Socket;
+class VirtualServers;
+class ConnectionManager;
 class Server
 {
 	private:

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "../include/Server.hpp"
 
 Server::Server(std::vector<VirtualServers>	_servers)
 {

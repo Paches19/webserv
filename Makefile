@@ -7,7 +7,6 @@ OBJ_DIR	= 	obj/
 #Sources 
 SRC		=	HttpRequest.cpp \
 			ResponseBuilder.cpp \
-			Server.cpp \
 			Socket.cpp \
 			ConnectionManager.cpp \
 			ConnectionData.cpp \
@@ -15,18 +14,13 @@ SRC		=	HttpRequest.cpp \
 			ConfigParser.cpp \
 			VirtualServers.cpp \
 			Location.cpp \
+			Server.cpp \
 			main.cpp
 		
 SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 
 #Headers
-HEADERS = 	$(INC_DIR)HttpRequest.hpp \
-			$(INC_DIR)ResponseBuilder.hpp \
-			$(INC_DIR)Server.hpp \
-			$(INC_DIR)Socket.hpp \
-			$(INC_DIR)ConnectionManager.hpp \
-			$(INC_DIR)ConnectionData.hpp \
-			$(INC_DIR)WebServer.hpp
+HEADERS = 	$(INC_DIR)WebServer.hpp
 
 #Objects
 OBJ		= $(SRC:.cpp=.o)

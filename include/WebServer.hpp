@@ -4,14 +4,16 @@
 # include <string>
 # include <map>
 # include <vector>
+# include <algorithm>
 # include <iostream>
 # include <fstream>
 # include <sstream>
 # include <sys/stat.h>
 # include <unistd.h>
 # include <stdint.h>
+# include <poll.h>
 # include <netinet/in.h>
-
+# include <sys/socket.h>
 
 # define RESET          "\x1B[0m"
 # define RED            "\x1B[31m"
@@ -29,5 +31,11 @@
 # include "ConfigFile.hpp"
 # include "VirtualServers.hpp"
 # include "Location.hpp"
+# include "Socket.hpp"
+# include "ConnectionManager.hpp"
+# include "HttpRequest.hpp"
+# include "ResponseBuilder.hpp"
+# include "ConnectionData.hpp"
+# include "Server.hpp"
 
 #endif

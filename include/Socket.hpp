@@ -13,10 +13,7 @@
 #ifndef SOCKET_HPP
 # define SOCKET_HPP
 
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <iostream>
+# include "WebServer.hpp"
 
 class Socket
 {
