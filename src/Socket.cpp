@@ -37,7 +37,7 @@ Socket& Socket::operator=(Socket& other)
 	return *this;
 }
 
-bool Socket::open(int port)
+bool Socket::open(int port, in_addr addr)
 {
 	std::cout << "Open port: " << port << std::endl;
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,7 +53,7 @@ bool Socket::open(int port)
 		
 	memset(&_address, 0, sizeof(_address));
 	_address.sin_family = AF_INET;
-	_address.sin_addr.s_addr = INADDR_ANY;
+	_address.sin_addr.s_addr = addr.s_addr;
 	_address.sin_port = htons(port);
 
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)

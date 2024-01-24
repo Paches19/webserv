@@ -27,7 +27,7 @@ class Socket
 		Socket(Socket& other);
 		Socket& operator=(Socket& other);
 
-		bool open(int port);
+		bool open(int port, in_addr addr);
 		bool accept(Socket& newSocket) const;
 		int send(const char* buffer, int length) const;
 		int receive(char* buffer, int length) const;

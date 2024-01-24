@@ -22,7 +22,7 @@ Server::Server(std::vector<VirtualServers>	_servers)
 	for (size_t i = 0; i < _servers.size(); ++i)
 	{
 		Socket* newSocket = new Socket();
-		if (newSocket->open((int) _servers[i].getPort()) == false)
+		if (newSocket->open((int)_servers[i].getPort(), _servers[i].getIpAddress()) == false)
 		{
 			std::cerr << "Error al abrir el socket" << std::endl;
 			return ;
