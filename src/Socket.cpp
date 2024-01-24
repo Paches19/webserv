@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/23 12:33:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/24 11:30:22 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,12 +43,20 @@ bool Socket::open(int port)
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFd == -1)
 		return false;
-	sockaddr_in server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(port);
+	
+	int opt = 1;
+    if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        std::cerr << "Error al configurar SO_REUSEADDR" << std::endl;
+        return false;
+    }
+		
+	memset(&_address, 0, sizeof(_address));
+	_address.sin_family = AF_INET;
+	_address.sin_addr.s_addr = INADDR_ANY;
+	_address.sin_port = htons(port);
 
-	if (bind(_socketFd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		return false;
 
 	if (listen(_socketFd, 5) < 0)
@@ -59,10 +67,9 @@ bool Socket::open(int port)
 
 bool Socket::accept(Socket& newSocket) const
 {
-	sockaddr_in client_addr;
-	socklen_t client_len = sizeof(client_addr);
+	socklen_t addressLen = sizeof(_address);
 
-	int new_sockfd = ::accept(this->_socketFd, (sockaddr *)&client_addr, &client_len);
+	int new_sockfd = ::accept(this->_socketFd, (sockaddr *)&_address, &addressLen);
 	if (new_sockfd < 0)
 		return false;
 
@@ -114,7 +121,6 @@ void Socket::close()
 	}
 }
 
-int	Socket::getSocketFd()
-{
-	return (this->_socketFd);
-}
+int	Socket::getSocketFd() { return (this->_socketFd); }
+
+sockaddr_in Socket::getSocketAddr() { return (this->_address); }

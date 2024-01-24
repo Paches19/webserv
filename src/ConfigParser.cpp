@@ -12,20 +12,20 @@
 
 #include "../include/ConfigParser.hpp"
 
-ConfigParser::ConfigParser() { _nb_server = 0; }
+ConfigParser::ConfigParser() { _nbServer = 0; }
 
 ConfigParser::ConfigParser(const ConfigParser &other)
 {
-	_nb_server = other._nb_server;
-	_server_config = other._server_config;
+	_nbServer = other._nbServer;
+	_serverConfig = other._serverConfig;
 }
 
 ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
 {
 	if (this == &rhs)
 		return (*this);
-	_nb_server = rhs._nb_server;
-	_server_config = rhs._server_config;
+	_nbServer = rhs._nbServer;
+	_serverConfig = rhs._serverConfig;
 	return (*this);
 }
 
@@ -41,6 +41,7 @@ int ConfigParser::print()
 		std::cout << CYAN << "Root: " << RESET << _servers[i].getRoot() << std::endl;
 		std::cout << CYAN << "Index: " << RESET << _servers[i].getIndex() << std::endl;
 		std::cout << CYAN <<  "Port: " << RESET << _servers[i].getPort() << std::endl;
+		std::cout << CYAN << "IP address: " << RESET << inet_ntoa(_servers[i].getIpAddress()) << std::endl;
 		std::cout << CYAN << "Max BSize: " << RESET << _servers[i].getClientMaxBodySize() << std::endl;
 		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
 		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
@@ -167,42 +168,42 @@ void ConfigParser::splitServers(std::string &content)
 		end = findEndServer(start, content);
 		if (start == end)
 			throw ErrorException("There is a problem with scope");
-		_server_config.push_back(content.substr(start, end - start + 1));
-		_nb_server++;
+		_serverConfig.push_back(content.substr(start, end - start + 1));
+		_nbServer++;
 		start = end + 1;
 	}
 }
 
 // The main function
-int ConfigParser::initParser(const std::string &config_file)
+int ConfigParser::initParser(const std::string &configFile)
 {
 	std::string		content;
-	ConfigFile		file(config_file);
+	ConfigFile		file(configFile);
 	
 	// Checking and read config file
 	if (file.checkPath(file.getPath()) == -1)
 		throw ErrorException("File is invalid");
 	if (file.checkFile(file.getPath(), 4) == -1)
 		throw ErrorException("File is not accessible");
-	content = file.readFile(config_file);
+	content = file.readFile(configFile);
 	if (content.empty())
 		throw ErrorException("File is empty");
 	//Splitting servers to strings
 	splitServers(content);
 
-//	for (size_t i = 0; i < this->_nb_server; i++)
+//	for (size_t i = 0; i < this->_nbServer; i++)
 //	{
 //		std::cout << "---   SERVER #" << i + 1 << "   ---" << std::endl;
-//		std::cout << _server_config[i] << std::endl;
+//		std::cout << _serverConfig[i] << std::endl;
 //		std::cout << "--- END  SERVER #" << i + 1  << " ---\n" << std::endl;
 //	}
 
-	if (this->_server_config.size() != this->_nb_server)
+	if (this->_serverConfig.size() != this->_nbServer)
 		throw ErrorException("There is a problem with server configuration");
 	// Creating vector of servers
-	for (size_t i = 0; i < this->_nb_server; i++)
+	for (size_t i = 0; i < this->_nbServer; i++)
 	{
-		VirtualServers server(_server_config[i]);
+		VirtualServers server(_serverConfig[i]);
 		this->_servers.push_back(server);
 	}
 	return (0);

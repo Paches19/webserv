@@ -25,15 +25,15 @@ class Location
 		std::vector<short>			_methods; // GET, POST, DELETE, PUT, HEAD
 		std::string					_return;
 		std::string					_alias;
-		std::vector<std::string>	_cgi_path;
-		std::vector<std::string>	_cgi_ext;
-		unsigned long				_client_max_body_size;
+		std::vector<std::string>	_cgiPath;
+		std::vector<std::string>	_cgiExt;
+		unsigned long				_clientMaxBodySize;
 
 		Location();
 		int _checkLocation(Location &location) const;
 
 	public:
-		std::map<std::string, std::string> _ext_path;
+		std::map<std::string, std::string> _extPath;
 		Location &operator=(const Location &rhs);
 		Location(const Location &other);
 		~Location();

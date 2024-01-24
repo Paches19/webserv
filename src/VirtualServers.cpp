@@ -17,14 +17,15 @@ VirtualServers::VirtualServers() { }
 VirtualServers::VirtualServers(const VirtualServers &rhs)
 {
 	_port = rhs._port;
-	_server_name = rhs._server_name;
+	_serverName = rhs._serverName;
 	_root = rhs._root;
 	_index = rhs._index;
 	_autoindex = rhs._autoindex;
 	_locations = rhs._locations;
-	_error_pages = rhs._error_pages;
-	_client_max_body_size = rhs._client_max_body_size;
+	_errorPages = rhs._errorPages;
+	_clientMaxBodySize = rhs._clientMaxBodySize;
 	_return = rhs._return;
+	_ipAddress = rhs._ipAddress;
 }
 
 VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
@@ -32,14 +33,15 @@ VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
 	if (this == &rhs)
 		return (*this);
 	_port = rhs._port;
-	_server_name = rhs._server_name;
+	_serverName = rhs._serverName;
 	_root = rhs._root;
 	_index = rhs._index;
 	_autoindex = rhs._autoindex;
 	_locations = rhs._locations;
-	_error_pages = rhs._error_pages;
-	_client_max_body_size = rhs._client_max_body_size;
+	_errorPages = rhs._errorPages;
+	_clientMaxBodySize = rhs._clientMaxBodySize;
 	_return = rhs._return;
+	_ipAddress = rhs._ipAddress;
 	return (*this);
 }
 
@@ -59,7 +61,7 @@ std::vector<std::string> splitParametrs(std::string &input)
 void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 {
 	std::vector<std::string>	parametrs;
-	std::vector<std::string>	error_codes;
+	std::vector<std::string>	errorCodes;
 	int		flag_loc = 1;
 	bool	flag_autoindex = false;
 
@@ -125,7 +127,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			{
 				if (i + 1 >= parametrs.size())
 					throw ErrorException("Wrong character out of server scope{}");
-				error_codes.push_back(parametrs[i]);
+				errorCodes.push_back(parametrs[i]);
 				if (parametrs[i].find(';') != std::string::npos)
 					break ;
 			}
@@ -158,7 +160,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		throw ErrorException("Index from config file not found or unreadable");
 	if (!server.getPort())
 		throw ErrorException("Port not found");
-	server.setErrorPages(error_codes);
+	server.setErrorPages(errorCodes);
 	if (!server._checkErrorPages())
 		throw ErrorException("Incorrect path for error page or number of error");
 }
@@ -166,7 +168,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 bool VirtualServers::_checkErrorPages()
 {
 	std::map<short, std::string>::const_iterator it;
-	for (it = _error_pages.begin(); it != _error_pages.end(); it++)
+	for (it = _errorPages.begin(); it != _errorPages.end(); it++)
 	{
 		if (it->first < 100 || it->first > 599)
 			return (false);
@@ -179,16 +181,17 @@ bool VirtualServers::_checkErrorPages()
 VirtualServers::VirtualServers(std::string &config)
 {
 	_port = 0;
-	_server_name = "";
+	_serverName = "";
 	_root = "";
 	_index = "";
 	_autoindex = false;
-	_client_max_body_size = MAX_CONTENT_LENGTH;
+	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_return = "";
+	setIpAddress("0.0.0.0");
 	// Hay que crear todas las páginas de errores. Estas son una muestra
-	_error_pages[403] = "/error_pages/403.html";
-	_error_pages[404] = "/error_pages/404.html";
-	_error_pages[405] = "/error_pages/405.html";
+	_errorPages[403] = "/error_pages/403.html";
+	_errorPages[404] = "/error_pages/404.html";
+	_errorPages[405] = "/error_pages/405.html";
 	
 	_createServer(config, *this);
 }
@@ -196,57 +199,78 @@ VirtualServers::VirtualServers(std::string &config)
 void VirtualServers::setPort(std::string parametr)
 {
 	unsigned int port;
-	
-	port = 0;
-	Location::checkToken(parametr);
-	for (size_t i = 0; i < parametr.length(); i++)
+	std::string stringPort;
+	std::string stringIP;
+
+	if (parametr.find(':') != std::string::npos)
 	{
-		if (!std::isdigit(parametr[i]))
+		std::istringstream stream(parametr);
+    	std::getline(stream, stringIP, ':');
+    	std::getline(stream, stringPort);
+	}
+	else
+	{
+		stringPort = parametr;
+		stringIP = "0.0.0.0";
+	}
+	setIpAddress(stringIP);
+	port = 0;
+	Location::checkToken(stringPort);
+
+	for (size_t i = 0; i < stringPort.length(); i++)
+	{
+		if (!std::isdigit(stringPort[i]))
 			throw ErrorException("Wrong syntax: port");
 	}
-	port = Location::ft_stoi((parametr));
+	port = Location::ft_stoi((stringPort));
 	if (port < 1 || port > 65636)
 		throw ErrorException("Wrong syntax: port");
 	_port = (uint16_t) port;
 }
 
-void VirtualServers::setServerName(std::string server_name)
+void VirtualServers::setIpAddress(std::string parametr)
 {
-	Location::checkToken(server_name);
-	_server_name = server_name;
+	if (inet_aton(parametr.c_str(), &_ipAddress) == 0)
+		throw ErrorException("Wrong syntax: ip address");
 }
 
-void VirtualServers::setRoot(std::string root)
+void VirtualServers::setServerName(std::string parametr)
 {
-	Location::checkToken(root);
+	Location::checkToken(parametr);
+	_serverName = parametr;
+}
 
-	if (ConfigFile::getTypePath(root) == 2)
+void VirtualServers::setRoot(std::string parametr)
+{
+	Location::checkToken(parametr);
+
+	if (ConfigFile::getTypePath(parametr) == 2)
 	{
-		_root = root;
+		_root = parametr;
 		return ;
 	}
 	char dir[1024];
 	getcwd(dir, 1024);
-	std::string full_root = dir + root;
-	if (ConfigFile::getTypePath(full_root) != 2)
+	std::string fullRoot = dir + parametr;
+	if (ConfigFile::getTypePath(fullRoot) != 2)
 		throw ErrorException("Wrong syntax: root");
-	_root = full_root;
+	_root = fullRoot;
 }
 
-void VirtualServers::setIndex(std::string index)
+void VirtualServers::setIndex(std::string parametr)
 {
-	Location::checkToken(index);
-	if (index[0] != '/')
-		index = "/" + index;
-	_index = index;
+	Location::checkToken(parametr);
+	if (parametr[0] != '/')
+		parametr = "/" + parametr;
+	_index = parametr;
 }
 
-void VirtualServers::setAutoindex(std::string autoindex)
+void VirtualServers::setAutoindex(std::string parametr)
 {
-	Location::checkToken(autoindex);
-	if (autoindex != "on" && autoindex != "off")
+	Location::checkToken(parametr);
+	if (parametr != "on" && parametr != "off")
 		throw ErrorException("Wrong syntax: autoindex");
-	if (autoindex == "on")
+	if (parametr == "on")
 		_autoindex = true;
 }
 
@@ -391,11 +415,11 @@ void VirtualServers::setErrorPages(std::vector<std::string> &parametr)
 			path = "/" + path;
 		if (ConfigFile::checkFile(_root + path, 0) == -1 || ConfigFile::checkFile(_root + path, 4) == -1)
 				throw ErrorException ("Error page file :" + _root + path + " is not accessible");
-		std::map<short, std::string>::iterator it = _error_pages.find(code_error);
-		if (it != _error_pages.end())
-			_error_pages[code_error] = path;
+		std::map<short, std::string>::iterator it = _errorPages.find(code_error);
+		if (it != _errorPages.end())
+			_errorPages[code_error] = path;
 		else
-			_error_pages.insert(std::make_pair(code_error, path));
+			_errorPages.insert(std::make_pair(code_error, path));
 	}
 }
 
@@ -413,7 +437,7 @@ void VirtualServers::setClientMaxBodySize(std::string parametr)
 	size = Location::ft_stoi((parametr));
 	if (size < 1 || size > 2147483647)
 		throw ErrorException("Wrong syntax: client_max_body_size");
-	_client_max_body_size = size;
+	_clientMaxBodySize = size;
 }
 
 void VirtualServers::setReturn(std::string parametr)
@@ -425,7 +449,7 @@ void VirtualServers::setReturn(std::string parametr)
 /********************GETTERS***********************/
 const uint16_t &VirtualServers::getPort() { return (_port); }
 
-const std::string &VirtualServers::getServerName() { return (_server_name); }
+const std::string &VirtualServers::getServerName() { return (_serverName); }
 
 const std::string &VirtualServers::getRoot() { return (_root); }
 
@@ -435,8 +459,10 @@ const bool &VirtualServers::getAutoindex() { return (_autoindex); }
 
 const std::vector<Location> &VirtualServers::getLocations() { return (_locations); }
 
-const std::map<short, std::string> &VirtualServers::getErrorPages() { return (_error_pages); }
+const std::map<short, std::string> &VirtualServers::getErrorPages() { return (_errorPages); }
 
-const unsigned long &VirtualServers::getClientMaxBodySize() { return (_client_max_body_size); }
+const unsigned long &VirtualServers::getClientMaxBodySize() { return (_clientMaxBodySize); }
 
 const std::string &VirtualServers::getReturn() { return (_return); }
+
+const in_addr &VirtualServers::getIpAddress() { return (_ipAddress); }

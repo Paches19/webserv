@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/23 12:34:42 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/24 13:01:17 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,8 +61,6 @@ void Server::run()
 	while (true)
 	{
 		fd_set readfds;
-		FD_ZERO(&readfds);
-		FD_SET(STDIN_FILENO, &readfds);
 		for (size_t i = 0; i < _pollFds.size(); ++i)
 			FD_SET(_pollFds[i].fd, &readfds);
 
@@ -80,50 +78,98 @@ void Server::run()
 		{
 			if (_pollFds[i].revents & POLLIN)
 			{
-				std::cout << "i: " << i << std::endl;
-				std::cout << "_serverSockets.size(): " << _serverSockets.size() << std::endl;
-				std::cout << "_clientSockets.size(): " << _clientSockets.size() << std::endl;
-				if (i < _serverSockets.size())
+				// std::cout << "i: " << i << std::endl;
+				// std::cout << "_serverSockets.size(): " << _serverSockets.size() << std::endl;
+				// std::cout << "_clientSockets.size(): " << _clientSockets.size() << std::endl;
+				Socket* dataSocket = handleNewConnection(_serverSockets[i]);
+				if (dataSocket)
 				{
-					Socket* newSocket = new Socket();			
-					if (_serverSockets[i]->accept(*newSocket))
-					{
-						std::cout << "Nuevo socket con fd: " << newSocket->getSocketFd() << std::endl;
-						struct pollfd newPollFd;
-						newPollFd.fd = newSocket->getSocketFd();
-						newPollFd.events = POLLIN | POLLOUT;
-						_pollFds.push_back(newPollFd);
-						_connectionManager.addConnection(*newSocket);
-						int clientKey = i + _serverSockets.size() + _clientSockets.size();
-						_clientSockets.insert(std::make_pair(clientKey, newSocket));
-					}
-					else
-					{
-						delete newSocket;
-						std::cerr << "Error al aceptar nueva conexión" << std::endl;
-					}
+					std::cout << "Llegada de datos " << std::endl;
+					_connectionManager.readData(*dataSocket);
 				}
-				else
-				{
-					if (_clientSockets.find(i) != _clientSockets.end())
-					{
-						std::cout << "Llegada de datos " << std::endl;
-    					_connectionManager.readData(*_clientSockets[i]);
-					}
-					else
-						std::cout << "Llegada de datos sin clientSocket" << std::endl;
-				}
+				// else
+				// 	std::cout << "Llegada de datos sin clientSocket" << std::endl;
 			}
 			else if (_pollFds[i].revents & POLLOUT)
-				_connectionManager.writeData(*_clientSockets[i]);
+			{
+				std::cout << "Handle Request " << std::endl;
+				handleRequest(*_clientSockets[i]);
+			}
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
 				std::cout << "Conexión cerrada o error en el socket FD: " << _pollFds[i].fd << std::endl;
 				_connectionManager.removeConnection(*_serverSockets[i]);
-				_pollFds.erase(_pollFds.begin() + i);
-				--i; // Ajustar el índice después de borrar un elemento
+				// _pollFds.erase(_pollFds.begin() + i);
+				// --i; // Ajustar el índice después de borrar un elemento
 			}
 		}
 	}
+}
+
+
+bool Server::areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)
+{
+	return (addr1.sin_addr.s_addr == addr2.sin_addr.s_addr) &&
+		(addr1.sin_port == addr2.sin_port);
+}
+
+Socket* Server::handleNewConnection(Socket* serverSocket)
+{
+	Socket* newSocket = new Socket();
+	Socket* existingSocket;
+	if (serverSocket->accept(*newSocket))
+	{
+		bool isExistingClient = false;
+		std::map<int, Socket*>::iterator it;
+		for (it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
+		{
+			existingSocket = it->second;
+			if (areAddressesEqual(newSocket->getSocketAddr(), existingSocket->getSocketAddr()))
+			{
+				std::cout << "Cliente existente" << std::endl;
+				delete newSocket;
+				isExistingClient = true;
+				return existingSocket;
+			}
+		}
+		if (!isExistingClient)
+		{
+			std::cout << "Nueva conexion" << std::endl;
+			struct pollfd newPollFd;
+			newPollFd.fd = newSocket->getSocketFd();
+			newPollFd.events = POLLIN | POLLOUT;
+			_connectionManager.addConnection(*newSocket);
+			_pollFds.push_back(newPollFd);
+			int clientKey = _pollFds.size();
+			_clientSockets.insert(std::make_pair(clientKey, newSocket));
+			return newSocket;
+		}
+		return existingSocket;
+	}
+	else
+	{
+		delete newSocket;
+		std::cerr << "Error al aceptar nueva conexión" << std::endl;
+		Socket *errorSocket = NULL;
+		return errorSocket;
+	}
+}
+
+void Server::handleRequest(Socket& clientSocket)
+{
+    ResponseBuilder responseBuilder;
+
+    // Configurar la respuesta
+	std::cout << "Respondiendo" << std::endl;
+    responseBuilder.setStatusCode(200);
+    responseBuilder.addHeader("Content-Type", "text/html");
+    responseBuilder.setBody("<html><body><h1>Hello, World!</h1></body></html>");
+
+    // Construir la respuesta
+    std::string response = responseBuilder.buildResponse();
+
+    // Enviar la respuesta
+    clientSocket.send(response.c_str(), response.size());
+	std::cout << "Respuesta enviada" << std::endl;
 }

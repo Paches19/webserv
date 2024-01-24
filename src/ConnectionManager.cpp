@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/23 12:55:40 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/01/24 12:59:14 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,8 +48,8 @@ void ConnectionManager::readData(Socket& socket)
 	std::cout << "socketLectura: " << socket.getSocketFd() << std::endl;
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	std::cout << "bytesRead: " << bytesRead << std::endl;
-	std::cout << "Buff: " << std::string(data.readBuffer.begin(), data.readBuffer.end()) << std::endl;
+	// std::cout << "bytesRead: " << bytesRead << std::endl;
+	// std::cout << "Buff: " << std::string(data.readBuffer.begin(), data.readBuffer.end()) << std::endl;
 	if (!data.readBuffer.empty())
 	{
 		std::cout << "ReadBuffer no vacio:" << std::endl << std::endl;
@@ -71,7 +71,7 @@ void ConnectionManager::readData(Socket& socket)
 		// 	&& contentLength > 0))
 		if (isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
 		{
-			std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
+			// std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data.readBuffer.begin(),
 				data.readBuffer.end()));
@@ -94,29 +94,30 @@ void ConnectionManager::readData(Socket& socket)
 			}
 			else
 			{
+				std::cerr << "Invalid request" << std::endl;
 				// Manejar solicitud inválida
-				std::string errorResponse = request.errorMessage();
-				data.writeBuffer.assign(errorResponse.begin(), errorResponse.end());
+				// std::string errorResponse = request.errorMessage();
+				// data.writeBuffer.assign(errorResponse.begin(), errorResponse.end());
 			}
-			// data.readBuffer.clear();
+			if (!data.readBuffer.empty())
+				data.readBuffer.clear();
 			data.readBuffer.resize(1024);
 			data.accumulatedBytes = 0;
 			data.headerReceived = false;
 		}
 	}
-	else if (bytesRead == 0) 
-	{
-		// Cliente cerró la conexión
-		removeConnection(socket);
-	} 
-	else 
-	{
-		// data.readBuffer.clear();
-		data.readBuffer.resize(1024); // Volver al tamaño inicial
-		data.accumulatedBytes = 0;
-		data.headerReceived = false;
-	}
-	
+	// else if (bytesRead == 0) 
+	// {
+	// 	// Cliente cerró la conexión
+	// 	removeConnection(socket);
+	// } 
+	// else 
+	// {
+	// 	// data.readBuffer.clear();
+	// 	data.readBuffer.resize(1024); // Volver al tamaño inicial
+	// 	data.accumulatedBytes = 0;
+	// 	data.headerReceived = false;
+	// }
 }
 
 void ConnectionManager::writeData(Socket& socket) 
@@ -130,8 +131,7 @@ void ConnectionManager::writeData(Socket& socket)
 			+ bytesSent);
 	else if (bytesSent == -1)
 	{
-		// Error en el envío
-		// Manejar el error
+		std::cerr << "Error de envio de response" << std::endl;
 	}
 	// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
 	if (data.writeBuffer.empty())
@@ -142,9 +142,14 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer,
 	size_t accumulatedBytes)
 {
 	accumulatedBytes = 1024;
+	if (accumulatedBytes)
+		accumulatedBytes = 1024;
+	std::cout << "http COmplete" << std::endl;
 	const std::string endOfHeader = "\r\n\r\n";
-	return std::search(buffer.begin(), buffer.begin() + accumulatedBytes,
-		endOfHeader.begin(), endOfHeader.end()) != buffer.begin() + accumulatedBytes;
+	if (std::search(buffer.begin(), buffer.end(),
+		endOfHeader.begin(), endOfHeader.end()) != buffer.end())
+		return true;
+	return false;
 }
 
 int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes)

@@ -23,6 +23,24 @@
 # include <unistd.h>
 # include <stdint.h>
 # include <netinet/in.h>
+# include <arpa/inet.h>
+# include <cstring>
+# include <sys/socket.h>
+# include <errno.h>
+# include <sys/select.h>
+# include <poll.h>
+# include <algorithm>
+
+# include "HttpRequest.hpp"
+# include "ResponseBuilder.hpp"
+# include "ConnectionData.hpp"
+# include "Socket.hpp"
+# include "ConnectionManager.hpp"
+# include "ConfigParser.hpp"
+# include "ConfigFile.hpp"
+# include "VirtualServers.hpp"
+# include "Location.hpp"
+
 
 
 # define RESET          "\x1B[0m"
@@ -36,10 +54,5 @@
 # define GREEN 			"\x1B[32m"
 
 # define MAX_CONTENT_LENGTH 1000000
-
-# include "ConfigParser.hpp"
-# include "ConfigFile.hpp"
-# include "VirtualServers.hpp"
-# include "Location.hpp"
 
 #endif // WEBSERVER_HPP

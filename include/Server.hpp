@@ -13,18 +13,7 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include <iostream>
-# include <unistd.h>
-# include <sys/socket.h>
-# include <sys/select.h>
-# include <netinet/in.h>
-# include <string>
-# include <vector>
-# include <map>
-# include <poll.h>
-# include "Socket.hpp"
-# include "ConnectionManager.hpp"
-# include "VirtualServers.hpp"
+# include "WebServer.hpp"
 
 class Server
 {
@@ -39,7 +28,10 @@ class Server
 		~Server();
 
 		void run();
-		// void setPollFds(struct pollfd serverPollFd);
+		
+		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
+		Socket* handleNewConnection(Socket* serverSocket);
+		void handleRequest(Socket& clientSocket);
 };
 
 #endif // SERVER_HPP

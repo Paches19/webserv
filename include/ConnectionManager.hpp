@@ -10,21 +10,13 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONNECTION_MANAGER_HPP
-# define CONNECTION_MANAGER_HPP
+#ifndef CONNECTIONMANAGER_HPP
+# define CONNECTIONMANAGER_HPP
 
-# include <map>
-# include <sys/socket.h>
-# include <string>
-# include <deque>
-# include <iostream>
-# include <unistd.h>
-# include <sstream>
-# include "Socket.hpp"
-# include "HttpRequest.hpp"
-# include "ResponseBuilder.hpp"
-# include "ConnectionData.hpp"
+# include "WebServer.hpp"
 
+class Socket;
+class ConnectionData;
 class ConnectionManager
 {
 	private:

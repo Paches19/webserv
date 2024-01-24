@@ -13,29 +13,28 @@
 #ifndef SOCKET_HPP
 # define SOCKET_HPP
 
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <unistd.h>
-# include <iostream>
-#include <errno.h>
+# include "WebServer.hpp"
 
 class Socket
 {
 	private:
 		int _socketFd;
-		Socket(Socket& other);
-		Socket& operator=(Socket& other);
+		sockaddr_in _address;
 
 	public:
 		Socket();
 		~Socket();
+		Socket(Socket& other);
+		Socket& operator=(Socket& other);
 
 		bool open(int port);
 		bool accept(Socket& newSocket) const;
 		int send(const char* buffer, int length) const;
 		int receive(char* buffer, int length) const;
 		void close();
+		
 		int	getSocketFd();
+		sockaddr_in	getSocketAddr();
 };
 
 #endif // SOCKET_HPP

@@ -13,27 +13,27 @@
 #Program name
 NAME	=	webserv
 
-SRC_DIR	= src/
-INC_DIR	= ./include/
-OBJ_DIR	= obj/
+SRC_DIR	= 	src/
+INC_DIR	= 	include/
+OBJ_DIR	= 	obj/
 
 #Sources 
-SRC	=	HttpRequest.cpp \
-		ResponseBuilder.cpp \
-		Server.cpp \
-		Socket.cpp \
-		ConnectionManager.cpp \
-		ConnectionData.cpp \
-		ConfigFile.cpp \
-		ConfigParser.cpp \
-		VirtualServers.cpp \
-		Location.cpp \
-		main.cpp
+SRC		=	HttpRequest.cpp \
+			ResponseBuilder.cpp \
+			Server.cpp \
+			Socket.cpp \
+			ConnectionManager.cpp \
+			ConnectionData.cpp \
+			ConfigFile.cpp \
+			ConfigParser.cpp \
+			VirtualServers.cpp \
+			Location.cpp \
+			main.cpp
 		
-SRCS = $(addprefix $(SRC_DIR), $(SRC))
+SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 
 #Headers
-HEADERS = $(INC_DIR)HttpRequest.hpp \
+HEADERS = 	$(INC_DIR)HttpRequest.hpp \
 			$(INC_DIR)ResponseBuilder.hpp \
 			$(INC_DIR)Server.hpp \
 			$(INC_DIR)Socket.hpp \
@@ -42,30 +42,30 @@ HEADERS = $(INC_DIR)HttpRequest.hpp \
 			$(INC_DIR)WebServer.hpp
 
 #Objects
-OBJ		= $(SRC:.cpp=.o)
-OBJS	= $(addprefix $(OBJ_DIR), $(OBJ))
+OBJ		= 	$(SRC:.cpp=.o)
+OBJS	= 	$(addprefix $(OBJ_DIR), $(OBJ))
 
 #Flags
-CXX		= clang++
-CXXFLAGS	= -Wall -Wextra -Werror -std=c++98 -fsanitize=address
+CXX		= 	c++
+CXXFLAGS= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
 
-all: create_dir $(NAME)
+all		: 	create_dir $(NAME)
 
-$(NAME): $(OBJS) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+$(NAME)	: 	$(OBJS) $(HEADERS)
+			$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
 create_dir:
-		@mkdir -p $(OBJ_DIR)
+			@mkdir -p $(OBJ_DIR)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
-	$(CXX) $(CXXFLAGS) -I$(INC_DIR) -o $@ -c $<
+			$(CXX) $(CXXFLAGS) -I$(INC_DIR) -o $@ -c $<
 
-clean:
-		rm -rf $(OBJ_DIR)
+clean	:
+			@rm -rf $(OBJ_DIR)
 
-fclean: clean
-		rm -rf $(NAME)
+fclean	: 	clean
+			@rm -rf $(NAME)
 
-re: fclean all
+re		: 	fclean all
 
-.PHONY: all re clean fclean
+.PHONY	: 	all re clean fclean create_dir

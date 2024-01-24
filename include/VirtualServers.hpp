@@ -21,13 +21,14 @@ class VirtualServers
 {
 	private:
 		uint16_t				_port;
-		std::string				_server_name;
+		in_addr					_ipAddress;
+		std::string				_serverName;
 		std::string				_root;
 		std::string				_index;
 		bool					_autoindex;
 		std::vector<Location>	_locations;
-		std::map<short, std::string>	_error_pages;
-		unsigned long			_client_max_body_size;
+		std::map<short, std::string>	_errorPages;
+		unsigned long			_clientMaxBodySize;
 		std::string				_return;
 		
 		VirtualServers();
@@ -41,13 +42,14 @@ class VirtualServers
 		~VirtualServers();
 		// Setters
 		void setPort(std::string parametr);
-		void setServerName(std::string server_name);
-		void setRoot(std::string root);
-		void setIndex(std::string index);
-		void setAutoindex(std::string autoindex);
+		void setServerName(std::string parametr);
+		void setRoot(std::string parametr);
+		void setIndex(std::string parametr);
+		void setAutoindex(std::string parametr);
 		void setErrorPages(std::vector<std::string> &parametr);
 		void setClientMaxBodySize(std::string parametr);
 		void setReturn(std::string parametr);
+		void setIpAddress(std::string parametr);
 		// Getters
 		const uint16_t &getPort();
 		const std::string &getServerName();
@@ -58,6 +60,7 @@ class VirtualServers
 		const std::map<short, std::string> &getErrorPages();
 		const unsigned long &getClientMaxBodySize();
 		const std::string &getReturn();
+		const in_addr &getIpAddress();
 	
 		class ErrorException : public std::exception
 		{
