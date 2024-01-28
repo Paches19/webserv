@@ -14,6 +14,8 @@
 # define LOCATION_HPP
 
 # include "WebServer.hpp"
+# include "Location.hpp"
+# include "ConfigFile.hpp"
 
 class Location
 {

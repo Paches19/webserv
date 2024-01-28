@@ -22,7 +22,7 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	std::cout << "Nueva conexión agregada. Socket FD: " << socketFd << std::endl;
+	std::cout << "    Agregada con Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket)
@@ -33,118 +33,216 @@ void ConnectionManager::removeConnection(Socket& socket)
     {
         socket.close();
         connections.erase(it);
-        std::cout << "Conexión eliminada. Socket FD: " << socketFd << std::endl;
+        std::cout << "\n****Conexión eliminada. Socket FD: " << socketFd << std::endl;
     }
     else
     {
-        std::cout << "Conexión no encontrada. Socket FD: " << socketFd << std::endl;
+        std::cout << "\n****Conexión no encontrada. Socket FD: " << socketFd << std::endl;
     }
 }
 
-void ConnectionManager::readData(Socket& socket)
+bool ConnectionManager::readData(Socket& socket)
 {
-	ConnectionData& data(connections[socket.getSocketFd()]);
+	ConnectionData data(connections[socket.getSocketFd()]);
 
-	std::cout << "socketLectura: " << socket.getSocketFd() << std::endl;
+	std::cout << "\n****Socket de Lectura: " << socket.getSocketFd() << std::endl;
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	// std::cout << "bytesRead: " << bytesRead << std::endl;
-	// std::cout << "Buff: " << std::string(data.readBuffer.begin(), data.readBuffer.end()) << std::endl;
-	if (!data.readBuffer.empty())
+	std::cout << "    Bytes Read: " << bytesRead << std::endl;
+	std::cout << "    data.readBuffer.empty: " << data.readBuffer.empty() << std::endl;
+
+	if (bytesRead > 0)
 	{
-		std::cout << "ReadBuffer no vacio:" << std::endl << std::endl;
-		data.accumulatedBytes += bytesRead + data.readBuffer.size(); // Añadir a la cuenta de bytes acumulados
-		// int contentLength = 0;
-		
-		// if (!data.headerReceived && isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
-		// {
-		// 	std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
-		// 	data.headerReceived = true;
-		// 	contentLength = getContentLength(data.readBuffer, data.accumulatedBytes);
-		// 	if (contentLength > 0)
-		// 	{
-		// 		// Redimensionar readBuffer para acomodar el cuerpo de la solicitud
-		// 		data.readBuffer.resize(data.accumulatedBytes + contentLength);
-		// 	}
-		// }
-		// if (data.headerReceived && ((data.accumulatedBytes == data.readBuffer.size())
-		// 	&& contentLength > 0))
+		std::cout << "    ReadBuffer size: " << data.readBuffer.size() << std::endl;
+		data.accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
+
 		if (isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
 		{
-			// std::cout << "data.headerReceived: " << data.headerReceived << std::endl;
 			// Procesar la solicitud completa
-			HttpRequest request(std::string(data.readBuffer.begin(),
-				data.readBuffer.end()));
-			std::cout << "Request:" << std::endl << std::endl;
-			std::cout << "Method: " << request.getMethod() << std::endl;
-			std::cout << "URL: " << request.getURL() << std::endl;
-			std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-			std::cout << "Headers :" << std::endl;
+			HttpRequest request(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+
+			std::cout << "\n****REQUEST:" << std::endl;
+			std::cout << "    Method: " << request.getMethod() << std::endl;
+			std::cout << "    URL: " << request.getURL() << std::endl;
+			std::cout << "    HTTP Version: " << request.getHttpVersion() << std::endl;
+			std::cout << "    Headers :" << std::endl;
 			std::map<std::string, std::string> headers = request.getHeaders();
 			std::map<std::string, std::string>::const_iterator it;
 			for (it = headers.begin(); it != headers.end(); ++it)
-				std::cout << it->first << ": " << it->second << std::endl;
+				std::cout << "    " << it->first << ": " << it->second << std::endl;
 			std::cout << std::endl;
 			if (request.isValidRequest())
-			{
-				// Procesar la solicitud y preparar la respuesta
-				ResponseBuilder response;
-				response.buildResponse();
-				// data.writeBuffer.assign(response.begin(), response.end());
-			}
+				data.responseSent = false;
 			else
 			{
-				std::cerr << "Invalid request" << std::endl;
-				// Manejar solicitud inválida
-				// std::string errorResponse = request.errorMessage();
-				// data.writeBuffer.assign(errorResponse.begin(), errorResponse.end());
+				std::cerr << "    Invalid request" << std::endl;
+				return false;
 			}
-			if (!data.readBuffer.empty())
-				data.readBuffer.clear();
+			
+			data.readBuffer.clear();
 			data.readBuffer.resize(1024);
 			data.accumulatedBytes = 0;
 			data.headerReceived = false;
+			_request = request;
+			connections[socket.getSocketFd()] = data;
 		}
 	}
-	// else if (bytesRead == 0) 
-	// {
-	// 	// Cliente cerró la conexión
-	// 	removeConnection(socket);
-	// } 
-	// else 
-	// {
-	// 	// data.readBuffer.clear();
-	// 	data.readBuffer.resize(1024); // Volver al tamaño inicial
-	// 	data.accumulatedBytes = 0;
-	// 	data.headerReceived = false;
-	// }
+	else if (bytesRead == 0) 
+		return false;
+	else 
+	{
+		data.readBuffer.clear();
+		data.readBuffer.resize(1024);
+		data.accumulatedBytes = 0;
+		data.headerReceived = false;
+		connections[socket.getSocketFd()] = data;
+	}
+	return true;
 }
 
-void ConnectionManager::writeData(Socket& socket) 
+void ConnectionManager::writeData(Socket& socket, VirtualServers &server) 
 {
 	ConnectionData& data(connections[socket.getSocketFd()]);
 
-	// Enviar datos desde el buffer de escritura
-	int bytesSent = socket.send(&data.writeBuffer[0], data.writeBuffer.size());
-	if (bytesSent > 0)
-		data.writeBuffer.erase(data.writeBuffer.begin(), data.writeBuffer.begin()
-			+ bytesSent);
-	else if (bytesSent == -1)
+	if (data.responseSent)
+		return;
+	
+	std::cout << "\n****Request leida para preparar RESPUESTA" << std::endl;
+	std::cout << "    Method: " << _request.getMethod() << std::endl;
+	std::cout << "    URL: " << _request.getURL() << std::endl;
+	std::cout << "    HTTP Version: " << _request.getHttpVersion() << std::endl;
+	std::cout << "    Headers :" << std::endl;
+	std::map<std::string, std::string> headers = _request.getHeaders();
+	std::map<std::string, std::string>::const_iterator it0;
+	for (it0 = headers.begin(); it0 != headers.end(); ++it0)
+		std::cout << "    " << it0->first << ": " << it0->second << std::endl;
+	std::cout << std::endl;
+	
+	ResponseBuilder responseBuilder;
+
+	// Configurar la respuesta
+	std::cout << "\n****METODO DETECTADO EN REQUEST: " << _request.getMethod() << std::endl;
+	std::cout << "    Searching for URL: " << _request.getURL() << std::endl;
+	std::string frontpage = server.getRoot() + server.getIndex();
+
+	std::vector<Location> locations = server.getLocations();
+	std::vector<Location>::const_iterator it;
+	if (_request.getMethod() == "GET")
 	{
-		std::cerr << "Error de envio de response" << std::endl;
+		for (it = locations.begin(); it < locations.end(); ++it)
+		{
+			std::cout << "    Location PATH: " << it->getPath(); 
+			if (it->getPath() == _request.getURL())
+			{
+				std::cout << " MATCH SUCCESSFULLY !!!!" << std::endl;
+				break;
+			}
+			else
+				std::cout << " NOT MATCH !";
+			std::cout << std::endl;
+		}
+		if (it == locations.end())
+		{
+			std::cout << "    Location PATH: " << _request.getURL() << " NOT FOUND !!!!" << std::endl;
+			std::map<short, std::string>::const_iterator it3 = server.getErrorPages().find(404);
+			std::ifstream fdError((server.getRoot() + it3->second).c_str());
+			std::cout << "    Value for 404 page errorr: " << server.getRoot()+it3->second << std::endl;
+
+			if (fdError && fdError.is_open())
+			{
+				std::stringstream stream_binding;
+				stream_binding << fdError.rdbuf();
+				responseBuilder.setBody(stream_binding.str());
+			}
+			else
+				responseBuilder.setBody("Error 404");
+		}
+		else
+		{
+			std::ifstream bodyFile(frontpage.c_str());
+			std::cout << "    Index: " << frontpage << std::endl;
+			if (!bodyFile || !bodyFile.is_open())
+			{
+				std::map<short, std::string>::const_iterator it4 = server.getErrorPages().find(404);
+				std::ifstream fdError(it4->second.c_str());
+				if (fdError && fdError.is_open())
+				{
+					std::stringstream stream_binding;
+					stream_binding << fdError.rdbuf();
+					responseBuilder.setBody(stream_binding.str());
+				}
+				else
+					responseBuilder.setBody("Error 404");
+			}
+			else
+			{
+				responseBuilder.setStatusCode(200);
+				std::stringstream stream_binding;
+				stream_binding << bodyFile.rdbuf();
+				responseBuilder.setBody(stream_binding.str());
+			}
+		}
 	}
-	// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
-	if (data.writeBuffer.empty())
-		data.writeBuffer.clear();
+	/*
+	else if (_request.getMethod() == "POST")
+	{
+		//Tratar POST
+	}
+	else if (_request.getMethod() == "DELETE")
+	{
+		//Tratar DELETE
+	}
+	else if (_request.getMethod() == "PUT")
+	{
+		//Tratar PUT
+	}
+	else if (_request.getMethod() == "HEAD")
+	{
+		//Tratar HEAD
+	}
+	else
+	{
+		//Error: Método no soportado
+	}		
+	*/	
+	responseBuilder.addHeader("Content-Type", "text/html");
+
+	// Construir la respuesta
+	std::string response = responseBuilder.buildResponse();
+	data.accumulatedBytes = response.size();
+	data.writeBuffer = new char[data.accumulatedBytes];
+	std::copy(response.begin(), response.end(), data.writeBuffer);
+
+	while (data.writeBuffer && data.accumulatedBytes > 0)
+	{
+		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
+		std::cout << "    bytesSent: " << bytesSent << std::endl;
+		std::cout << "    response: " << response << std::endl;
+		if (bytesSent > 0)
+		{
+			data.accumulatedBytes -= bytesSent;
+			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
+		}
+		else if (bytesSent == -1)
+		{
+			std::cerr << "Error de envio de response" << std::endl;
+		}
+		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
+		if (data.accumulatedBytes == 0)
+		{
+			delete[] data.writeBuffer;
+			data.writeBuffer = NULL;
+		}
+	}
+	data.responseSent = true;
 }
 
-bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer,
-	size_t accumulatedBytes)
+bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)
 {
 	accumulatedBytes = 1024;
 	if (accumulatedBytes)
 		accumulatedBytes = 1024;
-	std::cout << "http COmplete" << std::endl;
+	std::cout << "    HTTP Complete" << std::endl;
 	const std::string endOfHeader = "\r\n\r\n";
 	if (std::search(buffer.begin(), buffer.end(),
 		endOfHeader.begin(), endOfHeader.end()) != buffer.end())

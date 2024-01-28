@@ -14,6 +14,7 @@
 # define RESPONSEBUILDER_HPP
 
 # include "WebServer.hpp"
+# include "ResponseBuilder.hpp"
 
 class ResponseBuilder
 {
@@ -29,7 +30,7 @@ class ResponseBuilder
 		void addHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& bodyContent);
 
-		std::string buildResponse() const;
+		std::string buildResponse();
 };
 
 #endif // RESPONSE_BUILDER_HPP

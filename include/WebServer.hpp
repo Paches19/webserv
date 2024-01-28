@@ -30,18 +30,7 @@
 # include <sys/select.h>
 # include <poll.h>
 # include <algorithm>
-
-# include "HttpRequest.hpp"
-# include "ResponseBuilder.hpp"
-# include "ConnectionData.hpp"
-# include "Socket.hpp"
-# include "ConnectionManager.hpp"
-# include "ConfigParser.hpp"
-# include "ConfigFile.hpp"
-# include "VirtualServers.hpp"
-# include "Location.hpp"
-
-
+# include <fcntl.h>
 
 # define RESET          "\x1B[0m"
 # define RED            "\x1B[31m"

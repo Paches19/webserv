@@ -14,8 +14,9 @@
 # define CONFIGPARSER_HPP
 
 # include "WebServer.hpp"
-
-class VirtualServers;
+# include "ConfigParser.hpp"
+# include "VirtualServers.hpp"
+# include "ConfigFile.hpp"
 
 class ConfigParser
 {

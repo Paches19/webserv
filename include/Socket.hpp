@@ -14,6 +14,7 @@
 # define SOCKET_HPP
 
 # include "WebServer.hpp"
+# include "Socket.hpp"
 
 class Socket
 {

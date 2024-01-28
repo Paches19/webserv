@@ -13,7 +13,9 @@
 #include "ConnectionData.hpp"
 
 ConnectionData::ConnectionData() : readBuffer(1024),
-	writeBuffer(1024),  headerReceived(false), accumulatedBytes(0) {}
+	writeBuffer(NULL), headerReceived(false), accumulatedBytes(0), responseSent(false) {}
+
+ConnectionData::~ConnectionData() { delete[] writeBuffer; }
 
 ConnectionData::ConnectionData(const ConnectionData& other)
 {
@@ -21,6 +23,7 @@ ConnectionData::ConnectionData(const ConnectionData& other)
 	writeBuffer = other.writeBuffer;
 	headerReceived = other.headerReceived;
 	accumulatedBytes = other.accumulatedBytes;
+	responseSent = other.responseSent;
 }
 
 ConnectionData& ConnectionData::operator=(const ConnectionData& other)
@@ -31,6 +34,7 @@ ConnectionData& ConnectionData::operator=(const ConnectionData& other)
 		writeBuffer = other.writeBuffer;
 		headerReceived = other.headerReceived;
 		accumulatedBytes = other.accumulatedBytes;
+		responseSent = other.responseSent;
 	}
 	return *this;
 }

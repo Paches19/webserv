@@ -14,14 +14,18 @@
 # define CONNECTIONMANAGER_HPP
 
 # include "WebServer.hpp"
+# include "Socket.hpp"
+# include "VirtualServers.hpp"
+# include "ConnectionData.hpp"
+# include "HttpRequest.hpp"
+# include "ResponseBuilder.hpp"
 
-class Socket;
-class ConnectionData;
 class ConnectionManager
 {
 	private:
 		std::map<int, ConnectionData> connections;
-
+		HttpRequest _request;
+	
 	public:
 		ConnectionManager();
 		~ConnectionManager();
@@ -29,11 +33,11 @@ class ConnectionManager
 		void addConnection(Socket& socket);
 		void removeConnection(Socket& socket);
 
-		void readData(Socket& socket);
-		void writeData(Socket& socket);
+		bool readData(Socket& socket);
+		void writeData(Socket& socket, VirtualServers &_server);
 
 		bool isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
-		int getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);
+		int getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);	
 };
 
 #endif // CONNECTION_MANAGER_HPP

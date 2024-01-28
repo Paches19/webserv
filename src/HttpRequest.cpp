@@ -21,7 +21,29 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 		parseRequest(rawRequest);
 }
 
-HttpRequest::~HttpRequest() {};
+HttpRequest::HttpRequest(void) { this->_isValid = true; }
+
+HttpRequest::HttpRequest(const HttpRequest& copy)
+{
+	*this = copy;
+}
+
+HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
+{
+	if (this != &rhs)
+	{
+		this->_method = rhs._method;
+		this->_url = rhs._url;
+		this->_httpVersion = rhs._httpVersion;
+		this->_headers = rhs._headers;
+		this->_body = rhs._body;
+		this->_errorMessage = rhs._errorMessage;
+		this->_isValid = rhs._isValid;
+	}
+	return (*this);
+}
+
+HttpRequest::~HttpRequest(void) {};
 
 void HttpRequest::parseRequest(const std::string& rawRequest)
 {

@@ -39,7 +39,9 @@ Socket& Socket::operator=(Socket& other)
 
 bool Socket::open(int port, in_addr addr)
 {
-	std::cout << "Open port: " << port << std::endl;
+	
+	
+	std::cout << "    Open port: " << port << std::endl;
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFd == -1)
 		return false;
@@ -74,24 +76,18 @@ bool Socket::accept(Socket& newSocket) const
 		return false;
 
 	newSocket._socketFd = new_sockfd;
-	return true;
+	
+	int flags = fcntl(this->_socketFd, F_GETFL, 0);
+	return fcntl(_socketFd, F_SETFL, flags | O_NONBLOCK) != -1;
 }
 
 int Socket::send(const char* buffer, int length) const
 {
 	int totalSent = 0;
-	int bytesLeft = length;
 	int n;
 
-	while (totalSent < length)
-	{
-		n = ::send(_socketFd, buffer + totalSent, bytesLeft, 0);
-		if (n == -1)
-			break;
-		totalSent += n;
-		bytesLeft -= n;
-	}
-
+	n = ::send(_socketFd, buffer, length, 0);
+	totalSent += n;
 	return (n == -1) ? -1 : totalSent;
 }
 
@@ -99,21 +95,33 @@ int Socket::receive(char* buffer, int length) const
 {
 	int totalReceived = 0;
 	int n;
-
-	while (totalReceived < length)
+	
+	n = ::recv(_socketFd, buffer + totalReceived, length - totalReceived, 0);
+	if (n == -1)
 	{
-		n = ::recv(_socketFd, buffer + totalReceived, length - totalReceived, 0);
-		if (n == -1 || n == 0)
-			break;
-		totalReceived += n;
+		if (errno == EWOULDBLOCK || errno == EAGAIN)
+		{
+			std::cerr << "rcv sin datos a leer" << std::endl;
+			return -1;
+		}
+		else
+		{
+			std::cerr << "error receive" << std::endl;
+			return -1;
+		}
 	}
-
+	else if (n == 0)
+	{
+		std::cout << "    rcv conexion cerrada" << std::endl;
+		return 0;
+	}
+		totalReceived += n;
 	return (n <= 0) ? -1 : totalReceived;
 }
 
 void Socket::close()
 {
-	std::cout << "Socket cerrado: " << this->getSocketFd() << std::endl;
+	std::cout << "    Socket cerrado: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

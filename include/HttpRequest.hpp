@@ -14,6 +14,7 @@
 # define HTTPREQUEST_HPP
 
 # include "WebServer.hpp"
+# include "HttpRequest.hpp"
 
 class HttpRequest
 {
@@ -32,7 +33,10 @@ class HttpRequest
 	
 	public:
 		HttpRequest(const std::string& rawRequest);
+		HttpRequest(void);
 		~HttpRequest(void);
+		HttpRequest(const HttpRequest& copy);
+		HttpRequest& operator=(const HttpRequest& rhs);
 
 		std::string getMethod();
 		std::string getURL();

@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include "ConfigParser.hpp"
 #include "WebServer.hpp"
 
 int main(int argc, char **argv) 
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
 		}
 		Server myServer(cluster.getServers());
 
-		myServer.run();
+		myServer.run(cluster.getServers());
 		
 		// // Ejemplo de solicitud GET
 		// std::string getRequest = 

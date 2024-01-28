@@ -12,12 +12,9 @@
 
 #include "ResponseBuilder.hpp"
 
-ResponseBuilder::ResponseBuilder() : _statusCode(200) {}
+ResponseBuilder::ResponseBuilder(void) { _statusCode = 200; }
 
-void ResponseBuilder::setStatusCode(int code)
-{
-	_statusCode = code;
-}
+void ResponseBuilder::setStatusCode(int code) {	_statusCode = code; }
 
 void ResponseBuilder::addHeader(const std::string& key, const std::string& value)
 {
@@ -32,7 +29,7 @@ void ResponseBuilder::setBody(const std::string& bodyContent)
     addHeader("Content-Length", convert.str());
 }
 
-std::string ResponseBuilder::buildResponse() const
+std::string ResponseBuilder::buildResponse()
 {
 	std::string response = "HTTP/1.1 ";
 

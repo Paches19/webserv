@@ -14,16 +14,19 @@
 # define CONNECTIONDATA_HPP
 
 # include "WebServer.hpp"
+# include "ConnectionData.hpp"
 
 class ConnectionData
 {
 	public:
 		std::vector<char> readBuffer;
-		std::vector<char> writeBuffer;
+		char * writeBuffer;
 		bool headerReceived;
 		size_t accumulatedBytes;
+		bool responseSent;
 			
 		ConnectionData();
+		~ConnectionData();
 		
 		ConnectionData(const ConnectionData& other);
 

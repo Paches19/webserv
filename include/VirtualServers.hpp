@@ -14,8 +14,9 @@
 # define VIRTUALSERVERS_HPP
 
 # include "WebServer.hpp"
-
-class Location;
+# include "Location.hpp"
+# include "VirtualServers.hpp"
+# include "ConfigFile.hpp"
 
 class VirtualServers
 {

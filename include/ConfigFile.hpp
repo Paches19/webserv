@@ -14,6 +14,7 @@
 # define CONFIGFILE_HPP
 
 # include "WebServer.hpp"
+# include "ConfigFile.hpp"
 
 class ConfigFile
 {
