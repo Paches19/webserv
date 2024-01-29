@@ -61,7 +61,7 @@ bool ConnectionManager::readData(Socket& socket)
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data.readBuffer.begin(), data.readBuffer.end()));
 
-			std::cout << "\n****REQUEST:" << std::endl;
+			std::cout << YELLOW << "\n****REQUEST recibida:" << std::endl;
 			std::cout << "    Method: " << request.getMethod() << std::endl;
 			std::cout << "    URL: " << request.getURL() << std::endl;
 			std::cout << "    HTTP Version: " << request.getHttpVersion() << std::endl;
@@ -70,7 +70,7 @@ bool ConnectionManager::readData(Socket& socket)
 			std::map<std::string, std::string>::const_iterator it;
 			for (it = headers.begin(); it != headers.end(); ++it)
 				std::cout << "    " << it->first << ": " << it->second << std::endl;
-			std::cout << std::endl;
+			std::cout << RESET << std::endl;
 			if (request.isValidRequest())
 				data.responseSent = false;
 			else
@@ -125,21 +125,31 @@ void ConnectionManager::writeData(Socket& socket, VirtualServers &server)
 	std::cout << "    Searching for URL: " << _request.getURL() << std::endl;
 	std::string frontpage = server.getRoot() + server.getIndex();
 
+
+	std::cout << "    Searching frontpage: " << frontpage << std::endl;
 	std::vector<Location> locations = server.getLocations();
 	std::vector<Location>::const_iterator it;
 	if (_request.getMethod() == "GET")
 	{
-		for (it = locations.begin(); it < locations.end(); ++it)
+		if (ConfigFile::getTypePath(server.getRoot()+_request.getURL()) == 1)
 		{
-			std::cout << "    Location PATH: " << it->getPath(); 
-			if (it->getPath() == _request.getURL())
+			frontpage = server.getRoot()+_request.getURL();
+			it = locations.end() - 1;
+		}
+		else
+		{
+			for (it = locations.begin(); it < locations.end(); ++it)
 			{
-				std::cout << " MATCH SUCCESSFULLY !!!!" << std::endl;
-				break;
-			}
-			else
-				std::cout << " NOT MATCH !";
+				std::cout << "        Location PATH: " << it->getPath(); 
+				if (it->getPath() == _request.getURL())
+				{
+					std::cout << " MATCH SUCCESSFULLY !!!!" << std::endl;
+					break;
+				}
+				else
+					std::cout << " NOT MATCH !";
 			std::cout << std::endl;
+			}
 		}
 		if (it == locations.end())
 		{
@@ -182,6 +192,7 @@ void ConnectionManager::writeData(Socket& socket, VirtualServers &server)
 				responseBuilder.setBody(stream_binding.str());
 			}
 		}
+		
 	}
 	/*
 	else if (_request.getMethod() == "POST")
@@ -216,8 +227,9 @@ void ConnectionManager::writeData(Socket& socket, VirtualServers &server)
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		std::cout << "    bytesSent: " << bytesSent << std::endl;
-		std::cout << "    response: " << response << std::endl;
+		std::cout << "    Bytes sent: " << bytesSent << std::endl;
+		std::cout << CYAN << "****RESPONSE enviada: " << std::endl;
+		std::cout << response << RESET << std::endl;
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;
@@ -254,11 +266,11 @@ int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t 
 {
 	// Convertir el buffer actual a string para buscar el Content-Length
 	std::string header(buffer.begin(), buffer.begin() + accumulatedBytes);
-	std::size_t startPos = header.find("Content-Length: ");
+	std::size_t startPos = header.find("    Content-Length: ");
 	
 	if (startPos != std::string::npos)
 	{
-		startPos += std::string("Content-Length: ").length();
+		startPos += std::string("    Content-Length: ").length();
 		std::size_t endPos = header.find("\r\n", startPos);
 		if (endPos != std::string::npos)
 		{
