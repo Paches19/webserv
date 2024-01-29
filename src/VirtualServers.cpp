@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/VirtualServers.hpp"
+#include "VirtualServers.hpp"
 
 VirtualServers::VirtualServers() { }
 

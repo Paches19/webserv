@@ -20,17 +20,15 @@ class ConnectionData
 {
 	public:
 		std::vector<char> readBuffer;
-		char * writeBuffer;
-		bool headerReceived;
-		size_t accumulatedBytes;
-		bool responseSent;
+		char*	writeBuffer;
+		bool	headerReceived;
+		size_t	accumulatedBytes;
+		bool	responseSent;
 			
 		ConnectionData();
 		~ConnectionData();
-		
 		ConnectionData(const ConnectionData& other);
-
 		ConnectionData& operator=(const ConnectionData& other);
 };
 
-#endif // CONNECTION_DATA_HPP
+#endif // CONNECTIONDATA_HPP

@@ -24,19 +24,17 @@ class ConfigParser
 		std::vector<VirtualServers>	_servers;
 		std::vector<std::string>	_serverConfig;
 		size_t						_nbServer;
-		ConfigParser(const ConfigParser &other);
-		ConfigParser &operator=(const ConfigParser &rhs);
-
+		
 	public:
 		ConfigParser();
 		~ConfigParser();
+		ConfigParser(const ConfigParser &other);
+		ConfigParser &operator=(const ConfigParser &rhs);
 
-		int initParser(const std::string &configFile);
-		void splitServers(std::string &content);
-		int print();
-		
+		int		initParser(const std::string &configFile);
+		void	splitServers(std::string &content);
+		int 	print();
 		std::vector<VirtualServers> getServers();
-
 		class ErrorException : public std::exception
 		{
 			private:

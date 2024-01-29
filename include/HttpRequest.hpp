@@ -22,31 +22,30 @@ class HttpRequest
 		std::string _method;
 		std::string _url;
 		std::string _httpVersion;
-		std::map<std::string, std::string> _headers;
 		std::string _body;
 		std::string _errorMessage;
 		bool		_isValid;
+		std::map<std::string, std::string> _headers;
 
 		void parseRequest(const std::string& rawRequest);
 		void parseFirstLine(const std::string& line);
 		void parseHeaders(const std::string& headersStr);
 	
 	public:
+		HttpRequest();
 		HttpRequest(const std::string& rawRequest);
-		HttpRequest(void);
-		~HttpRequest(void);
+		~HttpRequest();
 		HttpRequest(const HttpRequest& copy);
 		HttpRequest& operator=(const HttpRequest& rhs);
 
 		std::string getMethod();
 		std::string getURL();
 		std::string getHttpVersion();
-		std::map<std::string, std::string> getHeaders();
 		std::string getBody();
-		
-		bool isValidRequest();
-		std::string errorMessage();
-		void invalidRequest();
+		std::map<std::string, std::string> getHeaders();
+		bool 		isValidRequest();
+		std::string	errorMessage();
+		void		invalidRequest();
 };
 
-#endif // HTTP_REQUEST_HPP
+#endif // HTTPREQUEST_HPP

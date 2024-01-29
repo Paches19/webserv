@@ -23,21 +23,21 @@
 class ConnectionManager
 {
 	private:
-		std::map<int, ConnectionData> connections;
+		std::map<int, ConnectionData> _connections;
 		HttpRequest _request;
 	
 	public:
 		ConnectionManager();
 		~ConnectionManager();
+		ConnectionManager(const ConnectionManager& other);
+		ConnectionManager& operator=(const ConnectionManager& other);
 
-		void addConnection(Socket& socket);
-		void removeConnection(Socket& socket);
-
-		bool readData(Socket& socket);
-		void writeData(Socket& socket, VirtualServers &_server);
-
-		bool isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
-		int getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);	
+		void	addConnection(Socket& socket);
+		void	removeConnection(Socket& socket);
+		bool	readData(Socket& socket);
+		void	writeData(Socket& socket, VirtualServers &_server);
+		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
+		int		getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);	
 };
 
-#endif // CONNECTION_MANAGER_HPP
+#endif // CONNECTIONMANAGER_HPP

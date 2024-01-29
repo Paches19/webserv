@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/ConfigFile.hpp"
+#include "ConfigFile.hpp"
 
 ConfigFile::ConfigFile() { }
 
@@ -35,7 +35,7 @@ int ConfigFile::checkPath(std::string const path)
 	
 	result = stat(path.c_str(), &buffer);
 	if (result == 0)
-			return (1);
+		return (1);
 	return (-1);
 }
 
@@ -58,12 +58,8 @@ std::string	ConfigFile::readFile(std::string path)
 	return (stream_binding.str());
 }
 
-std::string ConfigFile::getPath()
-{
-	return (_path);
-}
+std::string ConfigFile::getPath() {	return (_path); }
 
-// Get if path is file(1), folder(2) or something else(3)
 int ConfigFile::getTypePath(std::string const path)
 {
 	struct stat	buffer;
@@ -71,10 +67,10 @@ int ConfigFile::getTypePath(std::string const path)
 	if (stat(path.c_str(), &buffer) == 0)
 	{
 		if (buffer.st_mode & S_IFREG)
-			return (1);
+			return (1); //is file
 		if (buffer.st_mode & S_IFDIR)
-			return (2);
-		return (3);
+			return (2); //is folder
+		return (3); //is something else
 	}
 	return (-1);
 }

@@ -28,20 +28,20 @@ class VirtualServers
 		std::string				_index;
 		bool					_autoindex;
 		std::vector<Location>	_locations;
-		std::map<short, std::string>	_errorPages;
 		unsigned long			_clientMaxBodySize;
 		std::string				_return;
+		std::map<short, std::string>	_errorPages;
 		
-		VirtualServers();
 		void _createServer(std::string &config, VirtualServers &server);
 		bool _checkErrorPages();
 	
-	public:	
-		VirtualServers &operator=(const VirtualServers &copy);	
+	public:
+		VirtualServers();
 		VirtualServers(std::string &config);
 		VirtualServers(const VirtualServers &copy);
 		~VirtualServers();
-		// Setters
+		VirtualServers &operator=(const VirtualServers &copy);	
+		
 		void setPort(std::string parametr);
 		void setServerName(std::string parametr);
 		void setRoot(std::string parametr);
@@ -51,7 +51,7 @@ class VirtualServers
 		void setClientMaxBodySize(std::string parametr);
 		void setReturn(std::string parametr);
 		void setIpAddress(std::string parametr);
-		// Getters
+		
 		const uint16_t &getPort();
 		const std::string &getServerName();
 		const std::string &getRoot();

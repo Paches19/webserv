@@ -25,12 +25,14 @@ class ResponseBuilder
 
 	public:
 		ResponseBuilder();
+		~ResponseBuilder();
+		ResponseBuilder(const ResponseBuilder& copy);
+		ResponseBuilder& operator=(const ResponseBuilder& rhs);
 
 		void setStatusCode(int code);
 		void addHeader(const std::string& key, const std::string& value);
 		void setBody(const std::string& bodyContent);
-
 		std::string buildResponse();
 };
 
-#endif // RESPONSE_BUILDER_HPP
+#endif // RESPONSEBUILDER_HPP

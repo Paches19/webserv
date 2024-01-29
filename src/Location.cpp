@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Location.hpp"
+#include "Location.hpp"
 
 Location::Location() { }
 
@@ -296,10 +296,7 @@ int Location::_checkLocation(Location &location) const
 	return (0);
 }
 
-void Location::setPath(std::string parametr)
-{
-	_path = parametr;
-}
+void Location::setPath(std::string parametr) { _path = parametr; }
 
 void Location::setRootLocation(std::string parametr)
 {
@@ -348,25 +345,13 @@ void Location::setIndexLocation(std::string parametr)
 	_index = parametr;
 }
 
-void Location::setReturn(std::string parametr)
-{
-	_return = parametr;
-}
+void Location::setReturn(std::string parametr) { _return = parametr; }
 
-void Location::setAlias(std::string parametr)
-{
-	_alias = parametr;
-}
+void Location::setAlias(std::string parametr) {	_alias = parametr; }
 
-void Location::setCgiPath(std::vector<std::string> path)
-{
-	_cgiPath = path;
-}
+void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
 
-void Location::setCgiExtension(std::vector<std::string> extension)
-{
-	_cgiExt = extension;
-}
+void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
 
 void Location::setMaxBodySize(std::string parametr)
 {

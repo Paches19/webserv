@@ -31,16 +31,17 @@ class Location
 		std::vector<std::string>	_cgiExt;
 		unsigned long				_clientMaxBodySize;
 
-		Location();
 		int _checkLocation(Location &location) const;
 
 	public:
 		std::map<std::string, std::string> _extPath;
-		Location &operator=(const Location &rhs);
+
+		Location();
+		Location(std::string &path, std::vector<std::string> &paramtr, std::string &r);
 		Location(const Location &other);
 		~Location();
-		Location(std::string &path, std::vector<std::string> &paramtr, std::string &r);
-		// Setters
+		Location &operator=(const Location &rhs);
+		
 		void setPath(std::string parametr);
 		void setRootLocation(std::string parametr);
 		void setMethods(std::vector<std::string> methods);
@@ -52,7 +53,7 @@ class Location
 		void setCgiExtension(std::vector<std::string> extension);
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
-		// Getters
+
 		const std::string &getPath() const;
 		const std::string &getRootLocation() const;
 		const std::vector<short> &getMethods() const;

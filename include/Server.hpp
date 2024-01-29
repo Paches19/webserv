@@ -27,13 +27,31 @@ class Server
 		std::vector<struct pollfd> _pollFds;
 	
 	public:
+		Server();
 		Server(std::vector<VirtualServers> _servers);
 		~Server();
+		Server(const Server& other);
+		Server& operator=(const Server& other);
 
 		void run(std::vector<VirtualServers> _servers);
-		
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
+
+		class ErrorException : public std::exception
+		{
+			private:
+				std::string _message;
+			public:
+				ErrorException(std::string message) throw()
+				{
+					_message = "SERVER ERROR: " + message;
+				}
+				virtual const char* what() const throw()
+				{
+					return (_message.c_str());
+				}
+				virtual ~ErrorException() throw() {}
+		};
 };
 
 #endif // SERVER_HPP

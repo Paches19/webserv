@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/ConfigParser.hpp"
+#include "ConfigParser.hpp"
 
 ConfigParser::ConfigParser() { _nbServer = 0; }
 
@@ -190,13 +190,6 @@ int ConfigParser::initParser(const std::string &configFile)
 		throw ErrorException("File is empty");
 	//Splitting servers to strings
 	splitServers(content);
-
-//	for (size_t i = 0; i < this->_nbServer; i++)
-//	{
-//		std::cout << "---   SERVER #" << i + 1 << "   ---" << std::endl;
-//		std::cout << _serverConfig[i] << std::endl;
-//		std::cout << "--- END  SERVER #" << i + 1  << " ---\n" << std::endl;
-//	}
 
 	if (this->_serverConfig.size() != this->_nbServer)
 		throw ErrorException("There is a problem with server configuration");

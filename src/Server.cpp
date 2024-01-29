@@ -12,10 +12,32 @@
 
 #include "Server.hpp"
 
+Server::Server() { }
+
+Server::Server(const Server& other)
+{
+	_serverSockets = other._serverSockets;
+	_clientSockets = other._clientSockets;
+	_connectionManager = other._connectionManager;
+	_pollFds = other._pollFds;
+}
+
+Server& Server::operator=(const Server& other)
+{
+	if (this != &other)
+	{
+		_serverSockets = other._serverSockets;
+		_clientSockets = other._clientSockets;
+		_connectionManager = other._connectionManager;
+		_pollFds = other._pollFds;
+	}
+	return *this;
+}
+
 Server::Server(std::vector<VirtualServers>	_servers)
 {
-	std::cout << "\n****Inicializando servidor..." << std::endl;
-	std::cout << "    Servers: " << _servers.size() << std::endl;
+	std::cout << "\nInicializando servidor..." << std::endl;
+	std::cout << "    Num. servers: " << _servers.size() << std::endl;
 	_serverSockets.reserve(_servers.size());
 	
 	// Crear sockets
@@ -23,10 +45,8 @@ Server::Server(std::vector<VirtualServers>	_servers)
 	{
 		Socket* newSocket = new Socket();
 		if (newSocket->open((int) _servers[i].getPort(), _servers[i].getIpAddress()) == false)
-		{
-			std::cerr << "    Error al abrir el socket" << std::endl;
-			return ;
-		}
+			throw ErrorException("Error al abrir el socket");
+			
 		_serverSockets.push_back(newSocket);
 		
 		struct pollfd serverPollFd;
@@ -34,7 +54,7 @@ Server::Server(std::vector<VirtualServers>	_servers)
 		serverPollFd.fd = _serverSockets[i]->getSocketFd();
 		serverPollFd.events = POLLIN; // Establecer para leer
 		this->_pollFds.push_back(serverPollFd);
-		std::cout << "    Servidor escuchando en el puerto " <<
+		std::cout << "    Escuchando en el puerto " <<
 		_servers[i].getPort() << std::endl;
 	}
 }
@@ -56,7 +76,7 @@ Server::~Server()
 
 void Server::run(std::vector<VirtualServers> _servers)
 {
-	std::cout << "\n****Servidor en ejecución..." << std::endl;
+	std::cout << "\nServidor en ejecución..." << std::endl;
 
 	while (true)
 	{
@@ -66,10 +86,9 @@ void Server::run(std::vector<VirtualServers> _servers)
 
 		// Llamar a poll con la lista de file descriptors y un tiempo de espera
 		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
-
 		if (ret < 0)
 		{
-			std::cerr << "    Error en poll" << std::endl;
+			std::cerr << "Error en poll" << std::endl;
 			break;
 		}
 
@@ -89,7 +108,7 @@ void Server::run(std::vector<VirtualServers> _servers)
 						{
 							if (_clientSockets[j]->getSocketFd() == currentFd)
 							{
-								std::cout << "    Client socket erase" << _clientSockets[j]->getSocketFd() << std::endl;
+								std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
 								_clientSockets.erase(_clientSockets.begin() + j);
 							}
 						}
@@ -99,13 +118,10 @@ void Server::run(std::vector<VirtualServers> _servers)
 					}
 					else
 						_pollFds[i].events = POLLOUT;
-					std::cout << "    Salgo readData " << std::endl;
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
 			{
-				std::cout << "\n****Handle Request " << std::endl;
-				std::cout << "    socketFd " << _pollFds[i].fd << std::endl;
 				int currentFd = _pollFds[i].fd;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
@@ -120,7 +136,6 @@ void Server::run(std::vector<VirtualServers> _servers)
 								break;
 							}
 						}
-						std::cout << "    Writing Data from server " << nb_server << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), _servers[nb_server]);
 						_pollFds[i].events = POLLIN;
 						break ;
@@ -130,13 +145,13 @@ void Server::run(std::vector<VirtualServers> _servers)
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
-				std::cout << "\n****Conexión cerrada o error en el socket FD: " << _pollFds[i].fd << std::endl;
+				std::cout << "Conexión cerrada o error en el socket FD: " << _pollFds[i].fd << std::endl;
 				int currentFd = _pollFds[i].fd;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
 					if (_clientSockets[j]->getSocketFd() == currentFd)
 					{
-						std::cout << "    Client socket erase" << _clientSockets[j]->getSocketFd() << std::endl;
+						std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
 						_clientSockets.erase(_clientSockets.begin() + j);
 						_connectionManager.removeConnection(*(_clientSockets[j]));
 					}
@@ -173,7 +188,7 @@ Socket* Server::handleNewConnection(int i)
 					return existingSocket;
 				}
 			}
-			std::cout << "    Nueva conexion" << std::endl;
+			std::cout << "    Nueva conexión";
 			struct pollfd newPollFd;
 			newPollFd.fd = newSocket->getSocketFd();
 			newPollFd.events = POLLIN | POLLOUT;
@@ -185,7 +200,7 @@ Socket* Server::handleNewConnection(int i)
 		else
 		{
 			delete newSocket;
-			std::cerr << "    Error al aceptar nueva conexión" << std::endl;
+			std::cerr << "Error al aceptar nueva conexión" << std::endl;
 			Socket *errorSocket = NULL;
 			return errorSocket;
 		}

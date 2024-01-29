@@ -14,7 +14,25 @@
 
 ResponseBuilder::ResponseBuilder(void) { _statusCode = 200; }
 
-void ResponseBuilder::setStatusCode(int code) {	_statusCode = code; }
+ResponseBuilder::~ResponseBuilder() {}
+
+ResponseBuilder::ResponseBuilder(const ResponseBuilder& copy)
+{
+	_statusCode = copy._statusCode;
+	_headers = copy._headers;
+	_body = copy._body;
+}
+
+ResponseBuilder& ResponseBuilder::operator=(const ResponseBuilder& rhs)
+{
+	if (this != &rhs)
+	{
+		_statusCode = rhs._statusCode;
+		_headers = rhs._headers;
+		_body = rhs._body;
+	}
+	return *this;
+}
 
 void ResponseBuilder::addHeader(const std::string& key, const std::string& value)
 {
@@ -28,6 +46,8 @@ void ResponseBuilder::setBody(const std::string& bodyContent)
     convert << _body.size(); // Inserta el valor numérico en el stream
     addHeader("Content-Length", convert.str());
 }
+
+void ResponseBuilder::setStatusCode(int code) {	_statusCode = code; }
 
 std::string ResponseBuilder::buildResponse()
 {

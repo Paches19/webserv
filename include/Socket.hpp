@@ -19,7 +19,7 @@
 class Socket
 {
 	private:
-		int _socketFd;
+		int 		_socketFd;
 		sockaddr_in _address;
 
 	public:
@@ -28,13 +28,12 @@ class Socket
 		Socket(Socket& other);
 		Socket& operator=(Socket& other);
 
-		bool open(int port, in_addr addr);
-		bool accept(Socket& newSocket) const;
-		int send(const char* buffer, int length) const;
-		int receive(char* buffer, int length) const;
-		void close();
-		
-		int	getSocketFd();
+		bool	open(int port, in_addr addr);
+		bool	accept(Socket& newSocket) const;
+		int		send(const char* buffer, int length) const;
+		int		receive(char* buffer, int length) const;
+		void	close();
+		int		getSocketFd();
 		sockaddr_in	getSocketAddr();
 };
 

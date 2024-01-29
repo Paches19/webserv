@@ -14,11 +14,7 @@
 
 Socket::Socket() : _socketFd(-1) {}
 
-Socket::~Socket()
-{
-	// if (_socketFd != -1)
-	// 	::close(_socketFd);
-}
+Socket::~Socket() {}
 
 Socket::Socket(Socket& other) : _socketFd(other._socketFd)
 {
@@ -39,9 +35,6 @@ Socket& Socket::operator=(Socket& other)
 
 bool Socket::open(int port, in_addr addr)
 {
-	
-	
-	std::cout << "    Open port: " << port << std::endl;
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFd == -1)
 		return false;
@@ -101,18 +94,18 @@ int Socket::receive(char* buffer, int length) const
 	{
 		if (errno == EWOULDBLOCK || errno == EAGAIN)
 		{
-			std::cerr << "rcv sin datos a leer" << std::endl;
+			std::cerr << "Error: recv sin datos a leer" << std::endl;
 			return -1;
 		}
 		else
 		{
-			std::cerr << "error receive" << std::endl;
+			std::cerr << "Error: receive" << std::endl;
 			return -1;
 		}
 	}
 	else if (n == 0)
 	{
-		std::cout << "    rcv conexion cerrada" << std::endl;
+		std::cout << "Conexion cerrada" << std::endl;
 		return 0;
 	}
 		totalReceived += n;
@@ -121,7 +114,7 @@ int Socket::receive(char* buffer, int length) const
 
 void Socket::close()
 {
-	std::cout << "    Socket cerrado: " << this->getSocketFd() << std::endl;
+	std::cout << "Socket cerrado: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

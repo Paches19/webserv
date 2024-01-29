@@ -21,12 +21,9 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 		parseRequest(rawRequest);
 }
 
-HttpRequest::HttpRequest(void) { this->_isValid = true; }
+HttpRequest::HttpRequest() { this->_isValid = true; }
 
-HttpRequest::HttpRequest(const HttpRequest& copy)
-{
-	*this = copy;
-}
+HttpRequest::HttpRequest(const HttpRequest& copy) {	*this = copy; }
 
 HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 {
@@ -43,7 +40,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 	return (*this);
 }
 
-HttpRequest::~HttpRequest(void) {};
+HttpRequest::~HttpRequest() {};
 
 void HttpRequest::parseRequest(const std::string& rawRequest)
 {
@@ -102,39 +99,19 @@ void HttpRequest::parseHeaders(const std::string& headersStr)
 	}
 }
 
-std::string HttpRequest::getMethod()
-{
-	return (this->_method);
-}
+std::string HttpRequest::getMethod() { return (this->_method); }
 
-std::string HttpRequest::getURL()
-{
-	return (this->_url);
-}
+std::string HttpRequest::getURL() {	return (this->_url); }
 
-std::string HttpRequest::getHttpVersion()
-{
-	return (this->_httpVersion);
-}
+std::string HttpRequest::getHttpVersion() {	return (this->_httpVersion); }
 
-std::map<std::string, std::string> HttpRequest::getHeaders()
-{
-	return (this->_headers);
-}
-std::string HttpRequest::getBody()
-{
-	return (this->_body);
-}
+std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_headers); }
 
-bool HttpRequest::isValidRequest()
-{
-	return (this->_isValid);
-}
+std::string HttpRequest::getBody() { return (this->_body); }
 
-std::string HttpRequest::errorMessage()
-{
-	return (this->_errorMessage);
-}
+bool HttpRequest::isValidRequest() { return (this->_isValid); }
+
+std::string HttpRequest::errorMessage() { return (this->_errorMessage); }
 
 void HttpRequest::invalidRequest()
 {
