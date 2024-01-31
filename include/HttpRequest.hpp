@@ -39,6 +39,7 @@ class HttpRequest
 		HttpRequest& operator=(const HttpRequest& rhs);
 
 		std::string getMethod();
+		std::string getHost();
 		std::string getURL();
 		std::string getHttpVersion();
 		std::string getBody();

@@ -64,6 +64,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	std::vector<std::string>	errorCodes;
 	int		flag_loc = 1;
 	bool	flag_autoindex = false;
+	bool	flag_max_body_size = false;
 
 	parametrs = splitParametrs(config);
 	if (parametrs.size() < 3)
@@ -73,34 +74,31 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	{
 		if (parametrs[i] == "listen" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (server.getPort() != 0)
-				throw  ErrorException("Listen is duplicated");
-			server.setPort(parametrs[++i]);
+			if (server.getPort() == 0)
+				server.setPort(parametrs[++i]);
 		}
 		else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (!server.getServerName().empty())
-				throw  ErrorException("Server_name is duplicated");
-			server.setServerName(parametrs[++i]);
+			if (server.getServerName().empty())
+				server.setServerName(parametrs[++i]);
 		}
 		else if (parametrs[i] == "root" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (!server.getRoot().empty())
-				throw  ErrorException("Root is duplicated");
-			server.setRoot(parametrs[++i]);
+			if (server.getRoot().empty())
+				server.setRoot(parametrs[++i]);
 		}
 		else if (parametrs[i] == "index" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (!server.getIndex().empty())
-				throw  ErrorException("Index is duplicated");
-			server.setIndex(parametrs[++i]);
+			if (server.getIndex().empty())
+				server.setIndex(parametrs[++i]);
 		}
 		else if (parametrs[i] == "autoindex" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (flag_autoindex)
-				throw ErrorException("Autoindex of server is duplicated");
-			server.setAutoindex(parametrs[++i]);
-			flag_autoindex = true;
+			if (!flag_autoindex)
+			{
+				server.setAutoindex(parametrs[++i]);
+				flag_autoindex = true;
+			}
 		}
 		else if (parametrs[i] == "location" && (i + 1) < parametrs.size())
 		{
@@ -134,13 +132,16 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		}
 		else if (parametrs[i] == "client_max_body_size" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			server.setClientMaxBodySize(parametrs[++i]);
+			if (!flag_max_body_size)
+			{
+				server.setClientMaxBodySize(parametrs[++i]);
+				flag_max_body_size = true;
+			}
 		}
 		else if (parametrs[i] == "return" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (!server.getReturn().empty())
-				throw  ErrorException("Return is duplicated");
-			server.setReturn(parametrs[++i]);
+			if (server.getReturn().empty())
+				server.setReturn(parametrs[++i]);
 		}
 		else if (parametrs[i] != "}" && parametrs[i] != "{" )
 		{
@@ -150,16 +151,20 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 				throw  ErrorException("Unsupported directive");
 		}
 	}
+	if (server.getPort() == 0)
+		server.setPort("80");
+	if (server.getIpAddress().s_addr == 0)
+		server.setIpAddress("0.0.0.0");
 	if (server.getRoot().empty())
 		server.setRoot("var/www;");
 	if (server.getIndex().empty())
 		server.setIndex("/index.html;");
+	if (server.getServerName().empty())
+		server.setServerName("localhost");
 	if (ConfigFile::checkPath(server.getRoot()) == -1)
 		throw ErrorException("Root from config file not found or unreadable");
 	if (ConfigFile::checkFile(server.getRoot() + server.getIndex(), 4) == -1)
 		throw ErrorException("Index from config file not found or unreadable");
-	if (!server.getPort())
-		throw ErrorException("Port not found");
 	server.setErrorPages(errorCodes);
 	if (!server._checkErrorPages())
 		throw ErrorException("Incorrect path for error page or number of error");
@@ -187,7 +192,7 @@ VirtualServers::VirtualServers(std::string &config)
 	_autoindex = false;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_return = "";
-	setIpAddress("0.0.0.0");
+	_ipAddress.s_addr = 0;
 	// Hay que crear todas las páginas de errores. Estas son una muestra
 	_errorPages[403] = "/error_pages/403.html";
 	_errorPages[404] = "/error_pages/404.html";

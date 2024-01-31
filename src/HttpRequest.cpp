@@ -99,6 +99,14 @@ void HttpRequest::parseHeaders(const std::string& headersStr)
 	}
 }
 
+std::string HttpRequest::getHost()
+{
+	std::map<std::string, std::string>::iterator it = _headers.find("Host");
+	if (it != _headers.end())
+		return it->second;
+	return "";
+}
+
 std::string HttpRequest::getMethod() { return (this->_method); }
 
 std::string HttpRequest::getURL() {	return (this->_url); }

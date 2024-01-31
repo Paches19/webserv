@@ -290,3 +290,8 @@ int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t 
 	}
 	return 0; // Retorna 0 si no se encuentra el encabezado Content-Length
 }
+
+HttpRequest& ConnectionManager::getRequest()
+{
+	return _request;
+}
