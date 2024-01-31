@@ -57,6 +57,9 @@ int ConfigParser::print()
 			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
 			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
 			std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
+			std::cout << LIGHTRED << "      autoindex: " << RESET << itl->getAutoindex() << std::endl;
+			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << std::endl;
+			std::cout << LIGHTRED << "      modifier: " << RESET << itl->getModifier() << std::endl;
 			if (itl->getCgiPath().empty())
 			{
 				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;

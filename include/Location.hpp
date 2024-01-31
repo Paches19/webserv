@@ -30,6 +30,7 @@ class Location
 		std::vector<std::string>	_cgiPath;
 		std::vector<std::string>	_cgiExt;
 		unsigned long				_clientMaxBodySize;
+		std::string					_modifier;
 
 		int _checkLocation(Location &location) const;
 
@@ -37,7 +38,7 @@ class Location
 		std::map<std::string, std::string> _extPath;
 
 		Location();
-		Location(std::string &path, std::vector<std::string> &paramtr, std::string &r);
+		Location(std::string &path, std::string &modifier, std::vector<std::string> &paramtr, std::string &r);
 		Location(const Location &other);
 		~Location();
 		Location &operator=(const Location &rhs);
@@ -53,6 +54,7 @@ class Location
 		void setCgiExtension(std::vector<std::string> extension);
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
+		void setModifier(std::string parametr);
 
 		const std::string &getPath() const;
 		const std::string &getRootLocation() const;
@@ -66,6 +68,8 @@ class Location
 		const std::map<std::string, std::string> &getExtensionPath() const;
 		const unsigned long &getMaxBodySize() const;
 		std::string getPrintMethods() const;
+		const std::string &getModifier() const;
+
 		static void checkToken(std::string &parametr);
 		static int ft_stoi(std::string str);
 		

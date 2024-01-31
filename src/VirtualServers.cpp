@@ -106,16 +106,22 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			if (parametrs[i] == "{" || parametrs[i] == "}")
 				throw  ErrorException("Wrong character in server scope{}");
 			std::string path = parametrs[i];
+			std::string modifier = "";
 			if (parametrs[++i] != "{")
-				throw  ErrorException("Wrong character in server scope{}");
+			{
+				modifier = path;
+				path = parametrs[i++];
+				if (parametrs[i] != "{")
+					throw  ErrorException("Wrong character in server scope{}");
+			}
+			
 			i++;
-
 			std::vector<std::string> codes;
 			while (i < parametrs.size() && parametrs[i] != "}")
 				codes.push_back(parametrs[i++]);
 			if (i < parametrs.size() && parametrs[i] != "}")
 				throw  ErrorException("Wrong character in location scope{}");
-			Location  new_location(path, codes, _root);
+			Location  new_location(path, modifier, codes, _root);
 			_locations.push_back(new_location);
 			flag_loc = 0;
 		}	

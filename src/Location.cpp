@@ -26,6 +26,7 @@ Location::Location(const Location &other)
 	_alias = other._alias;
     _methods = other._methods;
 	_extPath = other._extPath;
+	_modifier = other._modifier;
 	_clientMaxBodySize = other._clientMaxBodySize;
 }
 
@@ -43,6 +44,7 @@ Location &Location::operator=(const Location &rhs)
 		_alias = rhs._alias;
 		_methods = rhs._methods;
 		_extPath = rhs._extPath;
+		_modifier = rhs._modifier;
 		_clientMaxBodySize = rhs._clientMaxBodySize;
     }
 	return (*this);
@@ -50,19 +52,19 @@ Location &Location::operator=(const Location &rhs)
 
 Location::~Location() { }
 
-Location::Location(std::string &path, std::vector<std::string> &parametr, std::string &r)
+Location::Location(std::string &path, std::string &modifier, std::vector<std::string> &parametr, std::string &r)
 {
 	std::vector<std::string> methods;
 
 	bool flag_methods = false;
 	bool flag_autoindex = false;
-	int valid;
-	_path = "";
+	_path = path;
 	_root = r;
 	_autoindex = false;
 	_index = "";
 	_return = "";
 	_alias = "";
+	_modifier = modifier;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_methods.reserve(5);
 	_methods.push_back(1); // GET
@@ -71,19 +73,17 @@ Location::Location(std::string &path, std::vector<std::string> &parametr, std::s
 	_methods.push_back(0); // PUT
 	_methods.push_back(0); // HEAD
 
-	setPath(path);
 	for (size_t i = 0; i < parametr.size(); i++)
 	{
-		if (parametr[i] == "root" && (i + 1) < parametr.size())
+		if (parametr[i] == "root" && (i + 1) < parametr.size() && getRootLocation().empty())
 		{
-			if (!getRootLocation().empty())
-				throw ErrorException("Root of location is duplicated");
 			checkToken(parametr[++i]);
 			if (ConfigFile::getTypePath(parametr[i]) == 2)
 				setRootLocation(parametr[i]);
 			else
 				setRootLocation(_root + parametr[i]);
 		}
+		
 		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())
 		{
 			if (flag_methods)
@@ -189,7 +189,9 @@ Location::Location(std::string &path, std::vector<std::string> &parametr, std::s
 	}
 	if (getPath() != "/cgi-bin" && getIndexLocation().empty())
 		setIndexLocation(_index);
-	valid = _checkLocation(*this);
+	/*
+
+	int valid = _checkLocation(*this);
 	if (valid == 1)
 		throw ErrorException("Failed CGI validation");
 	else if (valid == 2)
@@ -198,6 +200,8 @@ Location::Location(std::string &path, std::vector<std::string> &parametr, std::s
 		throw ErrorException("Failed redirection file in location validation");
 	else if (valid == 4)
 		throw ErrorException("Failed alias file in location validation");
+
+	*/
 }
 
 void Location::checkToken(std::string &parametr)
@@ -366,6 +370,10 @@ void Location::setMaxBodySize(std::string parametr)
 }
 
 void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = parametr; }
+
+void Location::setModifier(std::string parametr) { _modifier = parametr; }
+
+const std::string &Location::getModifier() const { return (_modifier); }
 
 const std::string &Location::getPath() const { return (_path); }
 
