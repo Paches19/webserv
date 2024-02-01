@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/23 11:08:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/01 18:17:53 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class Server
 		std::vector<Socket*> _clientSockets;
 		ConnectionManager _connectionManager;
 		std::vector<struct pollfd> _pollFds;
+		std::vector<ResponseBuilder> _responsesToSend;
 	
 	public:
 		Server();

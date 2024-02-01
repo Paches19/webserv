@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/24 12:59:14 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/01 18:20:00 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,6 @@ bool ConnectionManager::readData(Socket& socket)
 			data.readBuffer.resize(1024);
 			data.accumulatedBytes = 0;
 			data.headerReceived = false;
-			_request = request;
 			_connections[socket.getSocketFd()] = data;
 		}
 	}
@@ -120,8 +119,8 @@ void ConnectionManager::writeData(Socket& socket, VirtualServers &server)
 	ResponseBuilder responseBuilder;
 
 	// Configurar la respuesta
-	std::cout << "\nProcesando REQUEST: " << _request.getMethod() << std::endl;
-	std::cout << "    Searching for URL: " << _request.getURL() << std::endl;
+	//std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
+	//std::cout << "    Searching for URL: " << _request.getURL() << std::endl;
 	std::string frontpage = server.getRoot() + server.getIndex();
 	
 	std::vector<Location> locations = server.getLocations();
@@ -289,9 +288,4 @@ int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t 
 		}
 	}
 	return 0; // Retorna 0 si no se encuentra el encabezado Content-Length
-}
-
-HttpRequest& ConnectionManager::getRequest()
-{
-	return _request;
 }

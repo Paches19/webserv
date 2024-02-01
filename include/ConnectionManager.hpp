@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:04 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 11:57:32 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/01 18:18:39 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,12 @@
 # include "VirtualServers.hpp"
 # include "ConnectionData.hpp"
 # include "HttpRequest.hpp"
-# include "ResponseBuilder.hpp"
+# include "HttpResponse.hpp"
 
 class ConnectionManager
 {
 	private:
 		std::map<int, ConnectionData> _connections;
-		HttpRequest _request;
 	
 	public:
 		ConnectionManager();
@@ -38,7 +37,6 @@ class ConnectionManager
 		void	writeData(Socket& socket, VirtualServers &_server);
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
 		int		getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);
-		HttpRequest&	getRequest();
 };
 
 #endif // CONNECTIONMANAGER_HPP

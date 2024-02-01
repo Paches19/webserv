@@ -1,20 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ResponseBuilder.hpp                                :+:      :+:    :+:   */
+/*   HttpResponse.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:25:48 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/18 12:38:33 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/01 18:18:07 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef RESPONSEBUILDER_HPP
-# define RESPONSEBUILDER_HPP
+#ifndef HTTPRESPONSE_HPP
+# define HTTPRESPONSE_HPP
 
 # include "WebServer.hpp"
-# include "ResponseBuilder.hpp"
 
 class ResponseBuilder
 {
@@ -35,4 +34,4 @@ class ResponseBuilder
 		std::string buildResponse();
 };
 
-#endif // RESPONSEBUILDER_HPP
+#endif // HTTPRESPONSE_HPP
