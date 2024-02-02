@@ -30,6 +30,7 @@ class VirtualServers
 		std::vector<Location>	_locations;
 		unsigned long			_clientMaxBodySize;
 		std::string				_return;
+		bool					_defaultServer;
 		std::map<short, std::string>	_errorPages;
 		
 		void _createServer(std::string &config, VirtualServers &server);
@@ -62,6 +63,7 @@ class VirtualServers
 		const unsigned long &getClientMaxBodySize();
 		const std::string &getReturn();
 		const in_addr &getIpAddress();
+		const bool &getDefaultServer();
 	
 		class ErrorException : public std::exception
 		{

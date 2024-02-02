@@ -37,7 +37,8 @@ class Server
 		void run(std::vector<VirtualServers> _servers);
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
-
+		VirtualServers getBestServer(HttpRequest &request, size_t i);
+		
 		class ErrorException : public std::exception
 		{
 			private:

@@ -26,6 +26,7 @@ VirtualServers::VirtualServers(const VirtualServers &rhs)
 	_clientMaxBodySize = rhs._clientMaxBodySize;
 	_return = rhs._return;
 	_ipAddress = rhs._ipAddress;
+	_defaultServer = rhs._defaultServer;
 }
 
 VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
@@ -42,6 +43,7 @@ VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
 	_clientMaxBodySize = rhs._clientMaxBodySize;
 	_return = rhs._return;
 	_ipAddress = rhs._ipAddress;
+	_defaultServer = rhs._defaultServer;
 	return (*this);
 }
 
@@ -74,31 +76,44 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	{
 		if (parametrs[i] == "listen" && (i + 1) < parametrs.size() && flag_loc)
 		{
+			if (parametrs[i + 1] === "default_server;")
+			{	
+				i++;
+				if (!_defaultServer)
+					_defaultServer = true;
+				else
+					throw  ErrorException("Default server already exists");
+			}
 			if (server.getPort() == 0)
-				server.setPort(parametrs[++i]);
+				server.setPort(parametrs[i]);	
+			i++	
 		}
 		else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() && flag_loc)
 		{
 			if (server.getServerName().empty())
-				server.setServerName(parametrs[++i]);
+				server.setServerName(parametrs[i]);
+			i++;
 		}
 		else if (parametrs[i] == "root" && (i + 1) < parametrs.size() && flag_loc)
 		{
 			if (server.getRoot().empty())
-				server.setRoot(parametrs[++i]);
+				server.setRoot(parametrs[i]);
+			i++;
 		}
 		else if (parametrs[i] == "index" && (i + 1) < parametrs.size() && flag_loc)
 		{
 			if (server.getIndex().empty())
-				server.setIndex(parametrs[++i]);
+				server.setIndex(parametrs[i]);
+			i++;
 		}
 		else if (parametrs[i] == "autoindex" && (i + 1) < parametrs.size() && flag_loc)
 		{
 			if (!flag_autoindex)
 			{
-				server.setAutoindex(parametrs[++i]);
+				server.setAutoindex(parametrs[i]);
 				flag_autoindex = true;
 			}
+			i++;
 		}
 		else if (parametrs[i] == "location" && (i + 1) < parametrs.size())
 		{
@@ -158,7 +173,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		}
 	}
 	if (server.getPort() == 0)
-		server.setPort("80");
+		server.setPort("80", false);
 	if (server.getIpAddress().s_addr == 0)
 		server.setIpAddress("0.0.0.0");
 	if (server.getRoot().empty())
@@ -199,6 +214,7 @@ VirtualServers::VirtualServers(std::string &config)
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_return = "";
 	_ipAddress.s_addr = 0;
+	_defaultServer = false;
 	// Hay que crear todas las páginas de errores. Estas son una muestra
 	_errorPages[403] = "/error_pages/403.html";
 	_errorPages[404] = "/error_pages/404.html";
@@ -226,7 +242,8 @@ void VirtualServers::setPort(std::string parametr)
 	}
 	setIpAddress(stringIP);
 	port = 0;
-	Location::checkToken(stringPort);
+	if (!_defaultServer)
+		Location::checkToken(stringPort);
 
 	for (size_t i = 0; i < stringPort.length(); i++)
 	{
@@ -477,3 +494,5 @@ const unsigned long &VirtualServers::getClientMaxBodySize() { return (_clientMax
 const std::string &VirtualServers::getReturn() { return (_return); }
 
 const in_addr &VirtualServers::getIpAddress() { return (_ipAddress); }
+
+const bool &VirtualServers::getDefaultServer() { return (_defaultServer); }

@@ -74,6 +74,139 @@ Server::~Server()
 	}
 }
 
+VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
+{
+	//Busco qué cliente ha hecho la petición para saber qué server le corresponde
+	size_t j = 0;
+	while (j < _clientSockets.size() && _clientSockets[j]->getSocketFd() != _pollFds[i].fd)
+		j++;
+	if (j == _clientSockets.size())
+		throw ErrorException("Error: no client found");
+
+	int nbServer = 0; //Número de posibles servidores válidos
+	int candidates[_servers.size()]; //Array de candidatos a server: 1 = candidato, 0 = no candidato
+	long unsigned firstCandidate = _servers.size() - 1; //Posición del primer candidato, en el array de candidatos
+	
+	//Busco servers con IP:Port del socket cliente = IP:Port del server
+	for (long unsigned k = 0; k < _servers.size(); k++)
+	{
+		if (inet_ntoa(_servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr))
+		{
+			candidates[k] = 1;
+			nbServer++;
+			if (firstCandidate > k)
+				firstCandidate = k;
+		}
+		else
+			candidates[k] = 0;
+	}
+	
+	// Si no encuentra servers --> ERROR
+	if (nbServer == 0)
+		throw ErrorException("Error: no server found");
+				
+	// Si hay varios candidadtos......
+	if (nbServer > 1)
+	{
+		int possibleServers = nbServer;
+		// Se busca un server_name coincidente con Host del request
+		for (long unsigned k = 0; k < _servers.size(); k++)
+		{
+			if (candidates[k] == 1 && _servers[k].getServerName() != request.getHost())
+				possibleServers--;
+			if (candidates[k] == 1 && _servers[k].getServerName() == request.getHost())
+			{
+				if (firstCandidate > k)
+					firstCandidate = k;
+			}
+		}
+		// Si no hay coincidencias, se busca un server_name que tenga
+		// coincidencia más larga desde el primer punto hasta el final
+		if (possibleServers == 0)
+		{	
+			possibleServers = nbServer;
+			std::string finalServerName;
+			std::string finalRequestHost;
+			size_t maxLength = 0;
+			for (long unsigned k = 0; k < _servers.size(); k++)
+			{
+				finalServerName = _servers[k].getServerName().substr(_servers[k].getServerName().find_first_of(".") + 1);
+				finalRequestHost = request.getHost().substr(request.getHost().find_first_of(".") + 1);
+				if (candidates[k] == 1)
+				{
+					if (finalServerName != finalRequestHost)
+						possibleServers--;
+					else if (finalServerName.length() > maxLength)
+						firstCandidate = k;
+				}
+			}
+		}
+		// Si no hay coincidencias, se busca un server_name que tenga
+		// coincidencia más larga desde el principio hasta el último punto
+		if (possibleServers == 0)
+		{
+			possibleServers = nbServer;
+			std::string inicioServerName;
+			std::string inicioRequestHost;
+			size_t maxLength = 0;
+			for (long unsigned k = 0; k < _servers.size(); k++)
+			{
+				inicioServerName = _servers[k].getServerName().substr(0, _servers[k].getServerName().find_last_of("."));
+				inicioRequestHost = request.getHost().substr(0, request.getHost().find_last_of("."));
+				if (candidates[k] == 1)
+				{
+					if (inicioServerName != inicioRequestHost)
+						possibleServers--;
+					else if (inicioServerName.length() > maxLength)
+						firstCandidate = k;
+				}
+			}
+		}
+		// Si no hay coincidencias, se busca un server_name definido 
+		// con expresiones regulares (~ antes del nombre) que coincida
+		// con el nombre del Host del request
+		if (possibleServers == 0)
+		{
+			possibleServers = nbServer;
+
+		}
+		//Si no hay coincidencias, se usa el predeterminado:
+		// Este server es el primero del archivo de configuración (si default_server no está definido)
+		// o el que tenga la directiva default_server (solo puede haber uno)
+		if (possibleServers == 0)
+		{
+			possibleServers = nbServer;
+			for (long unsigned k = 0; k < _servers.size(); k++)
+			{
+				if (candidates[k] == 1)
+				{
+					if (!_servers[k].getDefaultServer())
+						possibleServers--;
+					else
+					{
+						firstCandidate = k;
+						break ;
+					}
+				}
+			}
+		}
+		//Si no hay coincidencias, se usa el primer server de la lista
+		if (possibleServers == 0)
+		{
+			possibleServers = nbServer;
+			for (long unsigned k = 0; k < _servers.size(); k++)
+			{
+				if (candidates[k] == 1)
+				{
+					firstCandidate = k;
+					break;
+				}
+			}
+		}
+	}
+	return _servers[firstCandidate];
+}
+
 void Server::run(std::vector<VirtualServers> _servers)
 {
 	std::cout << "\nServidor en ejecución..." << std::endl;
@@ -95,14 +228,19 @@ void Server::run(std::vector<VirtualServers> _servers)
 		// Revisar si hay nuevas conexiones en el socket del servidor
 		for (size_t i = 0; i < _pollFds.size(); ++i)
 		{
+			HttpRequest requestReceive;
+			VirtualServers bestServer;
+
 			if (ret >= 0 && _pollFds[i].revents & POLLIN)
 			{
 				Socket* dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					_pollFds[i].fd == dataSocket->getSocketFd())
 				{
-					_connectionManager.readData(*dataSocket);
-					
+					requestReceive = _connectionManager.readData(*dataSocket);
+					bestServer = getBestServer(requestReceive, i);
+					_pollFds[i].events = POLLOUT;
+
 					/*if (!_connectionManager.readData(*dataSocket))
 					{
 						int currentFd = _pollFds[i].fd;
@@ -120,99 +258,20 @@ void Server::run(std::vector<VirtualServers> _servers)
 					}
 					else
 						_pollFds[i].events = POLLOUT;*/
+					
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
 			{
-				int currentFd = _pollFds[i].fd;
-				int nbServer = 0;
-				int candidates[_servers.size()];
-				long unsigned firstCandidate = _servers.size() - 1;
-				//Busco servers con IP:Port del socket cliente = IP:Port del server
-				for (long unsigned k = 0; k < _servers.size(); k++)
+				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
-					if (inet_ntoa(_servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr))
+					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						candidates[k] = 1;
-						nbServer++;
-						if (firstCandidate > k)
-							firstCandidate = k;
-					}
-					else
-						candidates[k] = 0;
-				}
-				//Si no encuentra --> ERROR
-				if (nbServer == 0)
-					throw ErrorException("Error: no server found");
-				
-				//Si hay varios candidadtos......
-				if (nbServer > 1)
-				{
-					int possibleServers = nbServer;
-					//Se busca un server_name coincidente con Host del request
-					for (long unsigned k = 0; k < _servers.size(); k++)
-					{
-						if (candidates[k] == 1 && _servers[k].getServerName() != _connectionManager.getRequest().getHost())
-							possibleServers--;
-						if (candidates[k] == 1 && _servers[k].getServerName() == _connectionManager.getRequest().getHost())
-						{
-							if (firstCandidate > k)
-								firstCandidate = k;
-						}
-					}
-
-					//Si no hay coincidencias, se busca un server_name que termine igual: *.final
-					if (possibleServers == 0)
-					{	
-						possibleServers = nbServer;
-						std::string finalServerName;
-						std::string finalRequestHost;
-						size_t max_length = 0;
-						for (long unsigned k = 0; k < _servers.size(); k++)
-						{
-							finalServerName = _servers[k].getServerName().substr(_servers[k].getServerName().find_first_of(".") + 1);
-							finalRequestHost = _connectionManager.getRequest().getHost().substr(_connectionManager.getRequest().getHost().find_first_of(".") + 1);
-							
-							if (candidates[k] == 1 && finalServerName != finalRequestHost)
-								possibleServers--;
-							if (candidates[k] == 1 && finalServerName == finalRequestHost && finalName.length() > max_length)
-								firstCandidate = k;
-						}
-					}
-					//Si no hay coincidencias, se busca un server_name que empiece igual: inicio.*
-					if (possibleServers == 0)
-					{
-						possibleServers = nbServer;
-						std::string inicioServerName;
-						std::string inicioRequestHost;
-						size_t max_length = 0;
-						for (long unsigned k = 0; k < _servers.size(); k++)
-						{
-							inicioServerName = _servers[k].getServerName().substr(0, _servers[k].getServerName().find_last_of("."));
-							inicioRequestHost = _connectionManager.getRequest().getHost().substr(0, _connectionManager.getRequest().getHost().find_last_of("."));
-							if (candidates[k] == 1 && inicioServerName != inicioRequestHost)
-								possibleServers--;
-							if (candidates[k] == 1 && inicioServerName == inicioRequestHost && inicioServerName.length() > max_length)
-								firstCandidate = k;
-						}
-					}
-					//Si no hay coincidencias, se usa el predeterminado (localhost)
-					if (possibleServers == 0)
-					{
-						possibleServers = nbServer;
-						for (long unsigned k = 0; k < _servers.size(); k++)
-						{
-							if (candidates[k] == 1 && _servers[k].getServerName() == "localhost")
-							{
-								firstCandidate = k;
-								break;
-							}
-						}
+						_connectionManager.writeData(*(_clientSockets[j]), bestServer);
+						_pollFds[i].events = POLLIN;
+						break ;
 					}
 				}
-				_connectionManager.writeData(*(_clientSockets[j]), _servers[firstCandidate]);
-				_pollFds[i].events = POLLIN;
-				break ;
 			}
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
