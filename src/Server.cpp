@@ -162,17 +162,14 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 				}
 			}
 		}
+		//**********************************************************
 		// Si no hay coincidencias, se busca un server_name definido 
 		// con expresiones regulares (~ antes del nombre) que coincida
-		// con el nombre del Host del request
-		if (possibleServers == 0)
-		{
-			possibleServers = nbServer;
-
-		}
-		//Si no hay coincidencias, se usa el predeterminado:
-		// Este server es el primero del archivo de configuración (si default_server no está definido)
-		// o el que tenga la directiva default_server (solo puede haber uno)
+		// con el nombre del Host del request 
+		// ESTA PARTE NO SE IMPLEMENTA SEGÚN SUBJECT
+		//***********************************************************
+		// Si no hay coincidencias, se usa el predeterminado.
+		// Este server es el que tenga la directiva default_server (solo puede haber uno)
 		if (possibleServers == 0)
 		{
 			possibleServers = nbServer;
@@ -190,7 +187,7 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 				}
 			}
 		}
-		//Si no hay coincidencias, se usa el primer server de la lista
+		// Y Si no está definido default_server, se usa el primer server de la lista
 		if (possibleServers == 0)
 		{
 			possibleServers = nbServer;
