@@ -26,6 +26,7 @@
 # include <arpa/inet.h>
 # include <cstring>
 # include <sys/socket.h>
+# include <sys/stat.h>
 # include <errno.h>
 # include <sys/select.h>
 # include <poll.h>

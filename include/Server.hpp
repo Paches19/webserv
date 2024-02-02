@@ -25,20 +25,29 @@ class Server
 		std::vector<Socket*> _clientSockets;
 		ConnectionManager _connectionManager;
 		std::vector<struct pollfd> _pollFds;
-		std::vector<ResponseBuilder> _responsesToSend;
+		std::vector<HttpResponse> _responsesToSend;
 	
 	public:
 		Server();
-		Server(std::vector<VirtualServers> _servers);
+		Server(std::vector<VirtualServers> servers);
 		~Server();
 		Server(const Server& other);
 		Server& operator=(const Server& other);
 
-		void run(std::vector<VirtualServers> _servers);
+		void run(std::vector<VirtualServers> servers);
+
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
-		VirtualServers getBestServer(HttpRequest &request, size_t i);
-		
+		VirtualServers getBestServer(HttpRequest &request, size_t i, 
+			std::vector<VirtualServers> servers);
+		void processRequest(HttpRequest request, VirtualServers server, Socket socket);
+		std::string buildResourcePath(HttpRequest& request,
+			const Location& location, VirtualServers& server);
+		std::string adjustPathForDirectory(const std::string& requestURI,
+			const std::string& basePath, const Location& location, VirtualServers& server);
+		void processReturnDirective(const Location& locationRequest,
+			HttpResponse& processResponse);
+
 		class ErrorException : public std::exception
 		{
 			private:

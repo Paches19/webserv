@@ -22,21 +22,23 @@
 
 class ConnectionManager
 {
-	private:
-		std::map<int, ConnectionData> _connections;
-	
 	public:
+		std::map<int, ConnectionData> connections;
+
 		ConnectionManager();
 		~ConnectionManager();
 		ConnectionManager(const ConnectionManager& other);
 		ConnectionManager& operator=(const ConnectionManager& other);
 
 		void	addConnection(Socket& socket);
-		void	removeConnection(Socket& socket);
-		bool	readData(Socket& socket);
-		void	writeData(Socket& socket, VirtualServers &_server);
+		void	removeConnection(Socket& socket, int i,
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
+			HttpRequest	readData(Socket& socket, int i,
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
 		int		getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);
+		
+		void	writeData(Socket& socket, VirtualServers &_server);
 };
 
 #endif // CONNECTIONMANAGER_HPP

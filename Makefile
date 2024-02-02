@@ -18,18 +18,18 @@ INC_DIR	= 	include/
 OBJ_DIR	= 	obj/
 
 #Sources 
-SRC		=	HttpRequest.cpp \
-			ResponseBuilder.cpp \
+SRC		=	ConfigFile.cpp \
+			ConfigParser.cpp \
+			ConnectionData.cpp \
+			ConnectionManager.cpp \
+			HttpRequest.cpp \
+			HttpResponse.cpp \
+			Location.cpp \
+			main.cpp \
 			Server.cpp \
 			Socket.cpp \
-			ConnectionManager.cpp \
-			ConnectionData.cpp \
-			ConfigFile.cpp \
-			ConfigParser.cpp \
-			VirtualServers.cpp \
-			Location.cpp \
-			main.cpp
-		
+			VirtualServers.cpp
+
 SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 
 #Headers

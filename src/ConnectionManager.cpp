@@ -18,13 +18,13 @@ ConnectionManager::~ConnectionManager() {}
 
 ConnectionManager::ConnectionManager(const ConnectionManager& other)
 {
-	_connections = other._connections;
+	connections = other.connections;
 }
 
 ConnectionManager& ConnectionManager::operator=(const ConnectionManager& other)
 {
 	if (this != &other)
-		_connections = other._connections;
+		connections = other.connections;
 	return *this;
 }
 
@@ -33,18 +33,29 @@ void ConnectionManager::addConnection(Socket& socket)
 	int socketFd = socket.getSocketFd();
 	ConnectionData connData;
 
-	_connections.insert(std::make_pair(socketFd, connData));
+	connections.insert(std::make_pair(socketFd, connData));
 	std::cout << " agregada con Socket FD = " << socketFd << std::endl;
 }
 
-void ConnectionManager::removeConnection(Socket& socket)
+void ConnectionManager::removeConnection(Socket& socket, int i,
+			std::vector<struct pollfd>& _pollFds, std::vector<Socket *>& _clientSockets)
 {
-    int socketFd = socket.getSocketFd();
-    std::map<int, ConnectionData>::iterator it = _connections.find(socketFd);
-    if (it != _connections.end())
+	int socketFd = _pollFds[i].fd;
+	for (size_t j = 0; j < _clientSockets.size(); ++j)
+	{
+		if (_clientSockets[j]->getSocketFd() == socketFd)
+		{
+			std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
+			_clientSockets.erase(_clientSockets.begin() + j);
+		}
+	}
+	_pollFds.erase(_pollFds.begin() + i);
+						
+    std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
+    if (it != connections.end())
     {
         socket.close();
-        _connections.erase(it);
+        connections.erase(it);
         std::cout << "\nConexión eliminada. Socket FD = " << socketFd << std::endl;
     }
     else
@@ -53,9 +64,10 @@ void ConnectionManager::removeConnection(Socket& socket)
     }
 }
 
-bool ConnectionManager::readData(Socket& socket)
+HttpRequest ConnectionManager::readData(Socket& socket, int i,
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
 {
-	ConnectionData data(_connections[socket.getSocketFd()]);
+	ConnectionData data(connections[socket.getSocketFd()]);
 
 	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
 	// Leer datos del socket
@@ -82,168 +94,67 @@ bool ConnectionManager::readData(Socket& socket)
 				std::cout << it->first << ": " << it->second << std::endl;
 			std::cout << RESET << std::endl;
 			if (request.isValidRequest())
+			{
 				data.responseSent = false;
+				request.setValidRequest(true);
+				request.setCompleteRequest(true);
+				_pollFds[i].events = POLLOUT;
+			}
 			else
 			{
 				std::cerr << "    Invalid request" << std::endl;
-				return false;
+				return request;
 			}
-			
 			data.readBuffer.clear();
 			data.readBuffer.resize(1024);
 			data.accumulatedBytes = 0;
 			data.headerReceived = false;
-			_connections[socket.getSocketFd()] = data;
+			connections[socket.getSocketFd()] = data;
+			return request;
 		}
+		connections[socket.getSocketFd()] = data;
 	}
 	else if (bytesRead == 0) 
-		return false;
+	{
+		this->removeConnection(socket, i, _pollFds, _clientSockets);
+		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+		return invalidRequest;
+	}
 	else 
 	{
-		data.readBuffer.clear();
-		data.readBuffer.resize(1024);
-		data.accumulatedBytes = 0;
-		data.headerReceived = false;
-		_connections[socket.getSocketFd()] = data;
+		this->removeConnection(socket, i, _pollFds, _clientSockets);
+		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+		return invalidRequest;
 	}
-	return true;
+	HttpRequest incompleteRequest;
+	incompleteRequest.setValidRequest(true);
+	return incompleteRequest;
 }
 
 void ConnectionManager::writeData(Socket& socket, VirtualServers &server) 
 {
-	ConnectionData& data(_connections[socket.getSocketFd()]);
-
-	if (data.responseSent)
-		return;
-	
-	ResponseBuilder responseBuilder;
-
-	// Configurar la respuesta
-	//std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
-	//std::cout << "    Searching for URL: " << _request.getURL() << std::endl;
-	std::string frontpage = server.getRoot() + server.getIndex();
-	
-	std::vector<Location> locations = server.getLocations();
-	std::vector<Location>::const_iterator it;
-	if (_request.getMethod() == "GET")
-	{
-		if (ConfigFile::getTypePath(server.getRoot()+_request.getURL()) == 1)
-		{
-			frontpage = server.getRoot()+_request.getURL();
-			std::cout << "    Searching frontpage: " << frontpage << std::endl;
-			it = locations.end() - 1;
-		}
-		else
-		{
-			
-			for (it = locations.begin(); it < locations.end(); ++it)
-			{
-				std::cout << "        Location path: " << it->getPath(); 
-				frontpage = server.getRoot() + it->getPath() + server.getIndex();
-				std::cout << " && frontpage: " << frontpage;
-				if (it->getPath() == _request.getURL())
-				{
-					std::cout << GREEN << " MATCH SUCCESSFULLY !!!!" << RESET << std::endl;
-					break;
-				}
-				else
-					std::cout << RED << " NOT MATCH !" << RESET << std::endl;
-			}
-		}
-		if (it == locations.end())
-		{
-			std::cout << "    Location path: " << _request.getURL() << RED << " NOT FOUND !!!!" << RESET << std::endl;
-			std::map<short, std::string>::const_iterator it3 = server.getErrorPages().find(404);
-			std::ifstream fdError((server.getRoot() + it3->second).c_str());
-			std::cout << "    Value for 404 page errorr: " << server.getRoot()+it3->second << std::endl;
-
-			if (fdError && fdError.is_open())
-			{
-				std::stringstream stream_binding;
-				stream_binding << fdError.rdbuf();
-				responseBuilder.setBody(stream_binding.str());
-			}
-			else
-				responseBuilder.setBody("Error 404");
-		}
-		else
-		{
-			std::ifstream bodyFile(frontpage.c_str());
-			if (!bodyFile || !bodyFile.is_open())
-			{
-				std::map<short, std::string>::const_iterator it4 = server.getErrorPages().find(404);
-				std::ifstream fdError(it4->second.c_str());
-				if (fdError && fdError.is_open())
-				{
-					std::stringstream stream_binding;
-					stream_binding << fdError.rdbuf();
-					responseBuilder.setBody(stream_binding.str());
-				}
-				else
-					responseBuilder.setBody("Error 404");
-			}
-			else
-			{
-				responseBuilder.setStatusCode(200);
-				std::stringstream stream_binding;
-				stream_binding << bodyFile.rdbuf();
-				responseBuilder.setBody(stream_binding.str());
-			}
-		}
-		
-	}
-	/*
-	else if (_request.getMethod() == "POST")
-	{
-		//Tratar POST
-	}
-	else if (_request.getMethod() == "DELETE")
-	{
-		//Tratar DELETE
-	}
-	else if (_request.getMethod() == "PUT")
-	{
-		//Tratar PUT
-	}
-	else if (_request.getMethod() == "HEAD")
-	{
-		//Tratar HEAD
-	}
-	else
-	{
-		//Error: Método no soportado
-	}		
-	*/	
-	responseBuilder.addHeader("Content-Type", "text/html");
-
-	// Construir la respuesta
-	std::string response = responseBuilder.buildResponse();
-	data.accumulatedBytes = response.size();
-	data.writeBuffer = new char[data.accumulatedBytes];
-	std::copy(response.begin(), response.end(), data.writeBuffer);
-
-	while (data.writeBuffer && data.accumulatedBytes > 0)
-	{
-		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		std::cout << "\nRESPONSE enviada: " << std::endl;
-		std::cout << CYAN << response << RESET << std::endl;
-		if (bytesSent > 0)
-		{
-			data.accumulatedBytes -= bytesSent;
-			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-		}
-		else if (bytesSent == -1)
-		{
-			std::cerr << "Error de envio de response" << std::endl;
-		}
-		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
-		if (data.accumulatedBytes == 0)
-		{
-			delete[] data.writeBuffer;
-			data.writeBuffer = NULL;
-		}
-	}
-	data.responseSent = true;
+	// while (data.writeBuffer && data.accumulatedBytes > 0)
+	// {
+	// 	int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
+	// 	std::cout << "\nRESPONSE enviada: " << std::endl;
+	// 	std::cout << CYAN << response << RESET << std::endl;
+	// 	if (bytesSent > 0)
+	// 	{
+	// 		data.accumulatedBytes -= bytesSent;
+	// 		std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
+	// 	}
+	// 	else if (bytesSent == -1)
+	// 	{
+	// 		std::cerr << "Error de envio de response" << std::endl;
+	// 	}
+	// 	// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
+	// 	if (data.accumulatedBytes == 0)
+	// 	{
+	// 		delete[] data.writeBuffer;
+	// 		data.writeBuffer = NULL;
+	// 	}
+	// }
+	// data.responseSent = true;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)

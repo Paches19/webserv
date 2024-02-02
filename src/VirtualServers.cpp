@@ -302,117 +302,6 @@ void VirtualServers::setAutoindex(std::string parametr)
 		_autoindex = true;
 }
 
-std::string statusCodeString(short statusCode)
-{
-    switch (statusCode)
-    {
-        case 100:
-            return "Continue";
-        case 101:
-            return "Switching Protocol";
-        case 200:
-            return "OK";
-        case 201:
-            return "Created";
-        case 202:
-            return "Accepted";
-        case 203:
-            return "Non-Authoritative Information";
-        case 204:
-            return "No Content";
-        case 205:
-            return "Reset Content";
-        case 206:
-            return "Partial Content";
-        case 300:
-            return "Multiple Choice";
-        case 301:
-            return "Moved Permanently";
-        case 302:
-            return "Moved Temporarily";
-        case 303:
-            return "See Other";
-        case 304:
-            return "Not Modified";
-        case 307:
-            return "Temporary Redirect";
-        case 308:
-            return "Permanent Redirect";
-        case 400:
-            return "Bad Request";
-        case 401:
-            return "Unauthorized";
-        case 403:
-            return "Forbidden";
-        case 404:
-            return "Not Found";
-        case 405:
-            return "Method Not Allowed";
-        case 406:
-            return "Not Acceptable";
-        case 407:
-            return "Proxy Authentication Required";
-        case 408:
-            return "Request Timeout";
-        case 409:
-            return "Conflict";
-        case 410:
-            return "Gone";
-        case 411:
-            return "Length Required";
-        case 412:
-            return "Precondition Failed";
-        case 413:
-            return "Payload Too Large";
-        case 414:
-            return "URI Too Long";
-        case 415:
-            return "Unsupported Media Type";
-        case 416:
-            return "Requested Range Not Satisfiable";
-        case 417:
-            return "Expectation Failed";
-        case 418:
-            return "I'm a teapot";
-        case 421:
-            return "Misdirected Request";
-        case 425:
-            return "Too Early";
-        case 426:
-            return "Upgrade Required";
-        case 428:
-            return "Precondition Required";
-        case 429:
-            return "Too Many Requests";
-        case 431:
-            return "Request Header Fields Too Large";
-        case 451:
-            return "Unavailable for Legal Reasons";
-        case 500:
-            return "Internal Server Error";
-        case 501:
-            return "Not Implemented";
-        case 502:
-            return "Bad Gateway";
-        case 503:
-            return "Service Unavailable";
-        case 504:
-            return "Gateway Timeout";
-        case 505:
-            return "HTTP Version Not Supported";
-        case 506:
-            return "Variant Also Negotiates";
-        case 507:
-            return "Insufficient Storage";
-        case 510:
-            return "Not Extended";
-        case 511:
-            return "Network Authentication Required";
-        default:
-            return "Undefined";
-        }
-}
-
 // Check if there is such a default error code. 
 //   If there is, it overwrites the path to the file
 //   Otherwise it creates a new pair: error code - path to the file
@@ -427,27 +316,19 @@ void VirtualServers::setErrorPages(std::vector<std::string> &parametr)
 		throw ErrorException ("Error page initialization faled");
 	for (size_t i = 0; i < parametr.size() - 1; i++)
 	{
-		for (size_t j = 0; j < parametr[i].size(); j++) {
-			if (!std::isdigit(parametr[i][j]))
-				throw ErrorException("Error code is invalid");
-		}
-		if (parametr[i].size() != 3)
-			throw ErrorException("Error code is invalid");
-		short code_error = Location::ft_stoi(parametr[i]);
-		if (statusCodeString(code_error)  == "Undefined" || code_error < 400)
+		short codeError = Location::ft_stoi(parametr[i]);
+		if (codeError < 100 || codeError > 599)
 			throw ErrorException ("Incorrect error code: " + parametr[i]);
 		i++;
 		std::string path = parametr[i];
 		Location::checkToken(path);
 		if (path[0] != '/')
 			path = "/" + path;
-		if (ConfigFile::checkFile(_root + path, 0) == -1 || ConfigFile::checkFile(_root + path, 4) == -1)
-				throw ErrorException ("Error page file :" + _root + path + " is not accessible");
-		std::map<short, std::string>::iterator it = _errorPages.find(code_error);
+		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
 		if (it != _errorPages.end())
-			_errorPages[code_error] = path;
+			_errorPages[codeError] = path;
 		else
-			_errorPages.insert(std::make_pair(code_error, path));
+			_errorPages.insert(std::make_pair(codeError, path));
 	}
 }
 
@@ -486,6 +367,14 @@ const std::string &VirtualServers::getIndex() { return (_index); }
 const bool &VirtualServers::getAutoindex() { return (_autoindex); }
 
 const std::vector<Location> &VirtualServers::getLocations() { return (_locations); }
+
+const std::string &VirtualServers::getErrorPage(short i)
+{
+	std::map<short, std::string>::const_iterator it = _errorPages.find(i);
+	if (it != _errorPages.end())
+		return (it->second);
+	return ("");
+}
 
 const std::map<short, std::string> &VirtualServers::getErrorPages() { return (_errorPages); }
 

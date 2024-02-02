@@ -34,17 +34,17 @@ Server& Server::operator=(const Server& other)
 	return *this;
 }
 
-Server::Server(std::vector<VirtualServers>	_servers)
+Server::Server(std::vector<VirtualServers>	servers)
 {
 	std::cout << "\nInicializando servidor..." << std::endl;
-	std::cout << "    Num. servers: " << _servers.size() << std::endl;
-	_serverSockets.reserve(_servers.size());
+	std::cout << "    Num. servers: " << servers.size() << std::endl;
+	_serverSockets.reserve(servers.size());
 	
 	// Crear sockets
-	for (size_t i = 0; i < _servers.size(); ++i)
+	for (size_t i = 0; i < servers.size(); ++i)
 	{
 		Socket* newSocket = new Socket();
-		if (newSocket->open((int) _servers[i].getPort(), _servers[i].getIpAddress()) == false)
+		if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
 			throw ErrorException("Error al abrir el socket");
 			
 		_serverSockets.push_back(newSocket);
@@ -55,7 +55,7 @@ Server::Server(std::vector<VirtualServers>	_servers)
 		serverPollFd.events = POLLIN; // Establecer para leer
 		this->_pollFds.push_back(serverPollFd);
 		std::cout << "    Escuchando en el puerto " <<
-		_servers[i].getPort() << std::endl;
+		servers[i].getPort() << std::endl;
 	}
 }
 
@@ -74,23 +74,24 @@ Server::~Server()
 	}
 }
 
-VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
+VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers)
 {
 	//Busco qué cliente ha hecho la petición para saber qué server le corresponde
 	size_t j = 0;
+
 	while (j < _clientSockets.size() && _clientSockets[j]->getSocketFd() != _pollFds[i].fd)
 		j++;
 	if (j == _clientSockets.size())
 		throw ErrorException("Error: no client found");
 
 	int nbServer = 0; //Número de posibles servidores válidos
-	int candidates[_servers.size()]; //Array de candidatos a server: 1 = candidato, 0 = no candidato
-	long unsigned firstCandidate = _servers.size() - 1; //Posición del primer candidato, en el array de candidatos
+	int candidates[servers.size()]; //Array de candidatos a server: 1 = candidato, 0 = no candidato
+	long unsigned firstCandidate = servers.size() - 1; //Posición del primer candidato, en el array de candidatos
 	
 	//Busco servers con IP:Port del socket cliente = IP:Port del server
-	for (long unsigned k = 0; k < _servers.size(); k++)
+	for (long unsigned k = 0; k < servers.size(); k++)
 	{
-		if (inet_ntoa(_servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr))
+		if (inet_ntoa(servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr))
 		{
 			candidates[k] = 1;
 			nbServer++;
@@ -110,11 +111,11 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 	{
 		int possibleServers = nbServer;
 		// Se busca un server_name coincidente con Host del request
-		for (long unsigned k = 0; k < _servers.size(); k++)
+		for (long unsigned k = 0; k < servers.size(); k++)
 		{
-			if (candidates[k] == 1 && _servers[k].getServerName() != request.getHost())
+			if (candidates[k] == 1 && servers[k].getServerName() != request.getHost())
 				possibleServers--;
-			if (candidates[k] == 1 && _servers[k].getServerName() == request.getHost())
+			if (candidates[k] == 1 && servers[k].getServerName() == request.getHost())
 			{
 				if (firstCandidate > k)
 					firstCandidate = k;
@@ -128,9 +129,9 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 			std::string finalServerName;
 			std::string finalRequestHost;
 			size_t maxLength = 0;
-			for (long unsigned k = 0; k < _servers.size(); k++)
+			for (long unsigned k = 0; k < servers.size(); k++)
 			{
-				finalServerName = _servers[k].getServerName().substr(_servers[k].getServerName().find_first_of(".") + 1);
+				finalServerName = servers[k].getServerName().substr(servers[k].getServerName().find_first_of(".") + 1);
 				finalRequestHost = request.getHost().substr(request.getHost().find_first_of(".") + 1);
 				if (candidates[k] == 1)
 				{
@@ -149,9 +150,9 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 			std::string inicioServerName;
 			std::string inicioRequestHost;
 			size_t maxLength = 0;
-			for (long unsigned k = 0; k < _servers.size(); k++)
+			for (long unsigned k = 0; k < servers.size(); k++)
 			{
-				inicioServerName = _servers[k].getServerName().substr(0, _servers[k].getServerName().find_last_of("."));
+				inicioServerName = servers[k].getServerName().substr(0, servers[k].getServerName().find_last_of("."));
 				inicioRequestHost = request.getHost().substr(0, request.getHost().find_last_of("."));
 				if (candidates[k] == 1)
 				{
@@ -173,11 +174,11 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 		if (possibleServers == 0)
 		{
 			possibleServers = nbServer;
-			for (long unsigned k = 0; k < _servers.size(); k++)
+			for (long unsigned k = 0; k < servers.size(); k++)
 			{
 				if (candidates[k] == 1)
 				{
-					if (!_servers[k].getDefaultServer())
+					if (!servers[k].getDefaultServer())
 						possibleServers--;
 					else
 					{
@@ -191,7 +192,7 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 		if (possibleServers == 0)
 		{
 			possibleServers = nbServer;
-			for (long unsigned k = 0; k < _servers.size(); k++)
+			for (long unsigned k = 0; k < servers.size(); k++)
 			{
 				if (candidates[k] == 1)
 				{
@@ -201,10 +202,10 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i)
 			}
 		}
 	}
-	return _servers[firstCandidate];
+	return servers[firstCandidate];
 }
 
-void Server::run(std::vector<VirtualServers> _servers)
+void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServidor en ejecución..." << std::endl;
 
@@ -234,28 +235,16 @@ void Server::run(std::vector<VirtualServers> _servers)
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					_pollFds[i].fd == dataSocket->getSocketFd())
 				{
-					requestReceive = _connectionManager.readData(*dataSocket);
-					bestServer = getBestServer(requestReceive, i);
-					_pollFds[i].events = POLLOUT;
-
-					/*if (!_connectionManager.readData(*dataSocket))
+					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets);
+					if (requestReceive.isValidRequest() && requestReceive.isCompleteRequest())
 					{
-						int currentFd = _pollFds[i].fd;
-						for (size_t j = 0; j < _clientSockets.size(); ++j)
-						{
-							if (_clientSockets[j]->getSocketFd() == currentFd)
-							{
-								std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
-								_clientSockets.erase(_clientSockets.begin() + j);
-							}
-						}
-						_pollFds.erase(_pollFds.begin() + i);
-						--i;
-						_connectionManager.removeConnection(*dataSocket);
+						bestServer = getBestServer(requestReceive, i, _servers);
+						processRequest(requestReceive, bestServer, *dataSocket);				
 					}
-					else
-						_pollFds[i].events = POLLOUT;*/
-					
+					else if (!requestReceive.isValidRequest())
+					{
+						--i;
+					}	
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
@@ -264,7 +253,7 @@ void Server::run(std::vector<VirtualServers> _servers)
 				{
 					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						_connectionManager.writeData(*(_clientSockets[j]), bestServer);
+						_connectionManager.writeData(*(_clientSockets[j]), bestServer, requestReceive);
 						_pollFds[i].events = POLLIN;
 						break ;
 					}
@@ -283,12 +272,217 @@ void Server::run(std::vector<VirtualServers> _servers)
 						_clientSockets.erase(_clientSockets.begin() + j);
 						_connectionManager.removeConnection(*(_clientSockets[j]));
 					}
-				}
-				_pollFds.erase(_pollFds.begin() + i);
-				--i;
+				};
 			}
 		}
 	}
+}
+
+void Server::processRequest(HttpRequest request, VirtualServers server, Socket socket)
+{
+	ConnectionData& data(_connectionManager.connections[socket.getSocketFd()]);
+
+	if (data.responseSent)
+		return;
+	
+	HttpResponse processResponse;
+
+	// Configurar la respuesta
+	std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
+	std::cout << "    Searching for URL: " << request.getUri() << std::endl;
+	std::string frontpage = server.getRoot() + server.getIndex();
+	
+	std::vector<Location> locations = server.getLocations();
+	const Location*	locationRequest = nullptr;
+	
+	if (!locations.empty())
+		locationRequest = locations[0].selectLocation(request.getUri(), locations);
+	if (locationRequest == nullptr)
+	{
+		processResponse.setStatusCode(404);
+		processResponse.setBody("404 Not Found");
+		_responsesToSend[socket.getSocketFd()] = processResponse;
+		return ;
+	}
+	if (request.getMethod() == "GET")
+	{
+		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
+		std::string resourcePath = buildResourcePath(request, *locationRequest, server);
+		if (!fileExistsAndReadable(resourcePath))
+		{
+			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
+			processResponse.setStatusCode(404);
+			processResponse.setBody("404 Not Found");
+			_responsesToSend[socket.getSocketFd()] = processResponse;
+			return ;
+		}
+		std::ifstream file(resourcePath.c_str(), std::ifstream::binary);
+		if (file)
+		{
+			// Obtener el tamaño del archivo
+			file.seekg(0, file.end);
+			int length = file.tellg();
+			file.seekg(0, file.beg);
+
+			// Leer el contenido del archivo
+			char* buffer = new char[length];
+			file.read(buffer, length);
+
+			if (file)
+			{
+				// Si se leyó con éxito, construir la respuesta
+				processResponse.setStatusCode(200);
+				processResponse.addHeader("Content-Type:", getMimeType(resourcePath));
+				processResponse.setBody(std::string(buffer, length));
+				if (request.getBody().size() > locationRequest->getMaxBodySize())
+				{
+					processResponse.setStatusCode(413);
+					processResponse.setBody("413 Payload Too Large");
+					_responsesToSend[socket.getSocketFd()] = processResponse;
+					return;
+				}
+			}
+			else
+			{
+				// Error al leer el archivo
+				processResponse.setStatusCode(500);
+				processResponse.setBody("500 Internal Server Error");
+			}
+
+			delete[] buffer;
+			file.close();
+		}
+		else
+		{
+			// Archivo no se pudo abrir
+			processResponse.setStatusCode(500);
+			processResponse.setBody("500 Internal Server Error");
+		}
+		_responsesToSend[socket.getSocketFd()] = processResponse;
+		return ;
+	}
+	else if (request.getMethod() == "POST")
+	{
+		
+	}
+	else
+	{
+		processResponse.setStatusCode(405);
+		_responsesToSend[socket.getSocketFd()] = processResponse;
+    	return ;
+	}
+}
+std::string Server::buildResourcePath(HttpRequest& request,
+	const Location& location, VirtualServers& server)
+{
+	// Extraer la URI de la solicitud
+	std::string requestURI = request.getUri();
+
+	// Eliminar cualquier parámetro de consulta de la URI
+	size_t queryPos = requestURI.find('?');
+	if (queryPos != std::string::npos)
+		requestURI = requestURI.substr(0, queryPos);
+
+	std::string basePath;
+	if (!location.getRootLocation().empty())
+		basePath = location.getRootLocation(); // Usar root de la location si está definido
+	else
+		basePath = server.getRoot(); // Usar root del servidor si no hay root en la location
+
+	// Ajustar la ruta del recurso para manejo de directorios
+	std::string resourcePath =
+		adjustPathForDirectory(requestURI, basePath, location, server);
+	if (!location.getAlias().empty())
+		resourcePath.replace(0, location.getPath().length(), location.getAlias());
+	return resourcePath;
+}
+
+std::string Server::adjustPathForDirectory(const std::string& requestURI, const std::string& basePath,
+										const Location& location, VirtualServers& server)
+{
+	std::string fullPath = basePath + requestURI;
+	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
+
+	// Comprobar si la ruta completa apunta a un directorio
+	if (isDirectory(fullPath))
+	{
+		// Construir la ruta al archivo índice dentro del directorio
+		std::string indexPath = fullPath + (fullPath.back() == '/' ? "" : "/")
+			+ indexFile;
+		// Verificar si el archivo índice existe y es legible
+		if (fileExistsAndReadable(indexPath))
+			return indexPath;
+	}
+	else if (fileExistsAndReadable(fullPath))
+		return fullPath;
+
+	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
+	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URI
+	if (fileExistsAndReadable(fullPath))
+		return fullPath;
+
+	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
+	return requestURI;
+}
+
+void Server::processReturnDirective(const Location& locationRequest,
+	HttpResponse& processResponse)
+{
+	std::istringstream returnStream(locationRequest.getReturn());
+	int statusCode;
+	std::string urlOrText;
+
+	// Extraer el código de estado y la URL o texto opcional
+	returnStream >> statusCode;
+	std::getline(returnStream, urlOrText);
+	if (!urlOrText.empty() && urlOrText.front() == ' ')
+		urlOrText.erase(0, 1); // Elimina el espacio inicial si existe
+
+	// Configurar la respuesta basada en el código de estado
+	processResponse.setStatusCode(statusCode);
+
+	// Si es un código de redirección, añadir la URL a la cabecera 'Location'
+	if (statusCode == 301 || statusCode == 302)
+	{
+		processResponse.addHeader("Location", urlOrText);
+		processResponse.setBody(""); // El cuerpo de una respuesta de redirección suele estar vacío
+	}
+	else
+		processResponse.setBody(urlOrText);
+}
+bool isDirectory(const std::string& path)
+{
+	struct stat statbuf;
+	if (stat(path.c_str(), &statbuf) != 0)
+		return false;
+	return S_ISDIR(statbuf.st_mode);
+}
+
+bool fileExistsAndReadable(const std::string& filePath)
+{
+	std::ifstream file(filePath.c_str());
+	bool existsAndReadable = file.good();
+	file.close();
+	return existsAndReadable;
+}
+
+std::map<std::string, std::string> mimeTypes =
+{
+	{".html", "text/html"},
+	{".css", "text/css"},
+	{".js", "application/javascript"},
+};
+
+std::string getMimeType(const std::string& filePath)
+{
+	size_t dotPos = filePath.rfind('.');
+	if (dotPos != std::string::npos)
+	{
+		std::string ext = filePath.substr(dotPos);
+		if (mimeTypes.count(ext))
+			return mimeTypes[ext];
+	}
+	return "text/plain"; // Tipo MIME por defecto si no se reconoce la extensión
 }
 
 bool Server::areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)

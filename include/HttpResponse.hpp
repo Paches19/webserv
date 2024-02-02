@@ -15,7 +15,7 @@
 
 # include "WebServer.hpp"
 
-class ResponseBuilder
+class HttpResponse
 {
 	private:
 		int _statusCode;
@@ -23,10 +23,10 @@ class ResponseBuilder
 		std::string _body;
 
 	public:
-		ResponseBuilder();
-		~ResponseBuilder();
-		ResponseBuilder(const ResponseBuilder& copy);
-		ResponseBuilder& operator=(const ResponseBuilder& rhs);
+		HttpResponse();
+		~HttpResponse();
+		HttpResponse(const HttpResponse& copy);
+		HttpResponse& operator=(const HttpResponse& rhs);
 
 		void setStatusCode(int code);
 		void addHeader(const std::string& key, const std::string& value);

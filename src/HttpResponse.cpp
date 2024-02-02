@@ -12,18 +12,18 @@
 
 #include "HttpResponse.hpp"
 
-ResponseBuilder::ResponseBuilder(void) { _statusCode = 200; }
+HttpResponse::HttpResponse(void) { _statusCode = 200; }
 
-ResponseBuilder::~ResponseBuilder() {}
+HttpResponse::~HttpResponse() {}
 
-ResponseBuilder::ResponseBuilder(const ResponseBuilder& copy)
+HttpResponse::HttpResponse(const HttpResponse& copy)
 {
 	_statusCode = copy._statusCode;
 	_headers = copy._headers;
 	_body = copy._body;
 }
 
-ResponseBuilder& ResponseBuilder::operator=(const ResponseBuilder& rhs)
+HttpResponse& HttpResponse::operator=(const HttpResponse& rhs)
 {
 	if (this != &rhs)
 	{
@@ -34,12 +34,12 @@ ResponseBuilder& ResponseBuilder::operator=(const ResponseBuilder& rhs)
 	return *this;
 }
 
-void ResponseBuilder::addHeader(const std::string& key, const std::string& value)
+void HttpResponse::addHeader(const std::string& key, const std::string& value)
 {
 	_headers[key] = value;
 }
 
-void ResponseBuilder::setBody(const std::string& bodyContent)
+void HttpResponse::setBody(const std::string& bodyContent)
 {
 	_body = bodyContent;
 	std::ostringstream convert; // Crea un stringstream
@@ -47,9 +47,9 @@ void ResponseBuilder::setBody(const std::string& bodyContent)
     addHeader("Content-Length", convert.str());
 }
 
-void ResponseBuilder::setStatusCode(int code) {	_statusCode = code; }
+void HttpResponse::setStatusCode(int code) {	_statusCode = code; }
 
-std::string ResponseBuilder::buildResponse()
+std::string HttpResponse::buildResponse()
 {
 	std::string response = "HTTP/1.1 ";
 

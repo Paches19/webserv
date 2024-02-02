@@ -27,6 +27,9 @@ class Location
 		std::vector<short>			_methods; // GET, POST, DELETE, PUT, HEAD
 		std::string					_return;
 		std::string					_alias;
+		std::string					_tryFiles;
+		std::string			        _rewrite;
+		std::map<short, std::string>	_errorPages;
 		std::vector<std::string>	_cgiPath;
 		std::vector<std::string>	_cgiExt;
 		unsigned long				_clientMaxBodySize;
@@ -43,6 +46,15 @@ class Location
 		~Location();
 		Location &operator=(const Location &rhs);
 		
+		const Location* selectLocation(const std::string& requestURI,
+			const std::vector<Location>& locations);
+		const Location* findExactMatch(const std::string& requestURI,
+			const std::vector<Location>& locations);
+		const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
+			const std::vector<Location>& locations);
+	
+		bool startsWith(const std::string& str, const std::string& prefix);
+	
 		void setPath(std::string parametr);
 		void setRootLocation(std::string parametr);
 		void setMethods(std::vector<std::string> methods);
@@ -55,6 +67,9 @@ class Location
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
 		void setModifier(std::string parametr);
+		void setTryFiles(std::string parametr);
+		void setRewrite(std::string parametr);
+		void setErrorPage(std::vector<std::string> &parametr);
 
 		const std::string &getPath() const;
 		const std::string &getRootLocation() const;
@@ -69,6 +84,9 @@ class Location
 		const unsigned long &getMaxBodySize() const;
 		std::string getPrintMethods() const;
 		const std::string &getModifier() const;
+		const std::string &getTryFiles() const;
+		const std::string &getRewrite() const;
+		const std::string &getErrorPage(short i) const;		
 
 		static void checkToken(std::string &parametr);
 		static int ft_stoi(std::string str);

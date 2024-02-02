@@ -14,14 +14,15 @@
 
 HttpRequest::HttpRequest(const std::string& rawRequest)
 {
-	this->_isValid = true;
+	this->_isValid = false;
+	this->_isComplete = false;
 	if (rawRequest.empty())
 		invalidRequest();
 	else
 		parseRequest(rawRequest);
 }
 
-HttpRequest::HttpRequest() { this->_isValid = true; }
+HttpRequest::HttpRequest() { this->_isValid = false; this->_isComplete = false; }
 
 HttpRequest::HttpRequest(const HttpRequest& copy) {	*this = copy; }
 
@@ -36,6 +37,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 		this->_body = rhs._body;
 		this->_errorMessage = rhs._errorMessage;
 		this->_isValid = rhs._isValid;
+		this->_isComplete = rhs._isComplete;
 	}
 	return (*this);
 }
@@ -117,7 +119,13 @@ std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_he
 
 std::string HttpRequest::getBody() { return (this->_body); }
 
+void		HttpRequest::setValidRequest(bool validity) { this->_isValid = validity; }
+
+void		HttpRequest::setCompleteRequest(bool complete) { this->_isComplete = complete; }
+
 bool HttpRequest::isValidRequest() { return (this->_isValid); }
+
+bool HttpRequest::isCompleteRequest() { return (this->_isComplete); }
 
 std::string HttpRequest::errorMessage() { return (this->_errorMessage); }
 
