@@ -76,14 +76,14 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 
 	for (size_t i = 0; i < parametr.size(); i++)
 	{
-		if (parametr[i] == "try_files") && (i + 1) < parametr.size())
+		if (parametr[i] == "try_files" && (i + 1) < parametr.size())
 		{
 			if (!getTryFiles().empty())
 				throw ErrorException("Try_files of location is duplicated");
 			checkToken(parametr[++i]);
 			setTryFiles(parametr[i]);
 		}
-		else if (parametr[i] == "rewrite") && (i + 1) < parametr.size())
+		else if (parametr[i] == "rewrite" && (i + 1) < parametr.size())
 		{
 			if (!getRewrite().empty())
 				throw ErrorException("Rewrite of location is duplicated");
@@ -92,12 +92,12 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 		}
 		else if (parametr[i] == "error_page" && (i + 1) < parametr.size())
 		{
-			while (++i < parametrs.size())
+			while (++i < parametr.size())
 			{
-				if (i + 1 >= parametrs.size())
+				if (i + 1 >= parametr.size())
 					throw ErrorException("Wrong character out of server scope{}");
-				errorCodes.push_back(parametrs[i]);
-				if (parametrs[i].find(';') != std::string::npos)
+				errorCodes.push_back(parametr[i]);
+				if (parametr[i].find(';') != std::string::npos)
 					break ;
 			}
 		}
@@ -509,7 +509,7 @@ const std::string &Location::getTryFiles() const { return (_tryFiles); }
 
 const std::string &Location::getRewrite() const { return (_rewrite); }
 
-const std::string &Location::getErrorPage(short i) const
+const std::string Location::getErrorPage(short i) const
 {
 	std::map<short, std::string>::const_iterator it = _errorPages.find(i);
 	if (it != _errorPages.end())

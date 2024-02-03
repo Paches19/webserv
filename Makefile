@@ -34,7 +34,7 @@ SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 
 #Headers
 HEADERS = 	$(INC_DIR)HttpRequest.hpp \
-			$(INC_DIR)ResponseBuilder.hpp \
+			$(INC_DIR)HttpResponse.hpp \
 			$(INC_DIR)Server.hpp \
 			$(INC_DIR)Socket.hpp \
 			$(INC_DIR)ConnectionManager.hpp \

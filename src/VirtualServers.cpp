@@ -76,7 +76,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	{
 		if (parametrs[i] == "listen" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			if (parametrs[i + 1] === "default_server;")
+			if (parametrs[i + 1] == "default_server;")
 			{	
 				i++;
 				if (!_defaultServer)
@@ -86,7 +86,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			}
 			if (server.getPort() == 0)
 				server.setPort(parametrs[i]);	
-			i++	
+			i++;
 		}
 		else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() && flag_loc)
 		{
@@ -173,7 +173,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		}
 	}
 	if (server.getPort() == 0)
-		server.setPort("80", false);
+		server.setPort("80");
 	if (server.getIpAddress().s_addr == 0)
 		server.setIpAddress("0.0.0.0");
 	if (server.getRoot().empty())
@@ -182,6 +182,11 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		server.setIndex("/index.html;");
 	if (server.getServerName().empty())
 		server.setServerName("localhost");
+
+
+	//Comprobar si location debe o no estar definido
+
+
 	if (ConfigFile::checkPath(server.getRoot()) == -1)
 		throw ErrorException("Root from config file not found or unreadable");
 	if (ConfigFile::checkFile(server.getRoot() + server.getIndex(), 4) == -1)
@@ -368,7 +373,7 @@ const bool &VirtualServers::getAutoindex() { return (_autoindex); }
 
 const std::vector<Location> &VirtualServers::getLocations() { return (_locations); }
 
-const std::string &VirtualServers::getErrorPage(short i)
+const std::string VirtualServers::getErrorPage(short i)
 {
 	std::map<short, std::string>::const_iterator it = _errorPages.find(i);
 	if (it != _errorPages.end())

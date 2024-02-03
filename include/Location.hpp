@@ -50,7 +50,7 @@ class Location
 			const std::vector<Location>& locations);
 		const Location* findExactMatch(const std::string& requestURI,
 			const std::vector<Location>& locations);
-		const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
+		const Location* findLongestPrefixMatch(const std::string& requestURI,
 			const std::vector<Location>& locations);
 	
 		bool startsWith(const std::string& str, const std::string& prefix);
@@ -86,7 +86,7 @@ class Location
 		const std::string &getModifier() const;
 		const std::string &getTryFiles() const;
 		const std::string &getRewrite() const;
-		const std::string &getErrorPage(short i) const;		
+		const std::string getErrorPage(short i) const;		
 
 		static void checkToken(std::string &parametr);
 		static int ft_stoi(std::string str);

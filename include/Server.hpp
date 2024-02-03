@@ -35,7 +35,7 @@ class Server
 		Server& operator=(const Server& other);
 
 		void run(std::vector<VirtualServers> servers);
-
+		std::string getMimeType(const std::string& filePath);
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
 		VirtualServers getBestServer(HttpRequest &request, size_t i, 

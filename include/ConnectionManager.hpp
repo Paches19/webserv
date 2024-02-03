@@ -38,7 +38,7 @@ class ConnectionManager
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
 		int		getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);
 		
-		void	writeData(Socket& socket, VirtualServers &_server);
+		void	writeData(Socket& socket, VirtualServers &_server, HttpResponse &response);
 };
 
 #endif // CONNECTIONMANAGER_HPP

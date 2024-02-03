@@ -131,8 +131,13 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, VirtualServers &server) 
+void ConnectionManager::writeData(Socket& socket, VirtualServers &server, HttpResponse &response) 
 {
+	(void)socket;
+	(void)server;
+	(void)response;
+
+
 	// while (data.writeBuffer && data.accumulatedBytes > 0)
 	// {
 	// 	int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);

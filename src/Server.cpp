@@ -12,6 +12,22 @@
 
 #include "Server.hpp"
 
+bool isDirectory(const std::string& path)
+{
+	struct stat statbuf;
+	if (stat(path.c_str(), &statbuf) != 0)
+		return false;
+	return S_ISDIR(statbuf.st_mode);
+}
+
+bool fileExistsAndReadable(const std::string& filePath)
+{
+	std::ifstream file(filePath.c_str());
+	bool existsAndReadable = file.good();
+	file.close();
+	return existsAndReadable;
+}
+
 Server::Server() { }
 
 Server::Server(const Server& other)
@@ -238,7 +254,7 @@ void Server::run(std::vector<VirtualServers> servers)
 					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets);
 					if (requestReceive.isValidRequest() && requestReceive.isCompleteRequest())
 					{
-						bestServer = getBestServer(requestReceive, i, _servers);
+						bestServer = getBestServer(requestReceive, i, servers);
 						processRequest(requestReceive, bestServer, *dataSocket);				
 					}
 					else if (!requestReceive.isValidRequest())
@@ -253,7 +269,8 @@ void Server::run(std::vector<VirtualServers> servers)
 				{
 					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						_connectionManager.writeData(*(_clientSockets[j]), bestServer, requestReceive);
+
+						_connectionManager.writeData(*(_clientSockets[j]), bestServer, _responsesToSend[j]);
 						_pollFds[i].events = POLLIN;
 						break ;
 					}
@@ -270,13 +287,14 @@ void Server::run(std::vector<VirtualServers> servers)
 					{
 						std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
 						_clientSockets.erase(_clientSockets.begin() + j);
-						_connectionManager.removeConnection(*(_clientSockets[j]));
+						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
 					}
 				};
 			}
 		}
 	}
 }
+
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket socket)
 {
@@ -289,15 +307,15 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 
 	// Configurar la respuesta
 	std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
-	std::cout << "    Searching for URL: " << request.getUri() << std::endl;
+	std::cout << "    Searching for URL: " << request.getURL() << std::endl;
 	std::string frontpage = server.getRoot() + server.getIndex();
 	
 	std::vector<Location> locations = server.getLocations();
-	const Location*	locationRequest = nullptr;
+	const Location*	locationRequest = NULL;
 	
 	if (!locations.empty())
-		locationRequest = locations[0].selectLocation(request.getUri(), locations);
-	if (locationRequest == nullptr)
+		locationRequest = locations[0].selectLocation(request.getURL(), locations);
+	if (locationRequest == NULL)
 	{
 		processResponse.setStatusCode(404);
 		processResponse.setBody("404 Not Found");
@@ -328,7 +346,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 			char* buffer = new char[length];
 			file.read(buffer, length);
 
-			if (file)
+			if (buffer && file)
 			{
 				// Si se leyó con éxito, construir la respuesta
 				processResponse.setStatusCode(200);
@@ -339,6 +357,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 					processResponse.setStatusCode(413);
 					processResponse.setBody("413 Payload Too Large");
 					_responsesToSend[socket.getSocketFd()] = processResponse;
+					delete[] buffer;
+					file.close();
 					return;
 				}
 			}
@@ -347,8 +367,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 				// Error al leer el archivo
 				processResponse.setStatusCode(500);
 				processResponse.setBody("500 Internal Server Error");
-			}
 
+			}
 			delete[] buffer;
 			file.close();
 		}
@@ -372,16 +392,18 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
     	return ;
 	}
 }
+
+
 std::string Server::buildResourcePath(HttpRequest& request,
 	const Location& location, VirtualServers& server)
 {
 	// Extraer la URI de la solicitud
-	std::string requestURI = request.getUri();
+	std::string requestURL = request.getURL();
 
 	// Eliminar cualquier parámetro de consulta de la URI
-	size_t queryPos = requestURI.find('?');
+	size_t queryPos = requestURL.find('?');
 	if (queryPos != std::string::npos)
-		requestURI = requestURI.substr(0, queryPos);
+		requestURL = requestURL.substr(0, queryPos);
 
 	std::string basePath;
 	if (!location.getRootLocation().empty())
@@ -391,23 +413,23 @@ std::string Server::buildResourcePath(HttpRequest& request,
 
 	// Ajustar la ruta del recurso para manejo de directorios
 	std::string resourcePath =
-		adjustPathForDirectory(requestURI, basePath, location, server);
+		adjustPathForDirectory(requestURL, basePath, location, server);
 	if (!location.getAlias().empty())
 		resourcePath.replace(0, location.getPath().length(), location.getAlias());
 	return resourcePath;
 }
 
-std::string Server::adjustPathForDirectory(const std::string& requestURI, const std::string& basePath,
+std::string Server::adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
 										const Location& location, VirtualServers& server)
 {
-	std::string fullPath = basePath + requestURI;
+	std::string fullPath = basePath + requestURL;
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 
 	// Comprobar si la ruta completa apunta a un directorio
 	if (isDirectory(fullPath))
 	{
 		// Construir la ruta al archivo índice dentro del directorio
-		std::string indexPath = fullPath + (fullPath.back() == '/' ? "" : "/")
+		std::string indexPath = fullPath + (fullPath[fullPath.length() - 1] == '/' ? "" : "/")
 			+ indexFile;
 		// Verificar si el archivo índice existe y es legible
 		if (fileExistsAndReadable(indexPath))
@@ -422,7 +444,7 @@ std::string Server::adjustPathForDirectory(const std::string& requestURI, const 
 		return fullPath;
 
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
-	return requestURI;
+	return requestURL;
 }
 
 void Server::processReturnDirective(const Location& locationRequest,
@@ -435,7 +457,7 @@ void Server::processReturnDirective(const Location& locationRequest,
 	// Extraer el código de estado y la URL o texto opcional
 	returnStream >> statusCode;
 	std::getline(returnStream, urlOrText);
-	if (!urlOrText.empty() && urlOrText.front() == ' ')
+	if (!urlOrText.empty() && urlOrText[0] == ' ')
 		urlOrText.erase(0, 1); // Elimina el espacio inicial si existe
 
 	// Configurar la respuesta basada en el código de estado
@@ -450,32 +472,36 @@ void Server::processReturnDirective(const Location& locationRequest,
 	else
 		processResponse.setBody(urlOrText);
 }
-bool isDirectory(const std::string& path)
-{
-	struct stat statbuf;
-	if (stat(path.c_str(), &statbuf) != 0)
-		return false;
-	return S_ISDIR(statbuf.st_mode);
-}
 
-bool fileExistsAndReadable(const std::string& filePath)
-{
-	std::ifstream file(filePath.c_str());
-	bool existsAndReadable = file.good();
-	file.close();
-	return existsAndReadable;
-}
-
-std::map<std::string, std::string> mimeTypes =
-{
-	{".html", "text/html"},
-	{".css", "text/css"},
-	{".js", "application/javascript"},
-};
-
-std::string getMimeType(const std::string& filePath)
+std::string Server::getMimeType(const std::string& filePath)
 {
 	size_t dotPos = filePath.rfind('.');
+	std::map<std::string, std::string> mimeTypes;
+
+	mimeTypes[".html"] = "text/html";
+	mimeTypes[".css"] = "text/css";
+	mimeTypes[".js"] = "application/javascript";
+	mimeTypes[".jpg"] = "image/jpeg";
+	mimeTypes[".jpeg"] = "image/jpeg";
+	mimeTypes[".png"] = "image/png";
+	mimeTypes[".gif"] = "image/gif";
+	mimeTypes[".svg"] = "image/svg+xml";
+	mimeTypes[".ico"] = "image/x-icon";
+	mimeTypes[".txt"] = "text/plain";
+	mimeTypes[".pdf"] = "application/pdf";
+	mimeTypes[".zip"] = "application/zip";
+	mimeTypes[".tar"] = "application/x-tar";
+	mimeTypes[".gz"] = "application/gzip";
+	mimeTypes[".mp3"] = "audio/mpeg";
+	mimeTypes[".mp4"] = "video/mp4";
+	mimeTypes[".avi"] = "video/x-msvideo";
+	mimeTypes[".mpeg"] = "video/mpeg";
+	mimeTypes[".webm"] = "video/webm";
+	mimeTypes[".json"] = "application/json";
+	mimeTypes[".xml"] = "application/xml";
+	mimeTypes[".csv"] = "text/csv";
+	mimeTypes[".doc"] = "application/msword";
+
 	if (dotPos != std::string::npos)
 	{
 		std::string ext = filePath.substr(dotPos);
