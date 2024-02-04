@@ -340,8 +340,6 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		else if (i < parametr.size())
 			throw ErrorException("Parametr in a location is invalid");
 	}
-	if (getPath() != "/cgi-bin" && getIndexLocation().empty())
-		setIndexLocation(_index);
 	setErrorPage(errorCodes);
 
 	/*

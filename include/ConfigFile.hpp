@@ -33,7 +33,7 @@ class ConfigFile
 
 		static int	checkPath(std::string const path);
 		static int	checkFile(std::string const path, int mode);
-		std::string	readFile(std::string path);
+		static std::string	readFile(std::string path);
 		static int 	isFileExistAndReadable(std::string const path, std::string const index);
 		static bool isDirectory(const std::string& path);
 		static bool fileExistsAndReadable(const std::string& filePath);

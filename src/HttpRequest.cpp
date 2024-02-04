@@ -17,8 +17,8 @@
 //*******************************************************************
 HttpRequest::HttpRequest(const std::string& rawRequest)
 {
-	this->_isValid = false;
-	this->_isComplete = false;
+	this->_isValid = true;
+	this->_isComplete = true;
 	if (rawRequest.empty())
 		invalidRequest();
 	else
@@ -99,7 +99,7 @@ void HttpRequest::_parseRequest(const std::string& rawRequest)
 		return ;
 
 	// Parsear el cuerpo (si existe)
-	if (this->_method == "POST")
+	if (this->_method == "GET")
 	{
 		std::string bodyStr;
 		while (getline(requestStream, line))

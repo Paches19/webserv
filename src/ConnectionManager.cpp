@@ -117,13 +117,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 		}
 		connections[socket.getSocketFd()] = data;
 	}
-	else if (bytesRead == 0) 
-	{
-		this->removeConnection(socket, i, _pollFds, _clientSockets);
-		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
-		return invalidRequest;
-	}
-	else 
+	else
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets);
 		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
@@ -178,7 +172,7 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 		std::cout << "    Http complete !" << std::endl;
 		return true;
 	}
-		
+	std::cout << "    Http incomplete !" << std::endl;
 	return false;
 }
 

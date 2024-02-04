@@ -364,7 +364,11 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		server.setIndex("/index.html;");
 	if (server.getServerName().empty())
 		server.setServerName("localhost");
-
+	for (size_t i = 0; i < _locations.size(); i++)
+	{
+		if (_locations[i].getIndexLocation().empty())
+			_locations[i].setIndexLocation(server.getIndex());
+	}
 
 	//Comprobar si location debe o no estar definido
 
