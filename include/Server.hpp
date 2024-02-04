@@ -26,7 +26,7 @@ class Server
 		std::vector<Socket*> _clientSockets;
 		ConnectionManager _connectionManager;
 		std::vector<struct pollfd> _pollFds;
-		std::vector<HttpResponse> _responsesToSend;
+		std::map<int, HttpResponse> _responsesToSend;
 	
 	public:
 		Server();

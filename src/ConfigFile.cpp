@@ -32,10 +32,14 @@ ConfigFile::~ConfigFile() { }
 //*******************************************************************
 std::string ConfigFile::getPath() {	return (_path); }
 
-int ConfigFile::getTypePath(std::string const path)
+int ConfigFile::getTypePath(std::string path)
 {
 	struct stat	buffer;
 
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
 	if (stat(path.c_str(), &buffer) == 0)
 	{
 		if (buffer.st_mode & S_IFREG)
@@ -51,11 +55,16 @@ int ConfigFile::getTypePath(std::string const path)
 // Métodos de la clase
 //*******************************************************************
 
-int ConfigFile::checkPath(std::string const path)
+int ConfigFile::checkPath(std::string path)
 {
 	struct stat	buffer;
 	int			result;
 	
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
+
 	result = stat(path.c_str(), &buffer);
 	if (result == 0)
 		return (1);
@@ -63,8 +72,13 @@ int ConfigFile::checkPath(std::string const path)
 }
 
 // Check is the file exists and accessable
-int	ConfigFile::checkFile(std::string const path, int mode)
+int	ConfigFile::checkFile(std::string  path, int mode)
 {
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
+
 	std::cout << "Checking file: " << path << std::endl;
 	return (access(path.c_str(), mode));
 }
@@ -74,6 +88,12 @@ std::string	ConfigFile::readFile(std::string path)
 {
 	if (path.empty() || path.length() == 0)
 		return (NULL);
+
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
+
 	std::ifstream config_file(path.c_str());
 	if (!config_file || !config_file.is_open())
 		return (NULL);
@@ -82,25 +102,38 @@ std::string	ConfigFile::readFile(std::string path)
 	return (stream_binding.str());
 }
 
-int ConfigFile::isFileExistAndReadable(std::string const path, std::string const index)
+int ConfigFile::isFileExistAndReadable(std::string path, std::string const index)
 {
-	if (getTypePath(index) == 1 && checkFile(index, 4) == 0)
-		return (0);
-	if (getTypePath(path + index) == 1 && checkFile(path + index, 4) == 0)
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
+
+	if (getTypePath(path + "/" + index) == 1 && checkFile(path + "/" + index, 4) == 0)
 		return (0);
 	return (-1);
 }
 
-bool ConfigFile::isDirectory(const std::string& path)
+bool ConfigFile::isDirectory(std::string& path)
 {
+	if (path[0] != '/' && path[0] != '.')
+		path = "./" + path;
+	if (path[0] == '/')
+		path = "." + path;
+
 	struct stat statbuf;
 	if (stat(path.c_str(), &statbuf) != 0)
 		return false;
 	return S_ISDIR(statbuf.st_mode);
 }
 
-bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
+bool ConfigFile::fileExistsAndReadable(std::string& filePath)
 {
+	if (filePath[0] != '/' && filePath[0] != '.')
+		filePath = "./" + filePath;
+	if (filePath[0] == '/')
+		filePath = "." + filePath;
+
 	std::ifstream file(filePath.c_str());
 	bool existsAndReadable = file.good();
 	file.close();

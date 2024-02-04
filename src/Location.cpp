@@ -188,7 +188,7 @@ void Location::setErrorPage(std::vector<std::string> &parametr)
 	if (parametr.empty())
 	{
 		parametr.push_back("404");
-		parametr.push_back("/error_pages/404.html");
+		parametr.push_back("error_pages/404.html");
 	}
 	for (size_t i = 0; i < parametr.size() - 1; i++)
 	{
@@ -231,10 +231,8 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		else if (parametr[i] == "root" && (i + 1) < parametr.size())
 		{
 			checkToken(parametr[++i]);
-			if (ConfigFile::getTypePath(parametr[i]) == 2)
+			if (ConfigFile::getTypePath("." + parametr[i]) == 2)
 				setRootLocation(parametr[i]);
-			else
-				setRootLocation(_root + parametr[i]);
 		}
 		
 		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())

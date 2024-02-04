@@ -41,7 +41,7 @@ Server::Server(std::vector<VirtualServers>	servers)
 	std::cout << "\nInicializando servidor..." << std::endl;
 	std::cout << "    Num. servers: " << servers.size() << std::endl;
 	_serverSockets.reserve(servers.size());
-	
+
 	// Crear sockets
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
@@ -336,7 +336,13 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	// Configurar la respuesta
 	std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
 	std::cout << "    Searching for URL: " << request.getURL() << std::endl;
-	std::string frontpage = server.getRoot() + request.getURL() + server.getIndex();
+	
+	std::string frontpage = server.getRoot();
+	if (request.getURL() != "/")
+		frontpage += request.getURL();
+	if (server.getIndex()[0] != '/')
+		frontpage += "/";
+	frontpage += server.getIndex();
 	std::cout << "    frontpage = " << frontpage << std::endl;
 	
 	std::vector<Location> locations = server.getLocations();
@@ -364,7 +370,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	{
 		std::cout << "    Location not found" << std::endl;
 		processResponse.setStatusCode(404);
-		processResponse.setBody(ConfigFile::readFile("error_pages/404.html"));
+
+		std::string errorPage = server.getRoot();
+		if (server.getErrorPage(404)[0] != '/')
+			errorPage += "/";
+		errorPage += server.getErrorPage(404);
+		processResponse.setBody(ConfigFile::readFile(errorPage));
 		_responsesToSend[socket.getSocketFd()] = processResponse;
 		return ;
 	}
@@ -379,7 +390,11 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 		{
 			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
 			processResponse.setStatusCode(404);
-			processResponse.setBody(ConfigFile::readFile("error_pages/404.html"));
+			std::string errorPage = server.getRoot();
+			if (locationRequest->getErrorPage(404)[0] != '/')
+				errorPage += "/";
+			errorPage += locationRequest->getErrorPage(404);
+			processResponse.setBody(ConfigFile::readFile(errorPage));
 			_responsesToSend[socket.getSocketFd()] = processResponse;
 			return ;
 		}
@@ -390,23 +405,23 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 			//Error del archivo:  vacío o no se pudo abrir
 			processResponse.setStatusCode(500);
 			processResponse.setBody("500 Internal Server Error");
+			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(500)));
 			return;
 		}
 
-		std::cout << "    File size: " << buffer.length() << std::endl;
+		std::cout << "   body " << buffer << std::endl;
 		if (buffer.length() > locationRequest->getMaxBodySize())
 		{
 			// Si el archivo es demasiado grande, enviar respuesta 413
 			processResponse.setStatusCode(413);
 			processResponse.setBody("413 Payload Too Large");
+			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(413)));
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
 		processResponse.setBody(std::string(buffer, buffer.length()));
-		std::cout << "    Response set" << std::endl;
-		std::cout << "    Response is sending to socket id = " << socket.getSocketFd() << std::endl;
 		_responsesToSend[socket.getSocketFd()] = processResponse;
 		
 	}
@@ -442,11 +457,7 @@ std::string Server::buildResourcePath(HttpRequest& request,
 	if (queryPos != std::string::npos)
 		requestURL = requestURL.substr(0, queryPos);
 
-	std::string basePath;
-	if (!location.getRootLocation().empty())
-		basePath = location.getRootLocation(); // Usar root de la location si está definido
-	else
-		basePath = server.getRoot(); // Usar root del servidor si no hay root en la location
+	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
 
 	// Ajustar la ruta del recurso para manejo de directorios
 	std::string resourcePath =
@@ -462,11 +473,16 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
+	std::cout << "    fullPath: " << fullPath << std::endl;
+
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 	// Comprobar si la ruta completa apunta a un directorio
 	if (ConfigFile::isDirectory(fullPath))
 	{
-		std::string indexPath = fullPath + indexFile;
+		std::string indexPath = fullPath;
+		if (indexFile[0] != '/')
+			 indexPath +=  "/";
+		indexPath += indexFile;
 		// Construir la ruta al archivo índice dentro del directorio
 		// Verificar si el archivo índice existe y es legible
 		if (ConfigFile::fileExistsAndReadable(indexPath))

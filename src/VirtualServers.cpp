@@ -60,9 +60,9 @@ VirtualServers::VirtualServers(std::string &config)
 	_ipAddress.s_addr = 0;
 	_defaultServer = false;
 	// Hay que crear todas las páginas de errores. Estas son una muestra
-	_errorPages[403] = "/error_pages/403.html";
-	_errorPages[404] = "/error_pages/404.html";
-	_errorPages[405] = "/error_pages/405.html";
+	_errorPages[403] = "error_pages/403.html";
+	_errorPages[404] = "error_pages/404.html";
+	_errorPages[405] = "error_pages/405.html";
 	
 	_createServer(config, *this);
 }
@@ -151,26 +151,14 @@ void VirtualServers::setRoot(std::string parametr)
 {
 	Location::checkToken(parametr);
 
-	if (parametr[0] == '/')
-		parametr = "." + parametr;
-	if (ConfigFile::getTypePath(parametr) == 2)
-	{
-		_root = parametr;
-		return ;
-	}
-	char dir[1024];
-	getcwd(dir, 1024);
-	std::string fullRoot = dir + parametr;
-	if (ConfigFile::getTypePath(fullRoot) != 2)
+	if (ConfigFile::getTypePath("."+ parametr) != 2)
 		throw ErrorException("Wrong syntax: root");
-	_root = fullRoot;
+	_root = parametr;
 }
 
 void VirtualServers::setIndex(std::string parametr)
 {
 	Location::checkToken(parametr);
-	if (parametr[0] != '/')
-		parametr = "/" + parametr;
 	_index = parametr;
 }
 
@@ -191,7 +179,7 @@ void VirtualServers::setErrorPages(std::vector<std::string> &parametr)
 	if (parametr.empty())
 	{
 		parametr.push_back("404");
-		parametr.push_back("/error_pages/404.html");
+		parametr.push_back("error_pages/404.html");
 	}
 	for (size_t i = 0; i < parametr.size() - 1; i++)
 	{
@@ -200,8 +188,6 @@ void VirtualServers::setErrorPages(std::vector<std::string> &parametr)
 			throw ErrorException ("Incorrect error code: " + parametr[i]);
 		i++;
 		std::string path = parametr[i];
-		if (path[0] != '/')
-			path = "/" + path;
 		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
 		if (it != _errorPages.end())
 			_errorPages[codeError] = path;
@@ -361,21 +347,16 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	if (server.getRoot().empty())
 		server.setRoot("var/www;");
 	if (server.getIndex().empty())
-		server.setIndex("/index.html;");
+		server.setIndex("index.html;");
 	if (server.getServerName().empty())
 		server.setServerName("localhost");
-	for (size_t i = 0; i < _locations.size(); i++)
-	{
-		if (_locations[i].getIndexLocation().empty())
-			_locations[i].setIndexLocation(server.getIndex());
-	}
-
 	//Comprobar si location debe o no estar definido
 
 
 	if (ConfigFile::checkPath(server.getRoot()) == -1)
 		throw ErrorException("Root from config file not found or unreadable");
-	if (ConfigFile::checkFile(server.getRoot() + server.getIndex(), 4) == -1)
+	std::string indexPath = "." + server.getRoot() + "/" + server.getIndex();
+	if (!ConfigFile::fileExistsAndReadable(indexPath))
 		throw ErrorException("Index from config file not found or unreadable");
 	server.setErrorPages(errorCodes);
 	if (!server._checkErrorPages())
@@ -389,7 +370,7 @@ bool VirtualServers::_checkErrorPages()
 	{
 		if (it->first < 100 || it->first > 599)
 			return (false);
-		std::string completePath = getRoot() + it->second;
+		std::string completePath = "." + getRoot() + "/" + it->second;
 		if (ConfigFile::checkFile(completePath, 0) < 0 || ConfigFile::checkFile(completePath, 4) < 0)
 			return (false);
 	}
