@@ -28,13 +28,15 @@ class Socket
 		Socket(Socket& other);
 		Socket& operator=(Socket& other);
 
+		int		getSocketFd();
+		sockaddr_in	getSocketAddr();
+
 		bool	open(int port, in_addr addr);
 		bool	accept(Socket& newSocket) const;
 		int		send(const char* buffer, int length) const;
 		int		receive(char* buffer, int length) const;
 		void	close();
-		int		getSocketFd();
-		sockaddr_in	getSocketAddr();
+
 };
 
 #endif // SOCKET_HPP

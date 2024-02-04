@@ -12,15 +12,15 @@
 
 #include "Socket.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 Socket::Socket() : _socketFd(-1) {}
-
 Socket::~Socket() {}
-
 Socket::Socket(Socket& other) : _socketFd(other._socketFd)
 {
 	other._socketFd = -1;
 }
-
 Socket& Socket::operator=(Socket& other)
 {
 	if (this != &other)
@@ -33,6 +33,16 @@ Socket& Socket::operator=(Socket& other)
 	return *this;
 }
 
+//*******************************************************************
+// Getters
+//*******************************************************************
+int	Socket::getSocketFd() { return (this->_socketFd); }
+
+sockaddr_in Socket::getSocketAddr() { return (this->_address); }
+
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
 bool Socket::open(int port, in_addr addr)
 {
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
@@ -121,7 +131,3 @@ void Socket::close()
 		_socketFd = -1;
 	}
 }
-
-int	Socket::getSocketFd() { return (this->_socketFd); }
-
-sockaddr_in Socket::getSocketAddr() { return (this->_address); }

@@ -13,6 +13,7 @@
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
+// Libraries
 # include <string>
 # include <map>
 # include <vector>
@@ -33,6 +34,7 @@
 # include <algorithm>
 # include <fcntl.h>
 
+// Colours
 # define RESET          "\x1B[0m"
 # define RED            "\x1B[31m"
 # define LIGHTRED      	"\x1B[91m"
@@ -43,6 +45,7 @@
 # define LIGHTMAGENTA   "\x1B[95m"
 # define GREEN 			"\x1B[32m"
 
+// Macros
 # define MAX_CONTENT_LENGTH 1000000
 
 #endif // WEBSERVER_HPP

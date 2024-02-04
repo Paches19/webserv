@@ -12,24 +12,10 @@
 
 #include "Server.hpp"
 
-bool isDirectory(const std::string& path)
-{
-	struct stat statbuf;
-	if (stat(path.c_str(), &statbuf) != 0)
-		return false;
-	return S_ISDIR(statbuf.st_mode);
-}
-
-bool fileExistsAndReadable(const std::string& filePath)
-{
-	std::ifstream file(filePath.c_str());
-	bool existsAndReadable = file.good();
-	file.close();
-	return existsAndReadable;
-}
-
+//******************************************************************************
+// Constructores, destructor y operador de asignación
+//******************************************************************************
 Server::Server() { }
-
 Server::Server(const Server& other)
 {
 	_serverSockets = other._serverSockets;
@@ -37,7 +23,6 @@ Server::Server(const Server& other)
 	_connectionManager = other._connectionManager;
 	_pollFds = other._pollFds;
 }
-
 Server& Server::operator=(const Server& other)
 {
 	if (this != &other)
@@ -49,7 +34,6 @@ Server& Server::operator=(const Server& other)
 	}
 	return *this;
 }
-
 Server::Server(std::vector<VirtualServers>	servers)
 {
 	std::cout << "\nInicializando servidor..." << std::endl;
@@ -74,7 +58,6 @@ Server::Server(std::vector<VirtualServers>	servers)
 		servers[i].getPort() << std::endl;
 	}
 }
-
 Server::~Server()
 {
 	for (size_t i = 0; i < _serverSockets.size(); ++i)
@@ -90,6 +73,9 @@ Server::~Server()
 	}
 }
 
+//******************************************************************************
+// Getters
+//******************************************************************************
 VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers)
 {
 	//Busco qué cliente ha hecho la petición para saber qué server le corresponde
@@ -221,6 +207,47 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 	return servers[firstCandidate];
 }
 
+std::string Server::getMimeType(const std::string& filePath)
+{
+	size_t dotPos = filePath.rfind('.');
+	std::map<std::string, std::string> mimeTypes;
+
+	mimeTypes[".html"] = "text/html";
+	mimeTypes[".css"]  = "text/css";
+	mimeTypes[".js"]   = "application/javascript";
+	mimeTypes[".jpg"]  = "image/jpeg";
+	mimeTypes[".jpeg"] = "image/jpeg";
+	mimeTypes[".png"]  = "image/png";
+	mimeTypes[".gif"]  = "image/gif";
+	mimeTypes[".svg"]  = "image/svg+xml";
+	mimeTypes[".ico"]  = "image/x-icon";
+	mimeTypes[".txt"]  = "text/plain";
+	mimeTypes[".pdf"]  = "application/pdf";
+	mimeTypes[".zip"]  = "application/zip";
+	mimeTypes[".tar"]  = "application/x-tar";
+	mimeTypes[".gz"]   = "application/gzip";
+	mimeTypes[".mp3"]  = "audio/mpeg";
+	mimeTypes[".mp4"]  = "video/mp4";
+	mimeTypes[".avi"]  = "video/x-msvideo";
+	mimeTypes[".mpeg"] = "video/mpeg";
+	mimeTypes[".webm"] = "video/webm";
+	mimeTypes[".json"] = "application/json";
+	mimeTypes[".xml"]  = "application/xml";
+	mimeTypes[".csv"]  = "text/csv";
+	mimeTypes[".doc"]  = "application/msword";
+
+	if (dotPos != std::string::npos)
+	{
+		std::string ext = filePath.substr(dotPos);
+		if (mimeTypes.count(ext))
+			return mimeTypes[ext];
+	}
+	return "text/plain"; // Tipo MIME por defecto si no se reconoce la extensión
+}
+
+//******************************************************************************
+// Métodos de la clase
+//******************************************************************************
 void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServidor en ejecución..." << std::endl;
@@ -252,12 +279,12 @@ void Server::run(std::vector<VirtualServers> servers)
 					_pollFds[i].fd == dataSocket->getSocketFd())
 				{
 					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets);
-					if (requestReceive.isValidRequest() && requestReceive.isCompleteRequest())
+					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						bestServer = getBestServer(requestReceive, i, servers);
 						processRequest(requestReceive, bestServer, *dataSocket);				
 					}
-					else if (!requestReceive.isValidRequest())
+					else if (!requestReceive.getIsValidRequest())
 					{
 						--i;
 					}	
@@ -295,7 +322,6 @@ void Server::run(std::vector<VirtualServers> servers)
 	}
 }
 
-
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket socket)
 {
 	ConnectionData& data(_connectionManager.connections[socket.getSocketFd()]);
@@ -326,7 +352,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
 		std::string resourcePath = buildResourcePath(request, *locationRequest, server);
-		if (!fileExistsAndReadable(resourcePath))
+		if (!ConfigFile::fileExistsAndReadable(resourcePath))
 		{
 			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
 			processResponse.setStatusCode(404);
@@ -350,7 +376,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 			{
 				// Si se leyó con éxito, construir la respuesta
 				processResponse.setStatusCode(200);
-				processResponse.addHeader("Content-Type:", getMimeType(resourcePath));
+				processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
 				processResponse.setBody(std::string(buffer, length));
 				if (request.getBody().size() > locationRequest->getMaxBodySize())
 				{
@@ -393,14 +419,13 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	}
 }
 
-
 std::string Server::buildResourcePath(HttpRequest& request,
 	const Location& location, VirtualServers& server)
 {
-	// Extraer la URI de la solicitud
+	// Extraer la URL de la solicitud
 	std::string requestURL = request.getURL();
 
-	// Eliminar cualquier parámetro de consulta de la URI
+	// Eliminar cualquier parámetro de consulta de la URL
 	size_t queryPos = requestURL.find('?');
 	if (queryPos != std::string::npos)
 		requestURL = requestURL.substr(0, queryPos);
@@ -426,21 +451,21 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 
 	// Comprobar si la ruta completa apunta a un directorio
-	if (isDirectory(fullPath))
+	if (ConfigFile::isDirectory(fullPath))
 	{
 		// Construir la ruta al archivo índice dentro del directorio
 		std::string indexPath = fullPath + (fullPath[fullPath.length() - 1] == '/' ? "" : "/")
 			+ indexFile;
 		// Verificar si el archivo índice existe y es legible
-		if (fileExistsAndReadable(indexPath))
+		if (ConfigFile::fileExistsAndReadable(indexPath))
 			return indexPath;
 	}
-	else if (fileExistsAndReadable(fullPath))
+	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
 
 	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
-	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URI
-	if (fileExistsAndReadable(fullPath))
+	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URL
+	if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
 
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
@@ -466,49 +491,11 @@ void Server::processReturnDirective(const Location& locationRequest,
 	// Si es un código de redirección, añadir la URL a la cabecera 'Location'
 	if (statusCode == 301 || statusCode == 302)
 	{
-		processResponse.addHeader("Location", urlOrText);
+		processResponse.setHeader("Location", urlOrText);
 		processResponse.setBody(""); // El cuerpo de una respuesta de redirección suele estar vacío
 	}
 	else
 		processResponse.setBody(urlOrText);
-}
-
-std::string Server::getMimeType(const std::string& filePath)
-{
-	size_t dotPos = filePath.rfind('.');
-	std::map<std::string, std::string> mimeTypes;
-
-	mimeTypes[".html"] = "text/html";
-	mimeTypes[".css"] = "text/css";
-	mimeTypes[".js"] = "application/javascript";
-	mimeTypes[".jpg"] = "image/jpeg";
-	mimeTypes[".jpeg"] = "image/jpeg";
-	mimeTypes[".png"] = "image/png";
-	mimeTypes[".gif"] = "image/gif";
-	mimeTypes[".svg"] = "image/svg+xml";
-	mimeTypes[".ico"] = "image/x-icon";
-	mimeTypes[".txt"] = "text/plain";
-	mimeTypes[".pdf"] = "application/pdf";
-	mimeTypes[".zip"] = "application/zip";
-	mimeTypes[".tar"] = "application/x-tar";
-	mimeTypes[".gz"] = "application/gzip";
-	mimeTypes[".mp3"] = "audio/mpeg";
-	mimeTypes[".mp4"] = "video/mp4";
-	mimeTypes[".avi"] = "video/x-msvideo";
-	mimeTypes[".mpeg"] = "video/mpeg";
-	mimeTypes[".webm"] = "video/webm";
-	mimeTypes[".json"] = "application/json";
-	mimeTypes[".xml"] = "application/xml";
-	mimeTypes[".csv"] = "text/csv";
-	mimeTypes[".doc"] = "application/msword";
-
-	if (dotPos != std::string::npos)
-	{
-		std::string ext = filePath.substr(dotPos);
-		if (mimeTypes.count(ext))
-			return mimeTypes[ext];
-	}
-	return "text/plain"; // Tipo MIME por defecto si no se reconoce la extensión
 }
 
 bool Server::areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)

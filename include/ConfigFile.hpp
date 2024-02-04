@@ -21,19 +21,22 @@ class ConfigFile
 	private:
 		std::string	_path;
 
-	public:		
+	public:
 		ConfigFile();
 		ConfigFile(std::string const path);
 		ConfigFile(const ConfigFile &other);
 		~ConfigFile();
 		ConfigFile &operator=(const ConfigFile &rhs);
 		
+		std::string	getPath();
+		static int	getTypePath(std::string const path);
+
 		static int	checkPath(std::string const path);
 		static int	checkFile(std::string const path, int mode);
 		std::string	readFile(std::string path);
 		static int 	isFileExistAndReadable(std::string const path, std::string const index);
-		std::string	getPath();
-		static int	getTypePath(std::string const path);
+		static bool isDirectory(const std::string& path);
+		static bool fileExistsAndReadable(const std::string& filePath);
 };
 
 #endif // CONFIGFILE_HPP

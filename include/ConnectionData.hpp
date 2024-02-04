@@ -24,7 +24,7 @@ class ConnectionData
 		bool	headerReceived;
 		size_t	accumulatedBytes;
 		bool	responseSent;
-			
+
 		ConnectionData();
 		~ConnectionData();
 		ConnectionData(const ConnectionData& other);

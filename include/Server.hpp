@@ -17,6 +17,7 @@
 # include "Socket.hpp"
 # include "ConnectionManager.hpp"
 # include "VirtualServers.hpp"
+# include "ConfigFile.hpp"
 
 class Server
 {
@@ -34,16 +35,17 @@ class Server
 		Server(const Server& other);
 		Server& operator=(const Server& other);
 
-		void run(std::vector<VirtualServers> servers);
 		std::string getMimeType(const std::string& filePath);
-		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
-		Socket* handleNewConnection(int i);
 		VirtualServers getBestServer(HttpRequest &request, size_t i, 
 			std::vector<VirtualServers> servers);
+		
+		void run(std::vector<VirtualServers> servers);
+		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
+		Socket* handleNewConnection(int i);
 		void processRequest(HttpRequest request, VirtualServers server, Socket socket);
 		std::string buildResourcePath(HttpRequest& request,
 			const Location& location, VirtualServers& server);
-		std::string adjustPathForDirectory(const std::string& requestURI,
+		std::string adjustPathForDirectory(const std::string& requestURL,
 			const std::string& basePath, const Location& location, VirtualServers& server);
 		void processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);

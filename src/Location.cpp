@@ -12,8 +12,10 @@
 
 #include "Location.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 Location::Location() { }
-
 Location::Location(const Location &other)
 {
 	_path = other._path;
@@ -29,7 +31,6 @@ Location::Location(const Location &other)
 	_modifier = other._modifier;
 	_clientMaxBodySize = other._clientMaxBodySize;
 }
-
 Location &Location::operator=(const Location &rhs)
 {
 	if (this != &rhs)
@@ -49,16 +50,9 @@ Location &Location::operator=(const Location &rhs)
     }
 	return (*this);
 }
-
 Location::~Location() { }
-
 Location::Location(std::string &path, std::string &modifier, std::vector<std::string> &parametr, std::string &r)
 {
-	std::vector<std::string> methods;
-	std::vector<std::string>	errorCodes;
-	
-	bool flag_methods = false;
-	bool flag_autoindex = false;
 	_path = path;
 	_root = r;
 	_autoindex = false;
@@ -74,35 +68,167 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	_methods.push_back(0); // PUT
 	_methods.push_back(0); // HEAD
 
+	// Configuración de los parámetros de la localización
+	configureLocation(path, parametr);
+}
+
+//*******************************************************************
+// Getters
+//*******************************************************************
+const std::string &Location::getModifier() const { return (_modifier); }
+
+const std::string &Location::getPath() const { return (_path); }
+
+const std::string &Location::getRootLocation() const { return (_root); }
+
+const std::string &Location::getIndexLocation() const { return (_index); }
+
+const std::vector<short> &Location::getMethods() const { return (_methods); }
+
+const std::vector<std::string> &Location::getCgiPath() const { return (_cgiPath); }
+
+const std::vector<std::string> &Location::getCgiExtension() const { return (_cgiExt); }
+
+const bool &Location::getAutoindex() const { return (_autoindex); }
+
+const std::string &Location::getReturn() const { return (_return); }
+
+const std::string &Location::getAlias() const { return (_alias); }
+
+const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_extPath); }
+
+const unsigned long &Location::getMaxBodySize() const { return (_clientMaxBodySize); }
+
+const std::string Location::getErrorPage(short i) const
+{
+	std::map<short, std::string>::const_iterator it = _errorPages.find(i);
+	if (it != _errorPages.end())
+		return (it->second);
+	return ("");
+ }
+
+ //*******************************************************************
+ // Setters
+ //*******************************************************************
+void Location::setPath(std::string parametr) { _path = parametr; }
+
+void Location::setRootLocation(std::string parametr)
+{
+	if (ConfigFile::getTypePath(parametr) != 2)
+		throw ErrorException("root of location");
+	_root = parametr;
+}
+
+void Location::setMethods(std::vector<std::string> methods)
+{
+	_methods[0] = 0;
+	_methods[1] = 0;
+	_methods[2] = 0;
+	_methods[3] = 0;
+	_methods[4] = 0;
+
+	for (size_t i = 0; i < methods.size(); i++)
+	{
+		if (methods[i] == "GET")
+			_methods[0] = 1;
+		else if (methods[i] == "POST")
+			_methods[1] = 1;
+		else if (methods[i] == "DELETE")
+			_methods[2] = 1;
+		else if (methods[i] == "PUT")
+			_methods[3] = 1;
+		else if (methods[i] == "HEAD")
+			_methods[4] = 1;
+		else
+			throw ErrorException("Allow method not supported " + methods[i]);
+	}
+}
+
+void Location::setAutoindex(std::string parametr)
+{
+	if (parametr == "on" || parametr == "off")
+		_autoindex = (parametr == "on");
+	else
+		throw ErrorException("Wrong autoindex");
+}
+
+void Location::setIndexLocation(std::string parametr)
+{
+	if (parametr[0] != '/')
+		parametr = "/" + parametr;
+	_index = parametr;
+}
+
+void Location::setReturn(std::string parametr) { _return = parametr; }
+
+void Location::setAlias(std::string parametr) {	_alias = parametr; }
+
+void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
+
+void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
+
+void Location::setMaxBodySize(std::string parametr)
+{
+	for (size_t i = 0; i < parametr.length(); i++)
+	{
+		if (parametr[i] < '0' || parametr[i] > '9')
+			throw ErrorException("Wrong syntax: client_max_body_size");
+	}
+	if (!ft_stoi(parametr))
+		throw ErrorException("Wrong syntax: client_max_body_size");
+	_clientMaxBodySize = ft_stoi(parametr);
+}
+
+void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = parametr; }
+
+void Location::setModifier(std::string parametr) { _modifier = parametr; }
+
+void Location::setErrorPage(std::vector<std::string> &parametr)
+{
+	if (parametr.empty())
+	{
+		parametr.push_back("404");
+		parametr.push_back("/error_pages/404.html");
+	}
+	for (size_t i = 0; i < parametr.size() - 1; i++)
+	{
+		short codeError = ft_stoi(parametr[i]);
+		if (codeError < 100 || codeError > 599)
+			throw ErrorException ("Incorrect error code: " + parametr[i]);
+		i++;
+		std::string path = parametr[i];
+		if (path[0] != '/')
+			path = "/" + path;
+		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
+		if (it != _errorPages.end())
+			_errorPages[codeError] = path;
+		else
+			_errorPages.insert(std::make_pair(codeError, path));
+	}
+}
+
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
+void Location::configureLocation(std::string &path, std::vector<std::string> &parametr)
+{
+	std::vector<std::string>	methods;
+	std::vector<std::string>	errorCodes;
+	bool flag_methods = false;
+	bool flag_autoindex = false;
+
 	for (size_t i = 0; i < parametr.size(); i++)
 	{
-		if (parametr[i] == "try_files" && (i + 1) < parametr.size())
+		if (parametr[i] == "error_page" && (i + 1) < parametr.size())
 		{
-			if (!getTryFiles().empty())
-				throw ErrorException("Try_files of location is duplicated");
-			checkToken(parametr[++i]);
-			setTryFiles(parametr[i]);
+			++i;
+			if (ft_stoi(parametr[i]) < 100 || ft_stoi(parametr[i]) > 599)
+					throw ErrorException("Wrong error code");
+			errorCodes.push_back(parametr[i++]);
+			checkToken(parametr[i]);	
+			errorCodes.push_back(parametr[i]);	
 		}
-		else if (parametr[i] == "rewrite" && (i + 1) < parametr.size())
-		{
-			if (!getRewrite().empty())
-				throw ErrorException("Rewrite of location is duplicated");
-			checkToken(parametr[++i]);
-			setRewrite(parametr[i]);
-		}
-		else if (parametr[i] == "error_page" && (i + 1) < parametr.size())
-		{
-			while (++i < parametr.size())
-			{
-				if (i + 1 >= parametr.size())
-					throw ErrorException("Wrong character out of server scope{}");
-				errorCodes.push_back(parametr[i]);
-				if (parametr[i].find(';') != std::string::npos)
-					break ;
-			}
-		}
-		else
-		if (parametr[i] == "root" && (i + 1) < parametr.size() && getRootLocation().empty())
+		else if (parametr[i] == "root" && (i + 1) < parametr.size())
 		{
 			checkToken(parametr[++i]);
 			if (ConfigFile::getTypePath(parametr[i]) == 2)
@@ -219,8 +345,8 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	setErrorPage(errorCodes);
 
 	/*
-
 	int valid = _checkLocation(*this);
+
 	if (valid == 1)
 		throw ErrorException("Failed CGI validation");
 	else if (valid == 2)
@@ -229,7 +355,6 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 		throw ErrorException("Failed redirection file in location validation");
 	else if (valid == 4)
 		throw ErrorException("Failed alias file in location validation");
-
 	*/
 }
 
@@ -377,149 +502,9 @@ bool Location::startsWith(const std::string& str, const std::string& prefix)
     return str.substr(0, prefix.size()) == prefix;
 }
 
-void Location::setPath(std::string parametr) { _path = parametr; }
-
-void Location::setRootLocation(std::string parametr)
-{
-	if (ConfigFile::getTypePath(parametr) != 2)
-		throw ErrorException("root of location");
-	_root = parametr;
-}
-
-void Location::setMethods(std::vector<std::string> methods)
-{
-	_methods[0] = 0;
-	_methods[1] = 0;
-	_methods[2] = 0;
-	_methods[3] = 0;
-	_methods[4] = 0;
-
-	for (size_t i = 0; i < methods.size(); i++)
-	{
-		if (methods[i] == "GET")
-			_methods[0] = 1;
-		else if (methods[i] == "POST")
-			_methods[1] = 1;
-		else if (methods[i] == "DELETE")
-			_methods[2] = 1;
-		else if (methods[i] == "PUT")
-			_methods[3] = 1;
-		else if (methods[i] == "HEAD")
-			_methods[4] = 1;
-		else
-			throw ErrorException("Allow method not supported " + methods[i]);
-	}
-}
-
-void Location::setAutoindex(std::string parametr)
-{
-	if (parametr == "on" || parametr == "off")
-		_autoindex = (parametr == "on");
-	else
-		throw ErrorException("Wrong autoindex");
-}
-
-void Location::setIndexLocation(std::string parametr)
-{
-	if (parametr[0] != '/')
-		parametr = "/" + parametr;
-	_index = parametr;
-}
-
-void Location::setReturn(std::string parametr) { _return = parametr; }
-
-void Location::setAlias(std::string parametr) {	_alias = parametr; }
-
-void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
-
-void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
-
-void Location::setMaxBodySize(std::string parametr)
-{
-	for (size_t i = 0; i < parametr.length(); i++)
-	{
-		if (parametr[i] < '0' || parametr[i] > '9')
-			throw ErrorException("Wrong syntax: client_max_body_size");
-	}
-	if (!ft_stoi(parametr))
-		throw ErrorException("Wrong syntax: client_max_body_size");
-	_clientMaxBodySize = ft_stoi(parametr);
-}
-
-void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = parametr; }
-
-void Location::setModifier(std::string parametr) { _modifier = parametr; }
-
-void Location::setTryFiles(std::string parametr) { _tryFiles = parametr; }
-
-void Location::setRewrite(std::string parametr) { _rewrite = parametr; }
-
-void Location::setErrorPage(std::vector<std::string> &parametr)
-{
-	if (parametr.empty())
-	{
-		parametr.push_back("404");
-		parametr.push_back("/error_pages/404.html;");
-	}
-	if (parametr.size() % 2 != 0)
-		throw ErrorException ("Error page initialization faled");
-	for (size_t i = 0; i < parametr.size() - 1; i++)
-	{
-		short codeError = ft_stoi(parametr[i]);
-		if (codeError < 100 || codeError > 599)
-			throw ErrorException ("Incorrect error code: " + parametr[i]);
-		i++;
-		std::string path = parametr[i];
-		checkToken(path);
-		if (path[0] != '/')
-			path = "/" + path;
-		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
-		if (it != _errorPages.end())
-			_errorPages[codeError] = path;
-		else
-			_errorPages.insert(std::make_pair(codeError, path));
-	}
-}
-
-const std::string &Location::getModifier() const { return (_modifier); }
-
-const std::string &Location::getPath() const { return (_path); }
-
-const std::string &Location::getRootLocation() const { return (_root); }
-
-const std::string &Location::getIndexLocation() const { return (_index); }
-
-const std::vector<short> &Location::getMethods() const { return (_methods); }
-
-const std::vector<std::string> &Location::getCgiPath() const { return (_cgiPath); }
-
-const std::vector<std::string> &Location::getCgiExtension() const { return (_cgiExt); }
-
-const bool &Location::getAutoindex() const { return (_autoindex); }
-
-const std::string &Location::getReturn() const { return (_return); }
-
-const std::string &Location::getAlias() const { return (_alias); }
-
-const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_extPath); }
-
-const unsigned long &Location::getMaxBodySize() const { return (_clientMaxBodySize); }
-
-const std::string &Location::getTryFiles() const { return (_tryFiles); }
-
-const std::string &Location::getRewrite() const { return (_rewrite); }
-
-const std::string Location::getErrorPage(short i) const
-{
-	std::map<short, std::string>::const_iterator it = _errorPages.find(i);
-	if (it != _errorPages.end())
-		return (it->second);
-	return ("");
- }
-
-
-//****************************************************
+//*******************************************************************
 // To print methods.  Remove before send the project
+//*******************************************************************
 std::string Location::getPrintMethods() const
 {
 	std::string res;

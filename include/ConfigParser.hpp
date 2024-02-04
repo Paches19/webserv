@@ -31,10 +31,12 @@ class ConfigParser
 		ConfigParser(const ConfigParser &other);
 		ConfigParser &operator=(const ConfigParser &rhs);
 
+		std::vector<VirtualServers> getServers();
+
 		int		initParser(const std::string &configFile);
 		void	splitServers(std::string &content);
 		int 	print();
-		std::vector<VirtualServers> getServers();
+		
 		class ErrorException : public std::exception
 		{
 			private:

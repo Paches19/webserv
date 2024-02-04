@@ -12,6 +12,9 @@
 
 #include "HttpRequest.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 HttpRequest::HttpRequest(const std::string& rawRequest)
 {
 	this->_isValid = false;
@@ -19,13 +22,10 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 	if (rawRequest.empty())
 		invalidRequest();
 	else
-		parseRequest(rawRequest);
+		_parseRequest(rawRequest);
 }
-
 HttpRequest::HttpRequest() { this->_isValid = false; this->_isComplete = false; }
-
 HttpRequest::HttpRequest(const HttpRequest& copy) {	*this = copy; }
-
 HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 {
 	if (this != &rhs)
@@ -41,17 +41,52 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 	}
 	return (*this);
 }
-
 HttpRequest::~HttpRequest() {};
 
-void HttpRequest::parseRequest(const std::string& rawRequest)
+//*******************************************************************
+// Getters
+//*******************************************************************
+std::string HttpRequest::getMethod() { return (this->_method); }
+
+std::string HttpRequest::getURL() {	return (this->_url); }
+
+std::string HttpRequest::getHttpVersion() {	return (this->_httpVersion); }
+
+std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_headers); }
+
+std::string HttpRequest::getBody() { return (this->_body); }
+
+std::string HttpRequest::getHost()
+{
+	std::map<std::string, std::string>::iterator it = _headers.find("Host");
+	if (it != _headers.end())
+		return it->second;
+	return "";
+}
+bool HttpRequest::getIsValidRequest() { return (this->_isValid); }
+
+bool HttpRequest::getIsCompleteRequest() { return (this->_isComplete); }
+
+std::string HttpRequest::getErrorMessage() { return (this->_errorMessage); }
+
+//*******************************************************************
+// Setters
+//*******************************************************************
+void	HttpRequest::setValidRequest(bool validity) { this->_isValid = validity; }
+
+void	HttpRequest::setCompleteRequest(bool complete) { this->_isComplete = complete; }
+
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
+void HttpRequest::_parseRequest(const std::string& rawRequest)
 {
 	std::istringstream requestStream(rawRequest);
 	std::string line;
 
 	// Parsear la primera línea
 	getline(requestStream, line);
-	parseFirstLine(line);
+	_parseFirstLine(line);
 	if (!this->_isValid)
 		return ;
 
@@ -59,7 +94,7 @@ void HttpRequest::parseRequest(const std::string& rawRequest)
 	std::string headersStr;
 	while (getline(requestStream, line) && line[0] && line != "\r")
 		headersStr += line + "\n";
-	parseHeaders(headersStr);
+	_parseHeaders(headersStr);
 	if (!this->_isValid)
 		return ;
 
@@ -72,7 +107,7 @@ void HttpRequest::parseRequest(const std::string& rawRequest)
 	}
 }
 
-void HttpRequest::parseFirstLine(const std::string& line)
+void HttpRequest::_parseFirstLine(const std::string& line)
 {
 	std::istringstream lineStream(line);
 	lineStream >> _method >> _url >> _httpVersion;
@@ -81,7 +116,7 @@ void HttpRequest::parseFirstLine(const std::string& line)
 		return invalidRequest();
 }
 
-void HttpRequest::parseHeaders(const std::string& headersStr)
+void HttpRequest::_parseHeaders(const std::string& headersStr)
 {
 	std::istringstream headersStream(headersStr);
 	std::string line;
@@ -100,34 +135,6 @@ void HttpRequest::parseHeaders(const std::string& headersStr)
 			return invalidRequest();
 	}
 }
-
-std::string HttpRequest::getHost()
-{
-	std::map<std::string, std::string>::iterator it = _headers.find("Host");
-	if (it != _headers.end())
-		return it->second;
-	return "";
-}
-
-std::string HttpRequest::getMethod() { return (this->_method); }
-
-std::string HttpRequest::getURL() {	return (this->_url); }
-
-std::string HttpRequest::getHttpVersion() {	return (this->_httpVersion); }
-
-std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_headers); }
-
-std::string HttpRequest::getBody() { return (this->_body); }
-
-void		HttpRequest::setValidRequest(bool validity) { this->_isValid = validity; }
-
-void		HttpRequest::setCompleteRequest(bool complete) { this->_isComplete = complete; }
-
-bool HttpRequest::isValidRequest() { return (this->_isValid); }
-
-bool HttpRequest::isCompleteRequest() { return (this->_isComplete); }
-
-std::string HttpRequest::errorMessage() { return (this->_errorMessage); }
 
 void HttpRequest::invalidRequest()
 {

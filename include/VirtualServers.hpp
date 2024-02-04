@@ -42,17 +42,7 @@ class VirtualServers
 		VirtualServers(const VirtualServers &copy);
 		~VirtualServers();
 		VirtualServers &operator=(const VirtualServers &copy);	
-		
-		void setPort(std::string parametr);
-		void setServerName(std::string parametr);
-		void setRoot(std::string parametr);
-		void setIndex(std::string parametr);
-		void setAutoindex(std::string parametr);
-		void setErrorPages(std::vector<std::string> &parametr);
-		void setClientMaxBodySize(std::string parametr);
-		void setReturn(std::string parametr);
-		void setIpAddress(std::string parametr);
-		
+
 		const uint16_t &getPort();
 		const std::string &getServerName();
 		const std::string &getRoot();
@@ -65,6 +55,16 @@ class VirtualServers
 		const std::string &getReturn();
 		const in_addr &getIpAddress();
 		const bool &getDefaultServer();
+
+		void setPort(std::string parametr);
+		void setServerName(std::string parametr);
+		void setRoot(std::string parametr);
+		void setIndex(std::string parametr);
+		void setAutoindex(std::string parametr);
+		void setErrorPages(std::vector<std::string> &parametr);
+		void setClientMaxBodySize(std::string parametr);
+		void setReturn(std::string parametr);
+		void setIpAddress(std::string parametr);
 	
 		class ErrorException : public std::exception
 		{

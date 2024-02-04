@@ -28,10 +28,11 @@ class HttpResponse
 		HttpResponse(const HttpResponse& copy);
 		HttpResponse& operator=(const HttpResponse& rhs);
 
-		void setStatusCode(int code);
-		void addHeader(const std::string& key, const std::string& value);
-		void setBody(const std::string& bodyContent);
-		std::string buildResponse();
+		void 	setStatusCode(int code);
+		void 	setBody(const std::string& bodyContent);
+		void	setHeader(const std::string& key, const std::string& value);
+
+		std::string	buildResponse();
 };
 
 #endif // HTTPRESPONSE_HPP

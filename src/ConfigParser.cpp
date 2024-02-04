@@ -12,14 +12,15 @@
 
 #include "ConfigParser.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 ConfigParser::ConfigParser() { _nbServer = 0; }
-
 ConfigParser::ConfigParser(const ConfigParser &other)
 {
 	_nbServer = other._nbServer;
 	_serverConfig = other._serverConfig;
 }
-
 ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
 {
 	if (this == &rhs)
@@ -28,60 +29,16 @@ ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
 	_serverConfig = rhs._serverConfig;
 	return (*this);
 }
-
 ConfigParser::~ConfigParser() { }
 
-/************************ PRINTING servers configurations ************************/
-int ConfigParser::print()
-{
-	for (size_t i = 0; i < _servers.size(); i++)
-	{
-		std::cout << YELLOW <<  "SERVER #" << i + 1 << RESET << std::endl;
-		std::cout << CYAN << "Server name: " << RESET << _servers[i].getServerName() << std::endl;
-		std::cout << CYAN << "Root: " << RESET << _servers[i].getRoot() << std::endl;
-		std::cout << CYAN << "Index: " << RESET << _servers[i].getIndex() << std::endl;
-		std::cout << CYAN <<  "Port: " << RESET << _servers[i].getPort() << std::endl;
-		std::cout << CYAN << "IP address: " << RESET << inet_ntoa(_servers[i].getIpAddress()) << std::endl;
-		std::cout << CYAN << "Max BSize: " << RESET << _servers[i].getClientMaxBodySize() << std::endl;
-		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
-		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
-		while (it != _servers[i].getErrorPages().end())
-		{
-			std::cout << "   " << LIGHTRED << (*it).first << " - " << RESET << it->second << std::endl;
-			++it;
-		}
-		std::cout << CYAN << "Locations: " << _servers[i].getLocations().size() << std::endl;
-		std::vector<Location>::const_iterator itl = _servers[i].getLocations().begin();
-		while (itl != _servers[i].getLocations().end())
-		{
-			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
-			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
-			std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
-			std::cout << LIGHTRED << "      autoindex: " << RESET << itl->getAutoindex() << std::endl;
-			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << std::endl;
-			std::cout << LIGHTRED << "      modifier: " << RESET << itl->getModifier() << std::endl;
-			if (itl->getCgiPath().empty())
-			{
-				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;
-				if (!itl->getReturn().empty())
-					std::cout << LIGHTRED << "      return: " << RESET << itl->getReturn() << std::endl;
-				if (!itl->getAlias().empty())
-					std::cout << LIGHTRED << "      alias: " << RESET << itl->getAlias() << std::endl;
-			}
-			else
-			{
-				std::cout << LIGHTRED << "      cgi root: " << RESET << itl->getRootLocation() << std::endl;
-				std::cout << LIGHTRED << "      sgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
-				std::cout << LIGHTRED << "      sgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
-			}
-			++itl;
-		}
-		itl = _servers[i].getLocations().begin();
-	}
-	return (0);
-}
-/*********************************************************************************/
+//*******************************************************************
+// Getters
+//*******************************************************************
+std::vector<VirtualServers> ConfigParser::getServers() { return _servers; }
 
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
 // Remove comments from char # to \n and empty lines
 void removeCommentsAndEmptyLines(std::string &content)
 {
@@ -205,4 +162,58 @@ int ConfigParser::initParser(const std::string &configFile)
 	return (0);
 }
 
-std::vector<VirtualServers> ConfigParser::getServers() { return _servers; }
+// PRINTING servers configurations
+int ConfigParser::print()
+{
+	for (size_t i = 0; i < _servers.size(); i++)
+	{
+		std::cout << YELLOW <<  "SERVER #" << i + 1 << RESET << std::endl;
+		std::cout << CYAN << "Server name: " << RESET << _servers[i].getServerName() << std::endl;
+		std::cout << CYAN << "Root: " << RESET << _servers[i].getRoot() << std::endl;
+		std::cout << CYAN << "Index: " << RESET << _servers[i].getIndex() << std::endl;
+		
+		std::cout << CYAN << "IP:Port " << RESET << inet_ntoa(_servers[i].getIpAddress());
+		std::cout << ": " << _servers[i].getPort() << std::endl;
+
+		std::cout << CYAN << "Max Size: " << RESET << _servers[i].getClientMaxBodySize() << " bytes" << std::endl;
+		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
+		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
+		while (it != _servers[i].getErrorPages().end())
+		{
+			std::cout << "   " << LIGHTRED << (*it).first << " - " << RESET << it->second << std::endl;
+			++it;
+		}
+		std::cout << CYAN << "Locations: " << _servers[i].getLocations().size() << std::endl;
+		std::vector<Location>::const_iterator itl = _servers[i].getLocations().begin();
+		while (itl != _servers[i].getLocations().end())
+		{
+			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
+			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
+			std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
+			std::cout << LIGHTRED << "      autoindex: " << RESET << itl->getAutoindex() << std::endl;
+			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << std::endl;
+			std::cout << LIGHTRED << "      modifier: " << RESET ;
+			if (!itl->getModifier().empty())
+				std::cout << itl->getModifier() << std::endl;
+			else
+				std::cout << "None" << std::endl;
+			if (itl->getCgiPath().empty())
+			{
+				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;
+				if (!itl->getReturn().empty())
+					std::cout << LIGHTRED << "      return: " << RESET << itl->getReturn() << std::endl;
+				if (!itl->getAlias().empty())
+					std::cout << LIGHTRED << "      alias: " << RESET << itl->getAlias() << std::endl;
+			}
+			else
+			{
+				std::cout << LIGHTRED << "      cgi root: " << RESET << itl->getRootLocation() << std::endl;
+				std::cout << LIGHTRED << "      sgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
+				std::cout << LIGHTRED << "      sgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
+			}
+			++itl;
+		}
+		itl = _servers[i].getLocations().begin();
+	}
+	return (0);
+}

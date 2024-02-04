@@ -12,15 +12,15 @@
 
 #include "ConnectionManager.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 ConnectionManager::ConnectionManager() {}
-
 ConnectionManager::~ConnectionManager() {}
-
 ConnectionManager::ConnectionManager(const ConnectionManager& other)
 {
 	connections = other.connections;
 }
-
 ConnectionManager& ConnectionManager::operator=(const ConnectionManager& other)
 {
 	if (this != &other)
@@ -28,6 +28,9 @@ ConnectionManager& ConnectionManager::operator=(const ConnectionManager& other)
 	return *this;
 }
 
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
 void ConnectionManager::addConnection(Socket& socket)
 {
 	int socketFd = socket.getSocketFd();
@@ -93,7 +96,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			for (it = headers.begin(); it != headers.end(); ++it)
 				std::cout << it->first << ": " << it->second << std::endl;
 			std::cout << RESET << std::endl;
-			if (request.isValidRequest())
+			if (request.getIsValidRequest())
 			{
 				data.responseSent = false;
 				request.setValidRequest(true);
@@ -167,11 +170,15 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 	accumulatedBytes = 1024;
 	if (accumulatedBytes)
 		accumulatedBytes = 1024;
-	std::cout << "    Http complete !" << std::endl;
+	
 	const std::string endOfHeader = "\r\n\r\n";
 	if (std::search(buffer.begin(), buffer.end(),
 		endOfHeader.begin(), endOfHeader.end()) != buffer.end())
+	{
+		std::cout << "    Http complete !" << std::endl;
 		return true;
+	}
+		
 	return false;
 }
 

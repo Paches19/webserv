@@ -12,17 +12,17 @@
 
 #include "HttpResponse.hpp"
 
+//*******************************************************************
+// Constructores y destructor de la clase canónica
+//*******************************************************************
 HttpResponse::HttpResponse(void) { _statusCode = 200; }
-
 HttpResponse::~HttpResponse() {}
-
 HttpResponse::HttpResponse(const HttpResponse& copy)
 {
 	_statusCode = copy._statusCode;
 	_headers = copy._headers;
 	_body = copy._body;
 }
-
 HttpResponse& HttpResponse::operator=(const HttpResponse& rhs)
 {
 	if (this != &rhs)
@@ -34,7 +34,10 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& rhs)
 	return *this;
 }
 
-void HttpResponse::addHeader(const std::string& key, const std::string& value)
+//*******************************************************************
+// Setters
+//*******************************************************************
+void HttpResponse::setHeader(const std::string& key, const std::string& value)
 {
 	_headers[key] = value;
 }
@@ -44,11 +47,14 @@ void HttpResponse::setBody(const std::string& bodyContent)
 	_body = bodyContent;
 	std::ostringstream convert; // Crea un stringstream
     convert << _body.size(); // Inserta el valor numérico en el stream
-    addHeader("Content-Length", convert.str());
+    setHeader("Content-Length", convert.str());
 }
 
 void HttpResponse::setStatusCode(int code) {	_statusCode = code; }
 
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
 std::string HttpResponse::buildResponse()
 {
 	std::string response = "HTTP/1.1 ";

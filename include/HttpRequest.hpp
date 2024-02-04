@@ -28,9 +28,9 @@ class HttpRequest
 		bool		_isComplete;
 		std::map<std::string, std::string> _headers;
 
-		void parseRequest(const std::string& rawRequest);
-		void parseFirstLine(const std::string& line);
-		void parseHeaders(const std::string& headersStr);
+		void _parseRequest(const std::string& rawRequest);
+		void _parseFirstLine(const std::string& line);
+		void _parseHeaders(const std::string& headersStr);
 	
 	public:
 		HttpRequest();
@@ -45,14 +45,14 @@ class HttpRequest
 		std::string getHttpVersion();
 		std::string getBody();
 		std::map<std::string, std::string> getHeaders();
+		bool	getIsValidRequest();
+		bool 	getIsCompleteRequest();
+		std::string	getErrorMessage();
 
 		void		setValidRequest(bool validity);
 		void		setCompleteRequest(bool complete);
 		
-		bool 		isValidRequest();
-		bool 		isCompleteRequest();
 
-		std::string	errorMessage();
 		void		invalidRequest();
 };
 
