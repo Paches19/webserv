@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:06:05 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 13:46:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -285,12 +285,10 @@ void Server::run(std::vector<VirtualServers> servers)
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						bestServer = getBestServer(requestReceive, i, servers);
-						processRequest(requestReceive, bestServer, *dataSocket);				
+						processRequest(requestReceive, bestServer, dataSocket);
 					}
 					else if (!requestReceive.getIsValidRequest())
-					{
 						--i;
-					}
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
@@ -299,8 +297,10 @@ void Server::run(std::vector<VirtualServers> servers)
 				{
 					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						_connectionManager.writeData(*(_clientSockets[j]), bestServer, _responsesToSend[j]);
-						_pollFds[i].events = POLLIN;
+						std::cout << "\nENTRO POLLOUT por fd igual" << std::endl;
+						std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
+						_connectionManager.writeData(*(_clientSockets[j]), i, _responsesToSend[_pollFds[i].fd],
+							_pollFds);
 						break ;
 					}
 				}
@@ -315,18 +315,19 @@ void Server::run(std::vector<VirtualServers> servers)
 					if (_clientSockets[j]->getSocketFd() == currentFd)
 					{
 						std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
-						_clientSockets.erase(_clientSockets.begin() + j);
 						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
+						--i;
+						break ;
 					}
-				};
+				}
 			}
 		}
 	}
 }
 
-void Server::processRequest(HttpRequest request, VirtualServers server, Socket socket)
+void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
 {
-	ConnectionData& data(_connectionManager.connections[socket.getSocketFd()]);
+	ConnectionData& data(_connectionManager.connections[socket->getSocketFd()]);
 
 	if (data.responseSent)
 		return;
@@ -361,7 +362,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 			errorPage += "/";
 		errorPage += server.getErrorPage(404);
 		processResponse.setBody(ConfigFile::readFile(errorPage));
-		_responsesToSend[socket.getSocketFd()] = processResponse;
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 		return ;
 	}
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
@@ -371,7 +372,44 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	if (request.getMethod() == "GET")
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
-		if (!ConfigFile::fileExistsAndReadable(resourcePath))
+		if (ConfigFile::isDirectory(resourcePath))
+		{
+			if (locationRequest->getAutoindex())
+			{
+				// Autoindex activado: generar y enviar página de índice
+				std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
+				processResponse.setStatusCode(200);
+				processResponse.setHeader("Content-Type:", "text/html");
+				processResponse.setBody(directoryIndexHTML);
+			}
+			else
+			{
+				// Autoindex desactivado: buscar archivo index por defecto
+				std::string indexPath = resourcePath;
+				if (ConfigFile::fileExistsAndReadable(indexPath))
+				{
+					// Enviar archivo index
+					std::string buffer = ConfigFile::readFile(indexPath);
+					processResponse.setStatusCode(200);
+					processResponse.setHeader("Content-Type:", getMimeType(indexPath));
+					processResponse.setBody(buffer);
+					_responsesToSend[socket->getSocketFd()] = processResponse;
+					return ;
+				}
+				else
+				{
+					// Directorio sin archivo index y autoindex desactivado
+					std::string errorPage = server.getRoot();
+					if (server.getErrorPage(403)[0] != '/')
+						errorPage += "/";
+					errorPage += server.getErrorPage(403);
+					processResponse.setBody(ConfigFile::readFile(errorPage));
+					_responsesToSend[socket->getSocketFd()] = processResponse;
+					return ;
+				}
+			}
+		}
+		else if (!ConfigFile::fileExistsAndReadable(resourcePath))
 		{
 			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
 			processResponse.setStatusCode(404);
@@ -380,55 +418,90 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 				errorPage += "/";
 			errorPage += locationRequest->getErrorPage(404);
 			processResponse.setBody(ConfigFile::readFile(errorPage));
-			_responsesToSend[socket.getSocketFd()] = processResponse;
+			_responsesToSend[socket->getSocketFd()] = processResponse;
 			return ;
 		}
 		std::cout << "    File exists and is readable" << std::endl;
 		std::string buffer = ConfigFile::readFile(resourcePath);
+		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
 		{
+			std::cout << "buffer empty" << std::endl;
 			//Error del archivo:  vacío o no se pudo abrir
 			processResponse.setStatusCode(500);
 			processResponse.setBody("500 Internal Server Error");
 			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(500)));
+			_responsesToSend[socket->getSocketFd()] = processResponse;
 			return;
 		}
-
-		std::cout << "   body " << buffer << std::endl;
+		
 		if (buffer.length() > locationRequest->getMaxBodySize())
 		{
+			std::cerr << "body demasiado largo " << std::endl;
 			// Si el archivo es demasiado grande, enviar respuesta 413
 			processResponse.setStatusCode(413);
 			processResponse.setBody("413 Payload Too Large");
 			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(413)));
+			_responsesToSend[socket->getSocketFd()] = processResponse;
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
+		std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
-		processResponse.setBody(std::string(buffer, buffer.length()));
-		_responsesToSend[socket.getSocketFd()] = processResponse;
-		
+		processResponse.setBody(buffer);
+		std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
+		std::cout << "Response guardada en fd: " << socket->getSocketFd() << std::endl;
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else if (request.getMethod() == "POST")
 	{
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
 		processResponse.setBody("");
-		_responsesToSend[socket.getSocketFd()] = processResponse;
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else if (request.getMethod() == "DELETE")
 	{
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
 		processResponse.setBody("DELETE process");
-		_responsesToSend[socket.getSocketFd()] = processResponse;
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else
 	{
 		processResponse.setStatusCode(555);
 		processResponse.setBody("XXX Request not supported");
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
+}
+
+std::string Server::generateDirectoryIndex(const std::string& directoryPath)
+{
+	std::stringstream html;
+	html << "<html>\n<head>\n<title>Index of " << directoryPath << "</title>\n</head>\n";
+	html << "<body>\n<h1>Index of " << directoryPath << "</h1>\n";
+	html << "<ul>\n";
+
+	DIR* dir = opendir(directoryPath.c_str());
+	if (dir != NULL)
+	{
+		struct dirent* entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			// Filtra "." y ".."
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+				continue;
+			// Construye el enlace al archivo/directorio
+			html << "<li><a href=\"" << entry->d_name << "\">" << entry->d_name << "</a></li>\n";
+		}
+		closedir(dir);
+	}
+	else
+		html << "<p>Error opening directory.</p>\n";
+
+	html << "</ul>\n</body>\n</html>";
+	return html.str();
 }
 
 std::string Server::buildResourcePath(HttpRequest& request,
