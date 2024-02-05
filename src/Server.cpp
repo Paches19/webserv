@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 11:56:16 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 12:06:05 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -349,7 +349,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	const Location*	locationRequest = NULL;
 	
 	if (!locations.empty())
-		locationRequest = locations[0].selectLocation(request.getUri(), locations);
+		locationRequest = locations[0].selectLocation(request.getURL(), locations);
 	
 	if (locationRequest == NULL)
 	{
