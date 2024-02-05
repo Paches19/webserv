@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:04:47 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 17:22:44 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
 	std::cout << "    Bytes Read: " << bytesRead << std::endl;
-
+	// data.responseSent = false;
 	if (bytesRead > 0)
 	{
 		data.accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
@@ -98,10 +98,17 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::cout << RESET << std::endl;
 			if (request.getIsValidRequest())
 			{
-				data.responseSent = false;
+				connections[socket.getSocketFd()].responseSent = false;
 				request.setValidRequest(true);
 				request.setCompleteRequest(true);
-				_pollFds[i].events = POLLOUT;
+				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
+				std::cout << "\nPOLLOUT ON" << std::endl;
+				data.readBuffer.clear();
+				data.readBuffer.resize(1024);
+				data.accumulatedBytes = 0;
+				data.headerReceived = false;
+				connections[socket.getSocketFd()] = data;
+				return request;
 			}
 			else
 			{
@@ -109,12 +116,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				request.setValidRequest(false);
 				return request;
 			}
-			data.readBuffer.clear();
-			data.readBuffer.resize(1024);
-			data.accumulatedBytes = 0;
-			data.headerReceived = false;
-			connections[socket.getSocketFd()] = data;
-			return request;
 		}
 		connections[socket.getSocketFd()] = data;
 	}
@@ -122,42 +123,57 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets);
 		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
-		request.setValidRequest(false);
+		invalidRequest.setValidRequest(false);
 		return invalidRequest;
 	}
 	HttpRequest incompleteRequest;
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, VirtualServers &server, HttpResponse &response) 
-{
-	(void)socket;
-	(void)server;
-	(void)response;
+void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
+	std::vector<struct pollfd> &_pollFds) 
+{	
+	ConnectionData data(connections[socket.getSocketFd()]);
+	// if (data.responseSent == true)
+	// 	return ;
 
+	std::string responseStr = response.buildResponse();
 
-	// while (data.writeBuffer && data.accumulatedBytes > 0)
-	// {
-	// 	int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-	// 	std::cout << "\nRESPONSE enviada: " << std::endl;
-	// 	std::cout << CYAN << response << RESET << std::endl;
-	// 	if (bytesSent > 0)
-	// 	{
-	// 		data.accumulatedBytes -= bytesSent;
-	// 		std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-	// 	}
-	// 	else if (bytesSent == -1)
-	// 	{
-	// 		std::cerr << "Error de envio de response" << std::endl;
-	// 	}
-	// 	// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
-	// 	if (data.accumulatedBytes == 0)
-	// 	{
-	// 		delete[] data.writeBuffer;
-	// 		data.writeBuffer = NULL;
-	// 	}
-	// }
-	// data.responseSent = true;
+	data.writeBuffer = new char[responseStr.length() + 1];
+	std::strcpy(data.writeBuffer, responseStr.c_str());
+	data.accumulatedBytes = responseStr.length();
+	
+	std::cout << "\nENTRO writeData" << std::endl;
+	
+	while (data.writeBuffer && data.accumulatedBytes > 0)
+	{
+		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
+		// std::cout << "\nRESPONSE enviada: " << std::endl;
+		// std::cout << CYAN << responseStr << RESET << std::endl;
+		if (bytesSent > 0)
+		{
+			data.accumulatedBytes -= bytesSent;
+			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
+		}
+		else if (bytesSent == -1)
+		{
+			if ( data.writeBuffer)
+				delete[] data.writeBuffer;
+			data.writeBuffer = NULL;
+			std::cerr << "Error de envio de response" << std::endl;
+		}
+		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
+		if (data.accumulatedBytes == 0)
+		{
+			if ( data.writeBuffer)
+				delete[] data.writeBuffer;
+			data.writeBuffer = NULL;
+		}
+	}
+	connections[socket.getSocketFd()].responseSent = true;
+	if ( _pollFds[i].events > 0)
+		connections[socket.getSocketFd()].responseSent = true;
+	_pollFds[i].events = POLLIN | POLLERR | POLLHUP;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)

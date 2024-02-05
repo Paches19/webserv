@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/24 11:30:22 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 16:59:48 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,16 +102,8 @@ int Socket::receive(char* buffer, int length) const
 	n = ::recv(_socketFd, buffer + totalReceived, length - totalReceived, 0);
 	if (n == -1)
 	{
-		if (errno == EWOULDBLOCK || errno == EAGAIN)
-		{
-			std::cerr << "Error: recv sin datos a leer" << std::endl;
-			return -1;
-		}
-		else
-		{
-			std::cerr << "Error: receive" << std::endl;
-			return -1;
-		}
+		std::cerr << "Error: receive" << std::endl;
+		return -1;
 	}
 	else if (n == 0)
 	{

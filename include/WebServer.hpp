@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:41:48 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 12:28:47 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@
 # include <poll.h>
 # include <algorithm>
 # include <fcntl.h>
+# include <dirent.h>
 
 // Colours
 # define RESET          "\x1B[0m"

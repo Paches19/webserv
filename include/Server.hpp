@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/01 18:17:53 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 13:12:15 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,13 +42,14 @@ class Server
 		void run(std::vector<VirtualServers> servers);
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
-		void processRequest(HttpRequest request, VirtualServers server, Socket socket);
+		void processRequest(HttpRequest request, VirtualServers server, Socket* socket);
 		std::string buildResourcePath(HttpRequest& request,
 			const Location& location, VirtualServers& server);
 		std::string adjustPathForDirectory(const std::string& requestURL,
 			const std::string& basePath, const Location& location, VirtualServers& server);
 		void processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);
+		std::string generateDirectoryIndex(const std::string& directoryPath);
 
 		class ErrorException : public std::exception
 		{
