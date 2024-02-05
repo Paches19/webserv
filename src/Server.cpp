@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:46:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 17:23:56 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -277,6 +277,7 @@ void Server::run(std::vector<VirtualServers> servers)
 
 			if (ret >= 0 && _pollFds[i].revents & POLLIN)
 			{
+				// std::cout << "\nPOLLIN i: " << i << std::endl;
 				Socket* dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					_pollFds[i].fd == dataSocket->getSocketFd())
@@ -293,14 +294,18 @@ void Server::run(std::vector<VirtualServers> servers)
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
 			{
+				// std::cout << "\nPOLLOUT i: " << i << std::endl;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
 					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						std::cout << "\nENTRO POLLOUT por fd igual" << std::endl;
-						std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
+						// std::cout << "\nENTRO POLLOUT por fd igual" << std::endl;
+						// std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
+						// std::cout << "dataResponseSent preWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), i, _responsesToSend[_pollFds[i].fd],
 							_pollFds);
+						// std::cout << "dataResponseSent postWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
+						// std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
 						break ;
 					}
 				}
@@ -308,6 +313,7 @@ void Server::run(std::vector<VirtualServers> servers)
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
+				std::cout << "\nPOLLERR i: " << i << std::endl;
 				std::cout << "Conexión cerrada o error en el socket FD: " << _pollFds[i].fd << std::endl;
 				int currentFd = _pollFds[i].fd;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
@@ -327,10 +333,10 @@ void Server::run(std::vector<VirtualServers> servers)
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
 {
-	ConnectionData& data(_connectionManager.connections[socket->getSocketFd()]);
+	// ConnectionData& data(_connectionManager.connections[socket->getSocketFd()]);
 
-	if (data.responseSent)
-		return;
+	// if (data.responseSent)
+	// 	return;
 	
 	HttpResponse processResponse;
 
