@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/01 18:20:00 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 12:04:47 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,6 +106,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			else
 			{
 				std::cerr << "    Invalid request" << std::endl;
+				request.setValidRequest(false);
 				return request;
 			}
 			data.readBuffer.clear();
@@ -121,10 +122,10 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets);
 		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+		request.setValidRequest(false);
 		return invalidRequest;
 	}
 	HttpRequest incompleteRequest;
-	incompleteRequest.setValidRequest(true);
 	return incompleteRequest;
 }
 

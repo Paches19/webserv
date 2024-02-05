@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/01 18:26:06 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 11:56:16 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -348,23 +348,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket s
 	std::vector<Location> locations = server.getLocations();
 	const Location*	locationRequest = NULL;
 	
-	for (int i = 0; i < (int)locations.size(); i++)
-	{
-		std::cout << "    Searching for location: " << locations[i].getPath() << std::endl;
-		if (locations[i].getModifier() == "^~")
-		{
-			if (request.getURL() == locations[i].getPath())
-			{
-				locationRequest = &locations[i];
-				break;
-			}
-		}
-		else if (request.getURL() == locations[i].getPath())
-		{
-			locationRequest = &locations[i];
-			break;
-		}
-	}
+	if (!locations.empty())
+		locationRequest = locations[0].selectLocation(request.getUri(), locations);
 	
 	if (locationRequest == NULL)
 	{

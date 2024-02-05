@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 11:55:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 12:02:34 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 HttpRequest::HttpRequest(const std::string& rawRequest)
 {
 	this->_isValid = true;
-	this->_isComplete = true;
+	this->_isComplete = false;
 	if (rawRequest.empty())
 		invalidRequest();
 	else
@@ -99,7 +99,7 @@ void HttpRequest::_parseRequest(const std::string& rawRequest)
 		return ;
 
 	// Parsear el cuerpo (si existe)
-	if (this->_method == "GET")
+	if (this->_method == "POST")
 	{
 		std::string bodyStr;
 		while (getline(requestStream, line))
