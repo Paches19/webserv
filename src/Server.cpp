@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 17:23:56 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 18:12:36 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -380,13 +380,17 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
 		if (ConfigFile::isDirectory(resourcePath))
 		{
+			std::cout << " Es directorio " << std::endl;
 			if (locationRequest->getAutoindex())
 			{
+				std::cout << " Autoindex on " << std::endl;
 				// Autoindex activado: generar y enviar página de índice
 				std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
 				processResponse.setStatusCode(200);
 				processResponse.setHeader("Content-Type:", "text/html");
 				processResponse.setBody(directoryIndexHTML);
+				_responsesToSend[socket->getSocketFd()] = processResponse;
+				return ;
 			}
 			else
 			{
@@ -423,7 +427,9 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			if (locationRequest->getErrorPage(404)[0] != '/')
 				errorPage += "/";
 			errorPage += locationRequest->getErrorPage(404);
+			std::cout << "Error page: " << errorPage << std::endl;
 			processResponse.setBody(ConfigFile::readFile(errorPage));
+			std::cout << "read Error page: " << ConfigFile::readFile(errorPage) << std::endl;
 			_responsesToSend[socket->getSocketFd()] = processResponse;
 			return ;
 		}
@@ -492,6 +498,7 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 	DIR* dir = opendir(directoryPath.c_str());
 	if (dir != NULL)
 	{
+		
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL)
 		{
@@ -551,6 +558,8 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 		// Verificar si el archivo índice existe y es legible
 		if (ConfigFile::fileExistsAndReadable(indexPath))
 			return indexPath;
+		else
+			return fullPath;
 	}
 	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;

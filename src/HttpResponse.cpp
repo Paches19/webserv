@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:27:01 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:50:09 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/05 18:07:49 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,7 @@ std::string getStatusMessage(int statusCode)
 		case 500:
 			return "Internal Server Error";
 		default:
-			return "Unknown";
+			return "Unknown Server Error";
 	}
 }
 
