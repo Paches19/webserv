@@ -296,8 +296,11 @@ void Server::run(std::vector<VirtualServers> servers)
 						bestServer = getBestServer(requestReceive, i, servers);
 						processRequest(requestReceive, bestServer, dataSocket);
 					}
-					else if (!requestReceive.getIsValidRequest())
+					else if (!requestReceive.getIsValidRequest()) // Bad Request
+					{
 						--i;
+						createErrorPage(400, _responsesToSend[dataSocket->getSocketFd()], bestServer, dataSocket);
+					}
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
@@ -377,11 +380,6 @@ void Server::createErrorPage(short errorCode, HttpResponse &response, VirtualSer
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
 {
-	// ConnectionData& data(_connectionManager.connections[socket->getSocketFd()]);
-
-	// if (data.responseSent)
-	// 	return;
-	
 	HttpResponse processResponse;
 
 	// Configurar la respuesta
@@ -413,12 +411,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	if (request.getMethod() == "GET")
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
+		std::cout << "    return directive " << locationRequest->getReturn()[1] << std::endl;
+
 		if (ConfigFile::isDirectory(resourcePath))
 		{
-			std::cout << " Es directorio " << std::endl;
 			if (locationRequest->getAutoindex())
 			{
-				std::cout << " Autoindex on " << std::endl;
 				// Autoindex activado: generar y enviar página de índice
 				std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
 				processResponse.setStatusCode(200);
@@ -595,27 +593,17 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 void Server::processReturnDirective(const Location& locationRequest,
 	HttpResponse& processResponse)
 {
-	std::istringstream returnStream(locationRequest.getReturn());
-	int statusCode;
-	std::string urlOrText;
-
-	// Extraer el código de estado y la URL o texto opcional
-	returnStream >> statusCode;
-	std::getline(returnStream, urlOrText);
-	if (!urlOrText.empty() && urlOrText[0] == ' ')
-		urlOrText.erase(0, 1); // Elimina el espacio inicial si existe
+	std::vector<std::string> ret = locationRequest.getReturn();
+	int statusCode = Location::ft_stoi(ret[0]);
+	std::string urlOrText = ret[1];
 
 	// Configurar la respuesta basada en el código de estado
 	processResponse.setStatusCode(statusCode);
 
 	// Si es un código de redirección, añadir la URL a la cabecera 'Location'
-	if (statusCode == 301 || statusCode == 302)
-	{
-		processResponse.setHeader("Location", urlOrText);
-		processResponse.setBody(""); // El cuerpo de una respuesta de redirección suele estar vacío
-	}
-	else
-		processResponse.setBody(urlOrText);
+	processResponse.setHeader("Location:", urlOrText);
+	
+	processResponse.setBody(""); // El cuerpo de una respuesta de redirección suele estar vacío
 }
 
 bool Server::areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)

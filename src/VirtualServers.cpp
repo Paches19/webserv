@@ -26,7 +26,6 @@ VirtualServers::VirtualServers(const VirtualServers &rhs)
 	_locations = rhs._locations;
 	_errorPages = rhs._errorPages;
 	_clientMaxBodySize = rhs._clientMaxBodySize;
-	_return = rhs._return;
 	_ipAddress = rhs._ipAddress;
 	_defaultServer = rhs._defaultServer;
 }
@@ -42,7 +41,6 @@ VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
 	_locations = rhs._locations;
 	_errorPages = rhs._errorPages;
 	_clientMaxBodySize = rhs._clientMaxBodySize;
-	_return = rhs._return;
 	_ipAddress = rhs._ipAddress;
 	_defaultServer = rhs._defaultServer;
 	return (*this);
@@ -56,7 +54,6 @@ VirtualServers::VirtualServers(std::string &config)
 	_index = "";
 	_autoindex = false;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
-	_return = "";
 	_ipAddress.s_addr = 0;
 	_defaultServer = false;
 	// Hay que crear todas las páginas de errores. Estas son una muestra
@@ -96,8 +93,6 @@ const std::string VirtualServers::getErrorPage(short i)
 const std::map<short, std::string> &VirtualServers::getErrorPages() { return (_errorPages); }
 
 const unsigned long &VirtualServers::getClientMaxBodySize() { return (_clientMaxBodySize); }
-
-const std::string &VirtualServers::getReturn() { return (_return); }
 
 const in_addr &VirtualServers::getIpAddress() { return (_ipAddress); }
 
@@ -215,12 +210,6 @@ void VirtualServers::setClientMaxBodySize(std::string parametr)
 	_clientMaxBodySize = size;
 }
 
-void VirtualServers::setReturn(std::string parametr)
-{
-	Location::checkToken(parametr);
-	_return = parametr;
-}
-
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
@@ -325,11 +314,6 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 				server.setClientMaxBodySize(parametrs[++i]);
 				flag_max_body_size = true;
 			}
-		}
-		else if (parametrs[i] == "return" && (i + 1) < parametrs.size() && flag_loc)
-		{
-			if (server.getReturn().empty())
-				server.setReturn(parametrs[++i]);
 		}
 		else if (parametrs[i] != "}" && parametrs[i] != "{" )
 		{

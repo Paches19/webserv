@@ -57,7 +57,9 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	_root = r;
 	_autoindex = false;
 	_index = "";
-	_return = "";
+	_return.reserve(2);
+	_return.push_back("");
+	_return.push_back("");
 	_alias = "";
 	_modifier = modifier;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
@@ -97,7 +99,7 @@ const std::vector<std::string> &Location::getCgiExtension() const { return (_cgi
 
 const bool &Location::getAutoindex() const { return (_autoindex); }
 
-const std::string &Location::getReturn() const { return (_return); }
+const std::vector<std::string> &Location::getReturn() const { return (_return); }
 
 const std::string &Location::getAlias() const { return (_alias); }
 
@@ -118,10 +120,7 @@ const std::string Location::getErrorPage(short i) const
  //*******************************************************************
 void Location::setPath(std::string parametr) { _path = parametr; }
 
-void Location::setRootLocation(std::string parametr)
-{
-	_root = parametr;
-}
+void Location::setRootLocation(std::string parametr) { _root = parametr; }
 
 void Location::setMethods(std::vector<std::string> methods)
 {
@@ -142,20 +141,15 @@ void Location::setMethods(std::vector<std::string> methods)
 	}
 }
 
-void Location::setAutoindex(std::string parametr)
-{
-	if (parametr == "on" || parametr == "off")
-		_autoindex = (parametr == "on");
-	else
-		throw ErrorException("Wrong autoindex");
-}
+void Location::setAutoindex(std::string parametr) { _autoindex = (parametr == "on"); }
 
-void Location::setIndexLocation(std::string parametr)
-{
-	_index = parametr;
-}
+void Location::setIndexLocation(std::string parametr) {	_index = parametr; }
 
-void Location::setReturn(std::string parametr) { _return = parametr; }
+void Location::setReturn(std::string parametr1, std::string parametr2)
+{
+	_return[0] = parametr1;
+	_return[1] = parametr2;
+}
 
 void Location::setAlias(std::string parametr) {	_alias = parametr; }
 
@@ -163,10 +157,7 @@ void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
 
 void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
 
-void Location::setMaxBodySize(std::string parametr)
-{
-	_clientMaxBodySize = ft_stoi(parametr);
-}
+void Location::setMaxBodySize(std::string parametr) { _clientMaxBodySize = ft_stoi(parametr); }
 
 void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = parametr; }
 
@@ -249,6 +240,8 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			if (flag_autoindex)
 				throw ErrorException("Autoindex of location is duplicated");
 			checkToken(parametr[++i]);
+			if (parametr[i] != "on" && parametr[i] != "off")
+				throw ErrorException("Index of location is invalid");
 			setAutoindex(parametr[i]);
 			flag_autoindex = true;
 		}
@@ -263,10 +256,12 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		{
 			if (path == "/cgi-bin")
 				throw ErrorException("Parametr return not allow for CGI");
-			if (!getReturn().empty())
-				throw ErrorException("Return of location is duplicated");
+			std::string codeString = parametr[++i];
+			int code = ft_stoi(codeString);
+			if (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)
+				throw ErrorException("Invalid return code");
 			checkToken(parametr[++i]);
-			setReturn(parametr[i]);
+			setReturn(codeString, parametr[i]);
 		}
 		else if (parametr[i] == "alias" && (i + 1) < parametr.size())
 		{
@@ -323,7 +318,9 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			throw ErrorException("Parametr in a location is invalid");
 	}
 	setErrorPage(errorCodes);
-
+	if (getRootLocation().empty())
+		setRootLocation(_root);
+	
 	int valid = _checkLocation(*this);
 	if (valid == 1)
 		throw ErrorException("Failed CGI validation");
@@ -360,7 +357,29 @@ int Location::ft_stoi(std::string str)
 
 int Location::_checkLocation(Location &location) const
 {
-	if (location.getPath() == "/cgi-bin")
+	if (location.getPath() != "/cgi-bin")
+	{
+		if (location.getPath()[0] != '/')
+			return (2);
+		if (!location.getReturn()[1].empty())
+		{
+			std::string expath = ConfigFile::prefixPath(location.getRootLocation());
+			if (expath[expath.length() - 1] == '/')
+				expath = expath.substr(0, expath.length() - 1);
+			std::string index = location.getReturn()[1];
+			if (index[0] == '/')
+				index = index.substr(1);
+			std::string pathComplete = expath + "/" + index;
+			if (!ConfigFile::isDirectory(pathComplete))
+				return (3);	
+		}
+		if (!location.getAlias().empty() &&
+			ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getAlias()))
+			return (4);
+		if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath(), location.getIndexLocation()))
+			return (5);
+	}
+	else
 	{
 		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
 			return (1);
@@ -393,43 +412,18 @@ int Location::_checkLocation(Location &location) const
 			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
 			{
 				std::string tmp_path = *it_path;
-				if (tmp == ".py" || tmp == "*.py")
-				{
-					if (tmp_path.find("python") != std::string::npos)
-						location._extPath.insert(std::make_pair(".py", tmp_path));
-				}
-				else if (tmp == ".sh" || tmp == "*.sh")
-				{
-					if (tmp_path.find("bash") != std::string::npos)
-						location._extPath[".sh"] = tmp_path;
-				}
+				if ((tmp == ".py" || tmp == "*.py") && (tmp_path.find("python") != std::string::npos))
+					location._extPath.insert(std::make_pair(".py", tmp_path));
+				else if ((tmp == ".sh" || tmp == "*.sh") && tmp_path.find("bash") != std::string::npos)
+					location._extPath[".sh"] = tmp_path;		
 			}
 		}
 		if (location.getCgiPath().size() != location.getExtensionPath().size())
 			return (1);
 	}
-	else
-	{
-		if (location.getPath()[0] != '/')
-			return (2);
-		if (location.getRootLocation().empty()) {
-			location.setRootLocation(_root);
-		}
-		if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath(), location.getIndexLocation()))
-			return (5);
-		if (!location.getReturn().empty())
-		{
-			if (ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getReturn()))
-				return (3);
-		}
-		if (!location.getAlias().empty())
-		{
-			if (ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getAlias()))
-			 	return (4);
-		}
-	}
 	return (0);
 }
+
 const Location* Location::selectLocation(const std::string& requestURI,
 	const std::vector<Location>& locations)
 {
@@ -469,6 +463,8 @@ const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
 		{
 			longestMatch = &locations[i];
 			longestLength = locations[i].getPath().length();
+			if (!locations[i].getReturn()[1].empty())
+				return &locations[i];
 		}
 	}
 	return longestMatch;

@@ -58,6 +58,18 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 	{
 		case 200:
 			return "OK";
+		//in case of redirection
+		case 301:
+			return "Moved Permanently";
+		case 302:
+			return "Found";
+		case 303:
+			return "See Other";
+		case 307:
+			return "Temporary Redirect";
+		case 308:
+			return "Permanent Redirect";
+		//in case of client error
 		case 400:
 			return "Bad Request";
 		case 401:
@@ -72,6 +84,7 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Request Timeout";
 		case 413:
 			return "Payload Too Large";
+		//in case of server error
 		case 415:
 			return "Unsupported Media Type";
 		case 500:

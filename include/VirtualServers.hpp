@@ -29,7 +29,6 @@ class VirtualServers
 		bool					_autoindex;
 		std::vector<Location>	_locations;
 		unsigned long			_clientMaxBodySize;
-		std::string				_return;
 		bool					_defaultServer;
 		std::map<short, std::string>	_errorPages;
 		
@@ -52,7 +51,6 @@ class VirtualServers
 		const std::string getErrorPage(int short);
 		const std::map<short, std::string> &getErrorPages();
 		const unsigned long &getClientMaxBodySize();
-		const std::string &getReturn();
 		const in_addr &getIpAddress();
 		const bool &getDefaultServer();
 
@@ -63,7 +61,6 @@ class VirtualServers
 		void setAutoindex(std::string parametr);
 		void setErrorPages(std::vector<std::string> &parametr);
 		void setClientMaxBodySize(std::string parametr);
-		void setReturn(std::string parametr);
 		void setIpAddress(std::string parametr);
 	
 		class ErrorException : public std::exception

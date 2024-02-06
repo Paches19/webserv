@@ -143,7 +143,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 	std::strcpy(data.writeBuffer, responseStr.c_str());
 	data.accumulatedBytes = responseStr.length();
 	
-	std::cout << "\nENTRO writeData" << std::endl;
+	//std::cout << "\nENTRO writeData" << std::endl;
 	
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{

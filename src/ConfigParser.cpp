@@ -175,7 +175,7 @@ int ConfigParser::print()
 		std::cout << CYAN << "IP:Port " << RESET << inet_ntoa(_servers[i].getIpAddress());
 		std::cout << ": " << _servers[i].getPort() << std::endl;
 
-		std::cout << CYAN << "Max Size: " << RESET << _servers[i].getClientMaxBodySize() << " bytes" << std::endl;
+		std::cout << CYAN << "Max body size: " << RESET << _servers[i].getClientMaxBodySize() << " bytes" << std::endl;
 		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
 		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
 		while (it != _servers[i].getErrorPages().end())
@@ -189,19 +189,22 @@ int ConfigParser::print()
 		{
 			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
 			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
-			std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
-			std::cout << LIGHTRED << "      autoindex: " << RESET << itl->getAutoindex() << std::endl;
-			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << std::endl;
-			std::cout << LIGHTRED << "      modifier: " << RESET ;
-			if (!itl->getModifier().empty())
-				std::cout << itl->getModifier() << std::endl;
+			std::cout << LIGHTRED << "      autoindex: " << RESET;
+			if (!itl->getIndexLocation().empty())
+				std::cout << "off" << std::endl;
 			else
-				std::cout << "None" << std::endl;
+				std::cout << "on" << std::endl;
+			if (!itl->getIndexLocation().empty())
+				std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
+			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << " bytes" << std::endl;
+			if (!itl->getModifier().empty())
+				std::cout << LIGHTRED << "      modifier: " << RESET << itl->getModifier() << std::endl;
 			if (itl->getCgiPath().empty())
 			{
 				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;
-				if (!itl->getReturn().empty())
-					std::cout << LIGHTRED << "      return: " << RESET << itl->getReturn() << std::endl;
+				std::vector<std::string> r = itl->getReturn();
+				if (!r[1].empty())
+					std::cout << LIGHTRED << "      return: " << RESET << r[0] << " " << r[1] << std::endl;
 				if (!itl->getAlias().empty())
 					std::cout << LIGHTRED << "      alias: " << RESET << itl->getAlias() << std::endl;
 			}
