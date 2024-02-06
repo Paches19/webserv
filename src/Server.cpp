@@ -516,7 +516,6 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 	DIR* dir = opendir(directoryPath.c_str());
 	if (dir != NULL)
 	{
-		
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL)
 		{
@@ -524,7 +523,7 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 				continue;
 			// Construye el enlace al archivo/directorio
-			html << "<li><a href=\"" << entry->d_name << "\">" << entry->d_name << "</a></li>\n";
+			html << "<li><a href=\"" << directoryPath + "/"+entry->d_name << "\">" << entry->d_name << "</a></li>\n";
 		}
 		closedir(dir);
 	}
@@ -562,6 +561,8 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
+	if (fullPath[0] != '.')
+		fullPath = "." + fullPath;
 	std::cout << "    fullPath: " << fullPath << std::endl;
 
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
