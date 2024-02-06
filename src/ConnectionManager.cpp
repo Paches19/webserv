@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:39:56 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:40:03 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	{
 		std::string headers(data->readBuffer.begin(), data->readBuffer.end());
 		size_t contentLength = getContentLength(headers);
-		std::cout << "contentLength: " << contentLength << std::endl;
 		if (contentLength > 0)
 			data->readBuffer.reserve(data->readBuffer.size() + contentLength);
 	}
