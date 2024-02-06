@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 18:12:36 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:25:40 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -289,7 +289,11 @@ void Server::run(std::vector<VirtualServers> servers)
 						processRequest(requestReceive, bestServer, dataSocket);
 					}
 					else if (!requestReceive.getIsValidRequest())
-						--i;
+					{
+						if (_pollFds.size() > 1 && i > 0)
+							--i;
+					}
+						
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
@@ -563,13 +567,6 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	}
 	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
-
-	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
-	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URL
-	//if (ConfigFile::fileExistsAndReadable(fullPath))
-	//	return fullPath;
-
-	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
 	return requestURL;
 }
 
@@ -619,12 +616,12 @@ Socket* Server::handleNewConnection(int i)
 				existingSocket = *it;
 				if (areAddressesEqual(newSocket->getSocketAddr(), existingSocket->getSocketAddr()))
 				{
-					std::cout << "    Cliente existente" << std::endl;
+					std::cout << "Cliente existente" << std::endl;
 					delete newSocket;
 					return existingSocket;
 				}
 			}
-			std::cout << "    Nueva conexión";
+			std::cout << "Nueva conexión";
 			struct pollfd newPollFd;
 			newPollFd.fd = newSocket->getSocketFd();
 			newPollFd.events = POLLIN | POLLOUT;

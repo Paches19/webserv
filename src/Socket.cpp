@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 16:59:48 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:02:00 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,24 +94,20 @@ int Socket::send(const char* buffer, int length) const
 	return (n == -1) ? -1 : totalSent;
 }
 
-int Socket::receive(char* buffer, int length) const
+int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 {
-	int totalReceived = 0;
-	int n;
-	
-	n = ::recv(_socketFd, buffer + totalReceived, length - totalReceived, 0);
-	if (n == -1)
-	{
-		std::cerr << "Error: receive" << std::endl;
-		return -1;
+	int n = ::recv(_socketFd, buffer + startOffset, maxLength - startOffset, 0);
+	if (n > 0) {
+		// Lectura exitosa
+		std::cout << "Bytes recibidos: " << n << std::endl;
+	} else if (n == 0) {
+		// Conexión cerrada por el cliente
+		std::cout << "Conexion cerrada por cliente" << std::endl;
+	} else {
+		// Error de recepción
+		std::cerr << "Error en la recepcion" << std::endl;
 	}
-	else if (n == 0)
-	{
-		std::cout << "Conexion cerrada" << std::endl;
-		return 0;
-	}
-		totalReceived += n;
-	return (n <= 0) ? -1 : totalReceived;
+	return n;
 }
 
 void Socket::close()

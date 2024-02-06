@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:32:14 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 17:01:59 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:02:15 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ class Socket
 		bool	open(int port, in_addr addr);
 		bool	accept(Socket& newSocket) const;
 		int		send(const char* buffer, int length) const;
-		int		receive(char* buffer, int length) const;
+		int		receive(char* buffer, int maxLength, size_t startOffset) const;
 		void	close();
 
 };

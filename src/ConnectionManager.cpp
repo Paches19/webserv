@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 17:22:44 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:26:35 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,21 +70,35 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
 {
-	ConnectionData data(connections[socket.getSocketFd()]);
+	ConnectionData* data(&connections[socket.getSocketFd()]);
 
 	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
+
+	//Si no hay hueco en el buffer aumentamos tamaño
+	if (data->readBuffer.size() - data->accumulatedBytes == 0)
+		data->readBuffer.resize(data->readBuffer.size() + 1024);
+	if (!data->readBuffer.empty())
+	{
+		std::string headers(data->readBuffer.begin(), data->readBuffer.end());
+		size_t contentLength = getContentLength(headers);
+		std::cout << "contentLength: " << contentLength << std::endl;
+		if (contentLength > 0)
+			data->readBuffer.reserve(data->readBuffer.size() + contentLength);
+	}
+
 	// Leer datos del socket
-	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	std::cout << "    Bytes Read: " << bytesRead << std::endl;
-	// data.responseSent = false;
+	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
+	std::cout << "Bytes Read: " << bytesRead << std::endl;
+	std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
+	// data->responseSent = false;
 	if (bytesRead > 0)
 	{
-		data.accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
-
-		if (isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
+		data->accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
+		std::cout << "accumBuytes: " <<  data->accumulatedBytes << std::endl;
+		if (isHttpRequestComplete(data->readBuffer, data->accumulatedBytes))
 		{
 			// Procesar la solicitud completa
-			HttpRequest request(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+			HttpRequest request(std::string(data->readBuffer.begin(), data->readBuffer.end()));
 
 			std::cout << "\nREQUEST recibida: " << std::endl;
 			std::cout << YELLOW << "Method: " << request.getMethod() << std::endl;
@@ -95,7 +109,9 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::map<std::string, std::string>::const_iterator it;
 			for (it = headers.begin(); it != headers.end(); ++it)
 				std::cout << it->first << ": " << it->second << std::endl;
+			std::cout << "body: " << request.getBody() << std::endl;
 			std::cout << RESET << std::endl;
+			
 			if (request.getIsValidRequest())
 			{
 				connections[socket.getSocketFd()].responseSent = false;
@@ -103,26 +119,30 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				request.setCompleteRequest(true);
 				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
 				std::cout << "\nPOLLOUT ON" << std::endl;
-				data.readBuffer.clear();
-				data.readBuffer.resize(1024);
-				data.accumulatedBytes = 0;
-				data.headerReceived = false;
-				connections[socket.getSocketFd()] = data;
+				data->readBuffer.clear();
+				data->readBuffer.resize(1024);
+				data->accumulatedBytes = 0;
+				data->headerReceived = false;
+				connections[socket.getSocketFd()] = *data;
 				return request;
 			}
 			else
 			{
 				std::cerr << "    Invalid request" << std::endl;
+				data->readBuffer.clear();
+				data->readBuffer.resize(1024);
+				data->accumulatedBytes = 0;
+				data->headerReceived = false;
 				request.setValidRequest(false);
 				return request;
 			}
 		}
-		connections[socket.getSocketFd()] = data;
+		connections[socket.getSocketFd()] = *data;
 	}
 	else
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets);
-		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
 	}
@@ -162,7 +182,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 			data.writeBuffer = NULL;
 			std::cerr << "Error de envio de response" << std::endl;
 		}
-		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
+		// Si todos los datos han sido enviados se vacia completamente el buffer
 		if (data.accumulatedBytes == 0)
 		{
 			if ( data.writeBuffer)
@@ -171,37 +191,45 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 		}
 	}
 	connections[socket.getSocketFd()].responseSent = true;
-	if ( _pollFds[i].events > 0)
-		connections[socket.getSocketFd()].responseSent = true;
 	_pollFds[i].events = POLLIN | POLLERR | POLLHUP;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)
 {
-	accumulatedBytes = 1024;
-	if (accumulatedBytes)
-		accumulatedBytes = 1024;
-	
 	const std::string endOfHeader = "\r\n\r\n";
-	if (std::search(buffer.begin(), buffer.end(),
-		endOfHeader.begin(), endOfHeader.end()) != buffer.end())
+	std::vector<char>::const_iterator endOfHeaderPos =
+		std::search(buffer.begin(), buffer.end(), endOfHeader.begin(), endOfHeader.end());
+
+	bool endOfHeaderbool= false;
+	if (endOfHeaderPos != buffer.end())
+		endOfHeaderbool = true;
+	std::cout << "endOfHeader: " << endOfHeaderbool << std::endl;
+
+	if (endOfHeaderPos != buffer.end())
 	{
-		std::cout << "    Http complete !" << std::endl;
-		return true;
+		// Encabezados completos recibidos, calcular el tamaño total esperado de la solicitud
+		std::string header(buffer.begin(), endOfHeaderPos + endOfHeader.length());
+		size_t contentLength = getContentLength(header);
+		// Calcular el total de bytes recibidos hasta ahora y actualizar accumulatedBytes
+		size_t headersLength = endOfHeaderPos + endOfHeader.length() - buffer.begin();
+		accumulatedBytes = headersLength + contentLength;
+
+		// Comprobar si hemos recibido todo el cuerpo de la solicitud
+		std::cout << "buffer.size(): " << buffer.size() << std::endl;
+		std::cout << "accumulatedBytes: " << accumulatedBytes << std::endl;
+		return buffer.size() >= accumulatedBytes;
 	}
-	std::cout << "    Http incomplete !" << std::endl;
 	return false;
 }
 
-int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes)
+int ConnectionManager::getContentLength(const std::string& header)
 {
 	// Convertir el buffer actual a string para buscar el Content-Length
-	std::string header(buffer.begin(), buffer.begin() + accumulatedBytes);
-	std::size_t startPos = header.find("    Content-Length: ");
+	std::size_t startPos = header.find("Content-Length: ");
 	
 	if (startPos != std::string::npos)
 	{
-		startPos += std::string("    Content-Length: ").length();
+		startPos += std::string("Content-Length: ").length();
 		std::size_t endPos = header.find("\r\n", startPos);
 		if (endPos != std::string::npos)
 		{
