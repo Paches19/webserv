@@ -60,9 +60,12 @@ VirtualServers::VirtualServers(std::string &config)
 	_ipAddress.s_addr = 0;
 	_defaultServer = false;
 	// Hay que crear todas las páginas de errores. Estas son una muestra
+	_errorPages[400] = "error_pages/400.html";
 	_errorPages[403] = "error_pages/403.html";
 	_errorPages[404] = "error_pages/404.html";
 	_errorPages[405] = "error_pages/405.html";
+	_errorPages[413] = "error_pages/413.html";
+	_errorPages[500] = "error_pages/500.html";
 	
 	_createServer(config, *this);
 }
@@ -176,11 +179,10 @@ void VirtualServers::setAutoindex(std::string parametr)
 //   Otherwise it creates a new pair: error code - path to the file
 void VirtualServers::setErrorPages(std::vector<std::string> &parametr)
 {
-	if (parametr.empty())
-	{
-		parametr.push_back("404");
-		parametr.push_back("error_pages/404.html");
-	}
+	if (parametr.size() % 2 != 0)
+		throw ErrorException("Wrong error_page syntax");
+	if (parametr.size() == 0)
+		return;
 	for (size_t i = 0; i < parametr.size() - 1; i++)
 	{
 		short codeError = Location::ft_stoi(parametr[i]);
@@ -312,11 +314,8 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		}	
 		else if (parametrs[i] == "error_page" && (i + 1) < parametrs.size() && flag_loc)
 		{
-			++i;
-			if (Location::ft_stoi(parametrs[i]) < 100 || Location::ft_stoi(parametrs[i]) > 599)
-					throw ErrorException("Wrong error code");
-			errorCodes.push_back(parametrs[i++]);
-			Location::checkToken(parametrs[i]);	
+			errorCodes.push_back(parametrs[++i]);
+			Location::checkToken(parametrs[++i]);	
 			errorCodes.push_back(parametrs[i]);	
 		}
 		else if (parametrs[i] == "client_max_body_size" && (i + 1) < parametrs.size() && flag_loc)
@@ -350,17 +349,15 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		server.setIndex("index.html;");
 	if (server.getServerName().empty())
 		server.setServerName("localhost");
-	//Comprobar si location debe o no estar definido
-
 
 	if (ConfigFile::checkPath(server.getRoot()) == -1)
 		throw ErrorException("Root from config file not found or unreadable");
-	std::string indexPath = "." + server.getRoot() + "/" + server.getIndex();
+	std::string indexPath = server.getRoot() + "/" + server.getIndex();
 	if (!ConfigFile::fileExistsAndReadable(indexPath))
 		throw ErrorException("Index from config file not found or unreadable");
 	server.setErrorPages(errorCodes);
-	if (!server._checkErrorPages())
-		throw ErrorException("Incorrect path for error page or number of error");
+	//if (!server._checkErrorPages())
+	//	throw ErrorException("Incorrect path for error page or number of error");
 }
 
 bool VirtualServers::_checkErrorPages()
@@ -370,7 +367,7 @@ bool VirtualServers::_checkErrorPages()
 	{
 		if (it->first < 100 || it->first > 599)
 			return (false);
-		std::string completePath = "." + getRoot() + "/" + it->second;
+		std::string completePath = getRoot() + "/" + it->second;
 		if (ConfigFile::checkFile(completePath, 0) < 0 || ConfigFile::checkFile(completePath, 4) < 0)
 			return (false);
 	}

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:25:40 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 13:21:31 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,9 +85,13 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 
 	while (j < _clientSockets.size() && _clientSockets[j]->getSocketFd() != _pollFds[i].fd)
 		j++;
-	if (j == _clientSockets.size())
-		throw ErrorException("Error: no client found");
-
+	if (j == _clientSockets.size()) //No encuentra cliente
+	{
+		_errorCode = 500;
+		VirtualServers aServer;
+		return (aServer);
+	}
+	
 	int nbServer = 0; //Número de posibles servidores válidos
 	int candidates[servers.size()]; //Array de candidatos a server: 1 = candidato, 0 = no candidato
 	long unsigned firstCandidate = servers.size() - 1; //Posición del primer candidato, en el array de candidatos
@@ -106,11 +110,15 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 			candidates[k] = 0;
 	}
 	
-	// Si no encuentra servers --> ERROR
+	// Si no encuentra servers --> ERROR 404
 	if (nbServer == 0)
-		throw ErrorException("Error: no server found");
+	{
+		_errorCode = 404;
+		VirtualServers aServer;
+		return aServer;
+	}
 				
-	// Si hay varios candidadtos......
+	// Si hay varios candidatos......
 	if (nbServer > 1)
 	{
 		int possibleServers = nbServer;
@@ -206,7 +214,7 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 			}
 		}
 	}
-	std::cout << "The server selected is : " << firstCandidate << std::endl;
+	std::cout << "Server selected : " << firstCandidate << std::endl;
 	return servers[firstCandidate];
 }
 
@@ -266,6 +274,7 @@ void Server::run(std::vector<VirtualServers> servers)
 		if (ret < 0)
 		{
 			std::cerr << "Error en poll" << std::endl;
+			createErrorPage(500, _responsesToSend[_pollFds[0].fd], servers[0], _serverSockets[0]);
 			break;
 		}
 
@@ -290,10 +299,9 @@ void Server::run(std::vector<VirtualServers> servers)
 					}
 					else if (!requestReceive.getIsValidRequest())
 					{
-						if (_pollFds.size() > 1 && i > 0)
+						if (_pollFds.size() > i - 1 && i > 0)
 							--i;
 					}
-						
 				}
 			}
 			else if ((_pollFds[i].revents & POLLOUT))
@@ -347,14 +355,21 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	// Configurar la respuesta
 	std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
 	std::cout << "    Searching for URL: " << request.getURL() << std::endl;
+
+	if (server.getPort() == 0)
+	{
+		std::cout << "    Server not found" << std::endl;
+		createErrorPage(_errorCode, processResponse, server, socket);
+		return ;
+	}
 	
-	std::string frontpage = server.getRoot();
-	if (request.getURL() != "/")
-		frontpage += request.getURL();
-	if (server.getIndex()[0] != '/')
-		frontpage += "/";
-	frontpage += server.getIndex();
-	std::cout << "    frontpage = " << frontpage << std::endl;
+	// std::string frontpage = server.getRoot();
+	// if (request.getURL() != "/")
+	// 	frontpage += request.getURL();
+	// if (server.getIndex()[0] != '/')
+	// 	frontpage += "/";
+	// frontpage += server.getIndex();
+	// std::cout << "  frontpage = " << frontpage << std::endl;
 	
 	std::vector<Location> locations = server.getLocations();
 	const Location*	locationRequest = NULL;
@@ -365,14 +380,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	if (locationRequest == NULL)
 	{
 		std::cout << "    Location not found" << std::endl;
-		processResponse.setStatusCode(404);
-
-		std::string errorPage = server.getRoot();
-		if (server.getErrorPage(404)[0] != '/')
-			errorPage += "/";
-		errorPage += server.getErrorPage(404);
-		processResponse.setBody(ConfigFile::readFile(errorPage));
-		_responsesToSend[socket->getSocketFd()] = processResponse;
+		createErrorPage(404, processResponse, server, socket);
 		return ;
 	}
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
@@ -413,12 +421,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 				else
 				{
 					// Directorio sin archivo index y autoindex desactivado
-					std::string errorPage = server.getRoot();
-					if (server.getErrorPage(403)[0] != '/')
-						errorPage += "/";
-					errorPage += server.getErrorPage(403);
-					processResponse.setBody(ConfigFile::readFile(errorPage));
-					_responsesToSend[socket->getSocketFd()] = processResponse;
+					std::cout << "    Forbidden" << std::endl;
+					createErrorPage(403, processResponse, server, socket);
 					return ;
 				}
 			}
@@ -426,15 +430,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		else if (!ConfigFile::fileExistsAndReadable(resourcePath))
 		{
 			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
-			processResponse.setStatusCode(404);
-			std::string errorPage = server.getRoot();
-			if (locationRequest->getErrorPage(404)[0] != '/')
-				errorPage += "/";
-			errorPage += locationRequest->getErrorPage(404);
-			std::cout << "Error page: " << errorPage << std::endl;
-			processResponse.setBody(ConfigFile::readFile(errorPage));
-			std::cout << "read Error page: " << ConfigFile::readFile(errorPage) << std::endl;
-			_responsesToSend[socket->getSocketFd()] = processResponse;
+			std::cout << "Error: Read error page" << std::endl;
+			createErrorPage(404, processResponse, server, socket);
 			return ;
 		}
 		std::cout << "    File exists and is readable" << std::endl;
@@ -442,23 +439,17 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
 		{
-			std::cout << "buffer empty" << std::endl;
+			std::cout << "Error: buffer empty" << std::endl;
 			//Error del archivo:  vacío o no se pudo abrir
-			processResponse.setStatusCode(500);
-			processResponse.setBody("500 Internal Server Error");
-			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(500)));
-			_responsesToSend[socket->getSocketFd()] = processResponse;
+			createErrorPage(500, processResponse, server, socket);
 			return;
 		}
 		
 		if (buffer.length() > locationRequest->getMaxBodySize())
 		{
-			std::cerr << "body demasiado largo " << std::endl;
 			// Si el archivo es demasiado grande, enviar respuesta 413
-			processResponse.setStatusCode(413);
-			processResponse.setBody("413 Payload Too Large");
-			//processResponse.setBody(ConfigFile::readFile(server.getRoot() + "/" + locationRequest->getErrorPage(413)));
-			_responsesToSend[socket->getSocketFd()] = processResponse;
+			std::cerr << "body demasiado largo " << std::endl;
+			createErrorPage(413, processResponse, server, socket);
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
@@ -486,10 +477,46 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	}
 	else
 	{
-		processResponse.setStatusCode(555);
-		processResponse.setBody("XXX Request not supported");
+		std::cerr << "Request not supported " << std::endl;
+		createErrorPage(555, processResponse, server, socket);
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
+}
+
+
+std::string Server::createBodyErrorPage(short &errorCode)
+{
+	HttpResponse msg;
+	std::ostringstream errorCodeS;
+	errorCodeS << errorCode;
+	std::string errorPage = "<html>\n<head>\n<title>Error " + errorCodeS.str() + "</title>\n</head>\n";
+		errorPage += "<body>\n<h1>Error " + errorCodeS.str() + "</h1>\n";
+		errorPage += "<p>" + errorCodeS.str() + " " + msg.getStatusMessage(errorCode) + "</p>\n";
+		errorPage += "</body>\n</html>";
+	return errorPage;
+}
+
+void Server::createErrorPage(short errorCode, HttpResponse &response, VirtualServers &server, Socket* socket)
+{
+	response.setStatusCode(errorCode);
+	
+	std::string errorPage1 = server.getRoot();
+	std::string errorPage2 = server.getErrorPage(errorCode);
+
+	if (errorPage2 == "")
+		response.setBody(createBodyErrorPage(errorCode));
+	else if (errorPage2[0] != '/')
+		errorPage2 = "/" + errorPage2;
+	errorPage2 = errorPage1 + errorPage2;
+	std::cout << "Intento acceder a " << errorPage2 << std::endl;
+	if (ConfigFile::fileExistsAndReadable(errorPage2))
+	{
+		std::string bodyFromFile = ConfigFile::readFile(errorPage2);
+		response.setBody(bodyFromFile);
+	}
+	else
+		response.setBody(createBodyErrorPage(errorCode));
+	_responsesToSend[socket->getSocketFd()] = response;
 }
 
 std::string Server::generateDirectoryIndex(const std::string& directoryPath)
@@ -502,7 +529,6 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 	DIR* dir = opendir(directoryPath.c_str());
 	if (dir != NULL)
 	{
-		
 		struct dirent* entry;
 		while ((entry = readdir(dir)) != NULL)
 		{
@@ -510,7 +536,7 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 				continue;
 			// Construye el enlace al archivo/directorio
-			html << "<li><a href=\"" << entry->d_name << "\">" << entry->d_name << "</a></li>\n";
+			html << "<li><a href=\"" << directoryPath + "/"+entry->d_name << "\">" << entry->d_name << "</a></li>\n";
 		}
 		closedir(dir);
 	}
@@ -545,9 +571,11 @@ std::string Server::buildResourcePath(HttpRequest& request,
 std::string Server::adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
 										const Location& location, VirtualServers& server)
 {
-	std::string fullPath = basePath;
+std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
+	if (fullPath[0] != '.')
+		fullPath = "." + fullPath;
 	std::cout << "    fullPath: " << fullPath << std::endl;
 
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
@@ -567,6 +595,7 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	}
 	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
+		
 	return requestURL;
 }
 

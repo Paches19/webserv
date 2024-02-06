@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:27:01 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 18:07:49 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 13:14:05 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ std::string 	HttpResponse::getBody() { return _body; }
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
-std::string getStatusMessage(int statusCode)
+std::string HttpResponse::getStatusMessage(int statusCode)
 {
 	switch (statusCode)
 	{
@@ -71,8 +71,18 @@ std::string getStatusMessage(int statusCode)
 			return "Forbidden";
 		case 404:
 			return "Not Found";
+		case 405:
+			return "Method Not Allowed";
+		case 408:
+			return "Request Timeout";
+		case 413:
+			return "Payload Too Large";
+		case 415:
+			return "Unsupported Media Type";
 		case 500:
 			return "Internal Server Error";
+		case 555:
+			return "Request not supported";
 		default:
 			return "Unknown Server Error";
 	}

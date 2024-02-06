@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:12:15 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 13:07:00 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class Server
 		ConnectionManager _connectionManager;
 		std::vector<struct pollfd> _pollFds;
 		std::map<int, HttpResponse> _responsesToSend;
+		short _errorCode;
 	
 	public:
 		Server();
@@ -35,11 +36,14 @@ class Server
 		Server(const Server& other);
 		Server& operator=(const Server& other);
 
+		void createErrorPage(short errorCode, HttpResponse &response,
+				VirtualServers &server, Socket* socket);
 		std::string getMimeType(const std::string& filePath);
 		VirtualServers getBestServer(HttpRequest &request, size_t i, 
 			std::vector<VirtualServers> servers);
 		
 		void run(std::vector<VirtualServers> servers);
+		
 		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 		Socket* handleNewConnection(int i);
 		void processRequest(HttpRequest request, VirtualServers server, Socket* socket);
@@ -50,6 +54,7 @@ class Server
 		void processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);
 		std::string generateDirectoryIndex(const std::string& directoryPath);
+		std::string createBodyErrorPage(short &errorCode);
 
 		class ErrorException : public std::exception
 		{

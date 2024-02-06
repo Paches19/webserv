@@ -61,12 +61,18 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	_alias = "";
 	_modifier = modifier;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
+	//Páginas de error por defecto (Las mismas que el server)
+	_errorPages[400] = "error_pages/400.html";
+	_errorPages[403] = "error_pages/403.html";
+	_errorPages[404] = "error_pages/404.html";
+	_errorPages[405] = "error_pages/405.html";
+	_errorPages[413] = "error_pages/413.html";
+	_errorPages[500] = "error_pages/500.html";
+	//Métodos implementados
 	_methods.reserve(5);
 	_methods.push_back(1); // GET
 	_methods.push_back(0); // POST
 	_methods.push_back(0); // DELETE
-	_methods.push_back(0); // PUT
-	_methods.push_back(0); // HEAD
 
 	// Configuración de los parámetros de la localización
 	configureLocation(path, parametr);
@@ -114,8 +120,6 @@ void Location::setPath(std::string parametr) { _path = parametr; }
 
 void Location::setRootLocation(std::string parametr)
 {
-	if (ConfigFile::getTypePath(parametr) != 2)
-		throw ErrorException("root of location");
 	_root = parametr;
 }
 
@@ -124,8 +128,6 @@ void Location::setMethods(std::vector<std::string> methods)
 	_methods[0] = 0;
 	_methods[1] = 0;
 	_methods[2] = 0;
-	_methods[3] = 0;
-	_methods[4] = 0;
 
 	for (size_t i = 0; i < methods.size(); i++)
 	{
@@ -135,12 +137,8 @@ void Location::setMethods(std::vector<std::string> methods)
 			_methods[1] = 1;
 		else if (methods[i] == "DELETE")
 			_methods[2] = 1;
-		else if (methods[i] == "PUT")
-			_methods[3] = 1;
-		else if (methods[i] == "HEAD")
-			_methods[4] = 1;
 		else
-			throw ErrorException("Allow method not supported " + methods[i]);
+			throw ErrorException("Method not supported " + methods[i]);
 	}
 }
 
@@ -154,8 +152,8 @@ void Location::setAutoindex(std::string parametr)
 
 void Location::setIndexLocation(std::string parametr)
 {
-	if (parametr[0] != '/')
-		parametr = "/" + parametr;
+	// if (parametr[0] != '/')
+	// 	parametr = "/" + parametr;
 	_index = parametr;
 }
 
@@ -169,13 +167,13 @@ void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = e
 
 void Location::setMaxBodySize(std::string parametr)
 {
-	for (size_t i = 0; i < parametr.length(); i++)
-	{
-		if (parametr[i] < '0' || parametr[i] > '9')
-			throw ErrorException("Wrong syntax: client_max_body_size");
-	}
-	if (!ft_stoi(parametr))
-		throw ErrorException("Wrong syntax: client_max_body_size");
+	// for (size_t i = 0; i < parametr.length(); i++)
+	// {
+	// 	if (parametr[i] < '0' || parametr[i] > '9')
+	// 		throw ErrorException("Wrong syntax: client_max_body_size");
+	// }
+	// if (!ft_stoi(parametr))
+	// 	throw ErrorException("Wrong syntax: client_max_body_size");
 	_clientMaxBodySize = ft_stoi(parametr);
 }
 
@@ -185,11 +183,10 @@ void Location::setModifier(std::string parametr) { _modifier = parametr; }
 
 void Location::setErrorPage(std::vector<std::string> &parametr)
 {
-	if (parametr.empty())
-	{
-		parametr.push_back("404");
-		parametr.push_back("error_pages/404.html");
-	}
+	if (parametr.size() % 2 != 0)
+			throw ErrorException("Wrong error_page syntax");
+	if (parametr.size() == 0)
+		return;
 	for (size_t i = 0; i < parametr.size() - 1; i++)
 	{
 		short codeError = ft_stoi(parametr[i]);
@@ -197,8 +194,6 @@ void Location::setErrorPage(std::vector<std::string> &parametr)
 			throw ErrorException ("Incorrect error code: " + parametr[i]);
 		i++;
 		std::string path = parametr[i];
-		if (path[0] != '/')
-			path = "/" + path;
 		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
 		if (it != _errorPages.end())
 			_errorPages[codeError] = path;
@@ -221,18 +216,16 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 	{
 		if (parametr[i] == "error_page" && (i + 1) < parametr.size())
 		{
-			++i;
-			if (ft_stoi(parametr[i]) < 100 || ft_stoi(parametr[i]) > 599)
-					throw ErrorException("Wrong error code");
-			errorCodes.push_back(parametr[i++]);
-			checkToken(parametr[i]);	
+			errorCodes.push_back(parametr[++i]);
+			checkToken(parametr[++i]);	
 			errorCodes.push_back(parametr[i]);	
 		}
 		else if (parametr[i] == "root" && (i + 1) < parametr.size())
 		{
 			checkToken(parametr[++i]);
-			if (ConfigFile::getTypePath("." + parametr[i]) == 2)
-				setRootLocation(parametr[i]);
+			if (ConfigFile::getTypePath(parametr[i]) != 2)
+				throw ErrorException("Root of location");
+			setRootLocation(parametr[i]);
 		}
 		
 		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())
@@ -340,9 +333,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 	}
 	setErrorPage(errorCodes);
 
-	/*
 	int valid = _checkLocation(*this);
-
 	if (valid == 1)
 		throw ErrorException("Failed CGI validation");
 	else if (valid == 2)
@@ -351,7 +342,6 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		throw ErrorException("Failed redirection file in location validation");
 	else if (valid == 4)
 		throw ErrorException("Failed alias file in location validation");
-	*/
 }
 
 void Location::checkToken(std::string &parametr)
@@ -504,14 +494,6 @@ bool Location::startsWith(const std::string& str, const std::string& prefix)
 std::string Location::getPrintMethods() const
 {
 	std::string res;
-	if (_methods[4])
-		res.insert(0, "HEAD");
-	if (_methods[3])
-	{
-		if (!res.empty())
-			res.insert(0, ", ");
-		res.insert(0, "PUT");
-	}
 	if (_methods[2])
 	{
 		if (!res.empty())

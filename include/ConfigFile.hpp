@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:49:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:54:37 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class ConfigFile
 		static int 	isFileExistAndReadable(std::string path, std::string index);
 		static bool isDirectory(std::string& path);
 		static bool fileExistsAndReadable(std::string& filePath);
+		static std::string prefixPath(std::string const path);
 };
 
 #endif // CONFIGFILE_HPP

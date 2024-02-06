@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:40:03 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 13:21:50 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,10 +197,6 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 	const std::string endOfHeader = "\r\n\r\n";
 	std::vector<char>::const_iterator endOfHeaderPos =
 		std::search(buffer.begin(), buffer.end(), endOfHeader.begin(), endOfHeader.end());
-
-	bool endOfHeaderbool= false;
-	if (endOfHeaderPos != buffer.end())
-		endOfHeaderbool = true;
 
 	if (endOfHeaderPos != buffer.end())
 	{

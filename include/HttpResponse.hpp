@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:25:48 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:44:52 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 13:07:59 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,8 @@ class HttpResponse
 		void 	setBody(const std::string& bodyContent);
 		void	setHeader(const std::string& key, const std::string& value);
 
-		std::string 	getBody();
+		std::string getBody();
+		std::string getStatusMessage(int statusCode);
 
 		std::string	buildResponse();
 };
