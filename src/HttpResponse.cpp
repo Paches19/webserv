@@ -47,17 +47,12 @@ void HttpResponse::setBody(const std::string& bodyContent)
 	_body = bodyContent;
 }
 
-void HttpResponse::setStatusCode(int code) {	_statusCode = code; }
+void HttpResponse::setStatusCode(int code) { _statusCode = code; }
 
 //*******************************************************************
 // Getters
 //*******************************************************************
-std::string 	HttpResponse::getBody() { return _body; }
-
-//*******************************************************************
-// Métodos de la clase
-//*******************************************************************
-std::string getStatusMessage(int statusCode)
+std::string HttpResponse::getStatusMessage(int statusCode)
 {
 	switch (statusCode)
 	{
@@ -71,6 +66,14 @@ std::string getStatusMessage(int statusCode)
 			return "Forbidden";
 		case 404:
 			return "Not Found";
+		case 405:
+			return "Method Not Allowed";
+		case 408:
+			return "Request Timeout";
+		case 413:
+			return "Payload Too Large";
+		case 415:
+			return "Unsupported Media Type";
 		case 500:
 			return "Internal Server Error";
 		default:
@@ -78,6 +81,11 @@ std::string getStatusMessage(int statusCode)
 	}
 }
 
+std::string 	HttpResponse::getBody() { return _body; }
+
+//*******************************************************************
+// Métodos de la clase
+//*******************************************************************
 std::string HttpResponse::buildResponse()
 {
 	std::stringstream response;
@@ -110,4 +118,3 @@ std::string HttpResponse::buildResponse()
 
 	return response.str();
 }
-

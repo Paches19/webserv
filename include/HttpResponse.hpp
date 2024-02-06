@@ -28,12 +28,11 @@ class HttpResponse
 		HttpResponse(const HttpResponse& copy);
 		HttpResponse& operator=(const HttpResponse& rhs);
 
-		void 	setStatusCode(int code);
-		void 	setBody(const std::string& bodyContent);
+		void setStatusCode(int code);
+		void	setBody(const std::string& bodyContent);
 		void	setHeader(const std::string& key, const std::string& value);
-
-		std::string 	getBody();
-
+		std::string getBody();
+		std::string getStatusMessage(int statusCode);
 		std::string	buildResponse();
 };
 

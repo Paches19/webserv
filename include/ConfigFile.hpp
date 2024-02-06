@@ -37,6 +37,7 @@ class ConfigFile
 		static int 	isFileExistAndReadable(std::string path, std::string index);
 		static bool isDirectory(std::string& path);
 		static bool fileExistsAndReadable(std::string& filePath);
+		static std::string prefixPath(std::string const path);
 };
 
 #endif // CONFIGFILE_HPP

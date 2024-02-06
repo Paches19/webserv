@@ -18,6 +18,7 @@
 # include "ConnectionManager.hpp"
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
+# include "HttpResponse.hpp"
 
 class Server
 {
@@ -27,6 +28,7 @@ class Server
 		ConnectionManager _connectionManager;
 		std::vector<struct pollfd> _pollFds;
 		std::map<int, HttpResponse> _responsesToSend;
+		short _errorCode;
 	
 	public:
 		Server();
@@ -35,6 +37,8 @@ class Server
 		Server(const Server& other);
 		Server& operator=(const Server& other);
 
+		void createErrorPage(short errorCode, HttpResponse &response,
+			VirtualServers &server, Socket* socket);
 		std::string getMimeType(const std::string& filePath);
 		VirtualServers getBestServer(HttpRequest &request, size_t i, 
 			std::vector<VirtualServers> servers);
@@ -50,6 +54,7 @@ class Server
 		void processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);
 		std::string generateDirectoryIndex(const std::string& directoryPath);
+		std::string createBodyErrorPage(short &errorCode);
 
 		class ErrorException : public std::exception
 		{
