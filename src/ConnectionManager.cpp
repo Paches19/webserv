@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:26:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:33:16 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -234,20 +234,11 @@ int ConnectionManager::getContentLength(const std::string& header)
 		if (endPos != std::string::npos)
 		{
 			std::string contentLengthValue = header.substr(startPos, endPos - startPos);
-			try
-			{
-				std::istringstream iss(contentLengthValue);
-				int contentLength;
-				if (iss >> contentLength)
-					return contentLength;
-				else
-					std::cerr << "Throw exception" << std::endl;		
-			}
-			catch (const std::exception& e)
-			{
-			// Manejar excepción o valor no válido
-			}
+			std::istringstream iss(contentLengthValue);
+			int contentLength;
+			if (iss >> contentLength)
+				return contentLength;
 		}
 	}
-	return 0; // Retorna 0 si no se encuentra el encabezado Content-Length
+	return 0;
 }
