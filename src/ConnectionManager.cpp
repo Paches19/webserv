@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:33:16 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/06 12:39:56 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,13 +88,12 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
-	std::cout << "Bytes Read: " << bytesRead << std::endl;
-	std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
+	// std::cout << "Bytes Read: " << bytesRead << std::endl;
+	// std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
 	// data->responseSent = false;
 	if (bytesRead > 0)
 	{
 		data->accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
-		std::cout << "accumBuytes: " <<  data->accumulatedBytes << std::endl;
 		if (isHttpRequestComplete(data->readBuffer, data->accumulatedBytes))
 		{
 			// Procesar la solicitud completa
@@ -203,7 +202,6 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 	bool endOfHeaderbool= false;
 	if (endOfHeaderPos != buffer.end())
 		endOfHeaderbool = true;
-	std::cout << "endOfHeader: " << endOfHeaderbool << std::endl;
 
 	if (endOfHeaderPos != buffer.end())
 	{
@@ -215,8 +213,6 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 		accumulatedBytes = headersLength + contentLength;
 
 		// Comprobar si hemos recibido todo el cuerpo de la solicitud
-		std::cout << "buffer.size(): " << buffer.size() << std::endl;
-		std::cout << "accumulatedBytes: " << accumulatedBytes << std::endl;
 		return buffer.size() >= accumulatedBytes;
 	}
 	return false;
