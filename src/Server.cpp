@@ -213,7 +213,7 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 			}
 		}
 	}
-	std::cout << "Server selected : " << firstCandidate << std::endl;
+	std::cout << "Selected Server: " << firstCandidate << std::endl;
 	return servers[firstCandidate];
 }
 
@@ -260,7 +260,7 @@ std::string Server::getMimeType(const std::string& filePath)
 //******************************************************************************
 void Server::run(std::vector<VirtualServers> servers)
 {
-	std::cout << "\nServidor en ejecución..." << std::endl;
+	std::cout << "\nServer running..." << std::endl;
 
 	while (true)
 	{
@@ -272,9 +272,8 @@ void Server::run(std::vector<VirtualServers> servers)
 		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
 		if (ret < 0)
 		{
-			std::cerr << "Error en poll" << std::endl;
-			createErrorPage(500, _responsesToSend[_pollFds[0].fd], servers[0], _serverSockets[0]);
-			break;
+			std::cerr << "Poll error !" << std::endl;
+			//break;
 		}
 
 		// Revisar si hay nuevas conexiones en el socket del servidor
@@ -315,8 +314,8 @@ void Server::run(std::vector<VirtualServers> servers)
 						// std::cout << "dataResponseSent preWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), i, _responsesToSend[_pollFds[i].fd],
 							_pollFds);
-						// std::cout << "dataResponseSent postWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
-						// std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
+						//std::cout << "dataResponseSent postWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
+						//std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
 						break ;
 					}
 				}
@@ -324,22 +323,21 @@ void Server::run(std::vector<VirtualServers> servers)
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
-				std::cout << "\nPOLLERR i: " << i << std::endl;
-				std::cout << "Conexión cerrada o error en el socket FD: " << _pollFds[i].fd << std::endl;
+				std::cout << "Connection closed or error in socket FD: " << _pollFds[i].fd << std::endl;
 				int currentFd = _pollFds[i].fd;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
 					if (_clientSockets[j]->getSocketFd() == currentFd)
 					{
-						std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
+						std::cout << "Client socket erased: " << _clientSockets[j]->getSocketFd() << std::endl;
 						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
 						--i;
 						break ;
 					}
 				}
 			}
-		}
-	}
+		} // Fin del bucle for (recorre todos los file descriptors que se están escuchando)
+	} // Fin del bucle while (always true)
 }
 
 
@@ -367,7 +365,6 @@ void Server::createErrorPage(short errorCode, HttpResponse &response, VirtualSer
 	else if (errorPage2[0] != '/')
 		errorPage2 = "/" + errorPage2;
 	errorPage2 = errorPage1 + errorPage2;
-	std::cout << "Intento acceder a " << errorPage2 << std::endl;
 	if (ConfigFile::fileExistsAndReadable(errorPage2))
 	{
 		std::string bodyFromFile = ConfigFile::readFile(errorPage2);
@@ -383,7 +380,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	HttpResponse processResponse;
 
 	// Configurar la respuesta
-	std::cout << "\nProcesando REQUEST: " << request.getMethod() << std::endl;
+	std::cout << "\nProcessing REQUEST... " << request.getMethod() << std::endl;
 	std::cout << "    Searching for URL: " << request.getURL() << std::endl;
 	
 	if (server.getPort() == 0)
@@ -406,13 +403,13 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	}
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
 	std::string resourcePath = buildResourcePath(request, *locationRequest, server);
+	//if (request.getURL() == "/favicon.ico")
+	//	resourcePath = locationRequest->getRootLocation() + "/favicon.ico";
 	std::cout << "    Resource path: " << resourcePath << std::endl;
 
 	if (request.getMethod() == "GET")
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
-		std::cout << "    return directive " << locationRequest->getReturn()[1] << std::endl;
-
 		if (ConfigFile::isDirectory(resourcePath))
 		{
 			if (locationRequest->getAutoindex())
@@ -442,7 +439,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 				else
 				{
 					// Directorio sin archivo index y autoindex desactivado
-					std::cout << "    Forbidden" << std::endl;
+					std::cout << "Error: Forbidden" << std::endl;
 					createErrorPage(403, processResponse, server, socket);
 					return ;
 				}
@@ -455,7 +452,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(404, processResponse, server, socket);
 			return ;
 		}
-		std::cout << "    File exists and is readable" << std::endl;
+		//std::cout << "    File exists and is readable" << std::endl;
 		std::string buffer = ConfigFile::readFile(resourcePath);
 		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
@@ -468,18 +465,18 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		
 		if (buffer.length() > locationRequest->getMaxBodySize())
 		{
-			std::cerr << "body demasiado largo " << std::endl;
+			std::cerr << "Error: Body too long" << std::endl;
 			// Si el archivo es demasiado grande, enviar respuesta 413
 			createErrorPage(413, processResponse, server, socket);
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
-		std::cout << "buffer exito" << std::endl;
+		//std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
 		processResponse.setBody(buffer);
-		std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
-		std::cout << "Response guardada en fd: " << socket->getSocketFd() << std::endl;
+		//std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
+		//std::cout << "Response guardada en fd: " << socket->getSocketFd() << std::endl;
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else if (request.getMethod() == "POST")
@@ -561,8 +558,8 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 		fullPath += requestURL;
 	if (fullPath[0] != '.')
 		fullPath = "." + fullPath;
-	std::cout << "    fullPath: " << fullPath << std::endl;
-
+	
+	//std::cout << "    fullPath: " << fullPath << std::endl;
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 	// Comprobar si la ruta completa apunta a un directorio
 	if (ConfigFile::isDirectory(fullPath))
@@ -626,12 +623,12 @@ Socket* Server::handleNewConnection(int i)
 				existingSocket = *it;
 				if (areAddressesEqual(newSocket->getSocketAddr(), existingSocket->getSocketAddr()))
 				{
-					std::cout << "    Cliente existente" << std::endl;
+					//std::cout << "    Cliente existente" << std::endl;
 					delete newSocket;
 					return existingSocket;
 				}
 			}
-			std::cout << "    Nueva conexión";
+			//std::cout << "    Nueva conexión";
 			struct pollfd newPollFd;
 			newPollFd.fd = newSocket->getSocketFd();
 			newPollFd.events = POLLIN | POLLOUT;
@@ -643,7 +640,7 @@ Socket* Server::handleNewConnection(int i)
 		else
 		{
 			delete newSocket;
-			std::cerr << "Error al aceptar nueva conexión" << std::endl;
+			std::cerr << "Error accepting new connection" << std::endl;
 			Socket *errorSocket = NULL;
 			return errorSocket;
 		}

@@ -37,7 +37,7 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	std::cout << " agregada con Socket FD = " << socketFd << std::endl;
+	std::cout << "Conexión agregada con Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket, int i,
@@ -148,8 +148,8 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		// std::cout << "\nRESPONSE enviada: " << std::endl;
-		// std::cout << CYAN << responseStr << RESET << std::endl;
+		std::cout << "\nRESPONSE enviada: " << std::endl;
+		std::cout << CYAN << responseStr << RESET << std::endl;
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;
@@ -185,11 +185,8 @@ bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, s
 	const std::string endOfHeader = "\r\n\r\n";
 	if (std::search(buffer.begin(), buffer.end(),
 		endOfHeader.begin(), endOfHeader.end()) != buffer.end())
-	{
-		std::cout << "    Http complete !" << std::endl;
 		return true;
-	}
-	std::cout << "    Http incomplete !" << std::endl;
+
 	return false;
 }
 

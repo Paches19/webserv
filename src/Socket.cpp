@@ -52,7 +52,7 @@ bool Socket::open(int port, in_addr addr)
 	int opt = 1;
     if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
     {
-        std::cerr << "Error al configurar SO_REUSEADDR" << std::endl;
+        std::cerr << "Error configuring SO_REUSEADDR" << std::endl;
         return false;
     }
 		
@@ -107,7 +107,7 @@ int Socket::receive(char* buffer, int length) const
 	}
 	else if (n == 0)
 	{
-		std::cout << "Conexion cerrada" << std::endl;
+		std::cout << "Connection closed" << std::endl;
 		return 0;
 	}
 		totalReceived += n;
@@ -116,7 +116,7 @@ int Socket::receive(char* buffer, int length) const
 
 void Socket::close()
 {
-	std::cout << "Socket cerrado: " << this->getSocketFd() << std::endl;
+	std::cout << "Socket closed: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

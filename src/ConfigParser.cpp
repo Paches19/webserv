@@ -190,7 +190,7 @@ int ConfigParser::print()
 			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
 			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
 			std::cout << LIGHTRED << "      autoindex: " << RESET;
-			if (!itl->getIndexLocation().empty())
+			if (!itl->getAutoindex())
 				std::cout << "off" << std::endl;
 			else
 				std::cout << "on" << std::endl;
