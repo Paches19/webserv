@@ -257,11 +257,22 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			if (path == "/cgi-bin")
 				throw ErrorException("Parametr return not allow for CGI");
 			std::string codeString = parametr[++i];
-			int code = ft_stoi(codeString);
-			if (code != 301 && code != 302 && code != 303 && code != 307 && code != 308)
-				throw ErrorException("Invalid return code");
-			checkToken(parametr[++i]);
-			setReturn(codeString, parametr[i]);
+			if (codeString.find(";") != std::string::npos)
+			{
+				checkToken(codeString);
+				setReturn(codeString, "");
+			}
+			else
+			{
+				int code = ft_stoi(codeString);
+				if (code < 100 || code > 599)
+					throw ErrorException("Invalid return code");
+				std::string cad = parametr[++i];
+				while (parametr[i].find(";") == std::string::npos && i + 1 < parametr.size())
+					cad += " " + parametr[++i];
+				checkToken(cad);
+				setReturn(codeString, cad);
+			}
 		}
 		else if (parametr[i] == "alias" && (i + 1) < parametr.size())
 		{
@@ -344,11 +355,11 @@ int Location::ft_stoi(std::string str)
 {
     std::stringstream ss(str);
     if (str.length() > 10)
-        throw std::exception();
+        throw ErrorException("Number is too big");
     for (size_t i = 0; i < str.length(); ++i)
     {
         if(!isdigit(str[i]))
-            throw std::exception();
+            throw ErrorException("Invalid number");
     }
     int res;
     ss >> res;
@@ -361,19 +372,23 @@ int Location::_checkLocation(Location &location) const
 	{
 		if (location.getPath()[0] != '/')
 			return (2);
+
 		if (!location.getReturn()[1].empty())
 		{
 			std::string expath = ConfigFile::prefixPath(location.getRootLocation());
 			if (expath[expath.length() - 1] == '/')
 				expath = expath.substr(0, expath.length() - 1);
 			std::string index = location.getReturn()[1];
+			
+			if (index[0] == '\"' && index[index.length() - 1] == '\"')
+				return (0);
 			if (index[0] == '/')
 				index = index.substr(1);
 			std::string pathComplete = expath + "/" + index;
-			if (!ConfigFile::isDirectory(pathComplete))
+			if (!ConfigFile::isDirectory(pathComplete) && ConfigFile::isFileExistAndReadable(expath, index))
 				return (3);	
 		}
-		if (!location.getAlias().empty() &&
+		if (location.getAlias() != "" &&
 			ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getAlias()))
 			return (4);
 		if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath(), location.getIndexLocation()))

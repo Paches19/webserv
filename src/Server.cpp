@@ -213,7 +213,7 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 			}
 		}
 	}
-	std::cout << "Selected Server: " << firstCandidate << std::endl;
+	//std::cout << "Selected Server: " << firstCandidate << std::endl;
 	return servers[firstCandidate];
 }
 
@@ -272,7 +272,7 @@ void Server::run(std::vector<VirtualServers> servers)
 		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
 		if (ret < 0)
 		{
-			std::cerr << "Poll error !" << std::endl;
+			std::cerr << "    Poll error !" << std::endl;
 			//break;
 		}
 
@@ -323,15 +323,15 @@ void Server::run(std::vector<VirtualServers> servers)
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
-				std::cout << "Connection closed or error in socket FD: " << _pollFds[i].fd << std::endl;
+				std::cout << "    Connection closed or error in socket FD: " << _pollFds[i].fd << std::endl;
 				int currentFd = _pollFds[i].fd;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
 					if (_clientSockets[j]->getSocketFd() == currentFd)
 					{
-						std::cout << "Client socket erased: " << _clientSockets[j]->getSocketFd() << std::endl;
+						std::cout << "Client socket deleted: " << _clientSockets[j]->getSocketFd() << std::endl;
 						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
-						--i;
+						i > 0 ? --i : 0;
 						break ;
 					}
 				}
@@ -380,8 +380,9 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	HttpResponse processResponse;
 
 	// Configurar la respuesta
-	std::cout << "\nProcessing REQUEST... " << request.getMethod() << std::endl;
-	std::cout << "    Searching for URL: " << request.getURL() << std::endl;
+	std::cout << "\nProcessing REQUEST... " << std::endl;
+	std::cout << "    Method: " << request.getMethod() << std::endl;
+	std::cout << "    Requested URL: " << request.getURL() << std::endl;
 	
 	if (server.getPort() == 0)
 	{
@@ -402,9 +403,16 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		return ;
 	}
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
+	if (locationRequest->getReturn()[0] != "")
+	{
+		//std::cout << "    Return directive found" << std::endl;
+		processReturnDirective(*locationRequest, processResponse);
+		_responsesToSend[socket->getSocketFd()] = processResponse;
+		return ;
+	}
 	std::string resourcePath = buildResourcePath(request, *locationRequest, server);
-	//if (request.getURL() == "/favicon.ico")
-	//	resourcePath = locationRequest->getRootLocation() + "/favicon.ico";
+	if (request.getURL() == "/favicon.ico")
+		resourcePath = "." + locationRequest->getRootLocation() + "/favicon.ico";
 	std::cout << "    Resource path: " << resourcePath << std::endl;
 
 	if (request.getMethod() == "GET")
@@ -417,7 +425,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 				// Autoindex activado: generar y enviar página de índice
 				std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
 				processResponse.setStatusCode(200);
-				processResponse.setHeader("Content-Type:", "text/html");
+				processResponse.setHeader("Content-Type", "text/html");
 				processResponse.setBody(directoryIndexHTML);
 				_responsesToSend[socket->getSocketFd()] = processResponse;
 				return ;
@@ -431,7 +439,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 					// Enviar archivo index
 					std::string buffer = ConfigFile::readFile(indexPath);
 					processResponse.setStatusCode(200);
-					processResponse.setHeader("Content-Type:", getMimeType(indexPath));
+					processResponse.setHeader("Content-Type", getMimeType(indexPath));
 					processResponse.setBody(buffer);
 					_responsesToSend[socket->getSocketFd()] = processResponse;
 					return ;
@@ -473,7 +481,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		// Si se leyó con éxito, construir la respuesta
 		//std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
-		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
+		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
 		processResponse.setBody(buffer);
 		//std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
 		//std::cout << "Response guardada en fd: " << socket->getSocketFd() << std::endl;
@@ -482,14 +490,14 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	else if (request.getMethod() == "POST")
 	{
 		processResponse.setStatusCode(200);
-		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
+		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
 		processResponse.setBody("");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else if (request.getMethod() == "DELETE")
 	{
 		processResponse.setStatusCode(200);
-		processResponse.setHeader("Content-Type:", getMimeType(resourcePath));
+		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
 		processResponse.setBody("DELETE process");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
@@ -587,20 +595,51 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	return requestURL;
 }
 
+std::string bodyReturn(const std::string cad, const std::string& url, int statusCode)
+{
+	HttpResponse r;
+	std::stringstream ss;
+	ss << statusCode;
+
+	std::string body = "<html>\n<head>\n<title>";
+	body += ss.str() + " " +r.getStatusMessage(statusCode) + "</title>\n</head>\n";
+	body += "<body>\n<h1>" + ss.str() + " " + r.getStatusMessage(statusCode) + "</h1>\n";
+	if (url != "")
+		body += "<p><h2><font color=\"green\">Redirecting to <a href=\"" + url + "\">" + url + "</a></font></h2></p>\n";
+	else
+		body += "<p><h2><font color=\"red\">" + cad + "</font></h2></p>\n";
+	body += "</body>\n</html>";
+	return body;
+}
+
 void Server::processReturnDirective(const Location& locationRequest,
 	HttpResponse& processResponse)
 {
 	std::vector<std::string> ret = locationRequest.getReturn();
 	int statusCode = Location::ft_stoi(ret[0]);
-	std::string urlOrText = ret[1];
+	std::string urlOrText = locationRequest.getReturn()[1];
 
+	if (urlOrText[0] == '/')
+	{
+		// Si la cadena comienza con '/', es una redirección interna
+		// La URL se construye a partir de la raíz del servidor
+		// Si es un código de redirección, añadir la URL a la cabecera 'Location'
+		processResponse.setHeader("Location", urlOrText);
+		if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)
+			processResponse.setBody("");
+		else
+			processResponse.setBody(bodyReturn(locationRequest.getPath(), urlOrText, statusCode));
+	}
+	else
+	{	// si no, se envía el texto de la redirección
+		processResponse.setHeader("Location", locationRequest.getPath());
+		if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)
+			processResponse.setBody("");
+		else
+			processResponse.setBody(bodyReturn(urlOrText, "", statusCode));
 	// Configurar la respuesta basada en el código de estado
+	}
 	processResponse.setStatusCode(statusCode);
-
-	// Si es un código de redirección, añadir la URL a la cabecera 'Location'
-	processResponse.setHeader("Location:", urlOrText);
-	
-	processResponse.setBody(""); // El cuerpo de una respuesta de redirección suele estar vacío
 }
 
 bool Server::areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)
@@ -640,7 +679,7 @@ Socket* Server::handleNewConnection(int i)
 		else
 		{
 			delete newSocket;
-			std::cerr << "Error accepting new connection" << std::endl;
+			std::cerr << "    Error accepting new connection" << std::endl;
 			Socket *errorSocket = NULL;
 			return errorSocket;
 		}

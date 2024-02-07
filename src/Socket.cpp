@@ -116,7 +116,7 @@ int Socket::receive(char* buffer, int length) const
 
 void Socket::close()
 {
-	std::cout << "Socket closed: " << this->getSocketFd() << std::endl;
+	std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

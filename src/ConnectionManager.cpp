@@ -37,7 +37,7 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	std::cout << "Conexión agregada con Socket FD: " << socketFd << std::endl;
+	std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket, int i,
@@ -48,7 +48,7 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
-			std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
+			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
 			_clientSockets.erase(_clientSockets.begin() + j);
 		}
 	}
@@ -59,11 +59,11 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
     {
         socket.close();
         connections.erase(it);
-        std::cout << "\nConexión eliminada. Socket FD = " << socketFd << std::endl;
+        std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
     }
     else
     {
-        std::cout << "\nConexión no encontrada. Socket FD = " << socketFd << std::endl;
+        //std::cout << "\nConexión no encontrada. Socket FD = " << socketFd << std::endl;
     }
 }
 
@@ -72,10 +72,10 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 {
 	ConnectionData data(connections[socket.getSocketFd()]);
 
-	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
+	//std::cout << "    Socket read FD: " << socket.getSocketFd() << std::endl;
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	std::cout << "    Bytes Read: " << bytesRead << std::endl;
+	//std::cout << "    Bytes read: " << bytesRead << std::endl;
 	// data.responseSent = false;
 	if (bytesRead > 0)
 	{
@@ -86,7 +86,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data.readBuffer.begin(), data.readBuffer.end()));
 
-			std::cout << "\nREQUEST recibida: " << std::endl;
+			std::cout << "\n***** REQUEST *****" << std::endl;
 			std::cout << YELLOW << "Method: " << request.getMethod() << std::endl;
 			std::cout << "URL: " << request.getURL() << std::endl;
 			std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
@@ -94,7 +94,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::map<std::string, std::string> headers = request.getHeaders();
 			std::map<std::string, std::string>::const_iterator it;
 			for (it = headers.begin(); it != headers.end(); ++it)
-				std::cout << it->first << ": " << it->second << std::endl;
+				std::cout << "   " << it->first << ": " << it->second << std::endl;
 			std::cout << RESET << std::endl;
 			if (request.getIsValidRequest())
 			{
@@ -102,7 +102,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				request.setValidRequest(true);
 				request.setCompleteRequest(true);
 				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
-				std::cout << "\nPOLLOUT ON" << std::endl;
 				data.readBuffer.clear();
 				data.readBuffer.resize(1024);
 				data.accumulatedBytes = 0;
@@ -112,7 +111,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			}
 			else
 			{
-				std::cerr << "    Invalid request" << std::endl;
+				std::cerr << "Error: Invalid request" << std::endl;
 				request.setValidRequest(false);
 				return request;
 			}
@@ -148,7 +147,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		std::cout << "\nRESPONSE enviada: " << std::endl;
+		std::cout << "\n***** RESPONSE *****" << std::endl;
 		std::cout << CYAN << responseStr << RESET << std::endl;
 		if (bytesSent > 0)
 		{
@@ -160,7 +159,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 			if ( data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
-			std::cerr << "Error de envio de response" << std::endl;
+			std::cerr << "Error sending the response" << std::endl;
 		}
 		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
 		if (data.accumulatedBytes == 0)
@@ -203,6 +202,7 @@ int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t 
 		if (endPos != std::string::npos)
 		{
 			std::string contentLengthValue = header.substr(startPos, endPos - startPos);
+			//std::cout << "Content-Length: " << contentLengthValue << std::endl;
 			try
 			{
 				std::istringstream iss(contentLengthValue);
