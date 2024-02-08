@@ -54,6 +54,14 @@ std::string HttpRequest::getHttpVersion() {	return (this->_httpVersion); }
 
 std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_headers); }
 
+std::string HttpRequest::getHeader(const std::string& header_name) const
+{
+	std::map<std::string, std::string>::const_iterator it = _headers.find(header_name);
+	if (it != _headers.end())
+		return it->second;
+	return "";
+}
+
 std::string HttpRequest::getBody() { return (this->_body); }
 
 std::string HttpRequest::getHost()
@@ -140,4 +148,9 @@ void HttpRequest::invalidRequest()
 {
 	this->_isValid = false;
 	this->_errorMessage = "Bad Request";
+}
+
+bool HttpRequest::startsWith(const std::string& str, const std::string& prefix)
+{
+    return str.substr(0, prefix.size()) == prefix;
 }

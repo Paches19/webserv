@@ -18,7 +18,7 @@
 # include "ConnectionManager.hpp"
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
-# include "HttpResponse.hpp"
+//# include "HttpResponse.hpp"
 
 class Server
 {
@@ -48,6 +48,8 @@ class Server
 		Socket* handleNewConnection(int i);
 		void processRequest(HttpRequest request, VirtualServers server, Socket* socket);
 		std::string buildResourcePath(HttpRequest& request,
+			const Location& location, VirtualServers& server);
+		std::string buildResourcePathForPost(HttpRequest& request,
 			const Location& location, VirtualServers& server);
 		std::string adjustPathForDirectory(const std::string& requestURL,
 			const std::string& basePath, const Location& location, VirtualServers& server);

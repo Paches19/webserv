@@ -331,7 +331,7 @@ void Server::run(std::vector<VirtualServers> servers)
 					{
 						std::cout << "Client socket deleted: " << _clientSockets[j]->getSocketFd() << std::endl;
 						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
-						i > 0 ? --i : 0;
+						--i;
 						break ;
 					}
 				}
@@ -373,6 +373,24 @@ void Server::createErrorPage(short errorCode, HttpResponse &response, VirtualSer
 	else
 		response.setBody(createBodyErrorPage(errorCode));
 	_responsesToSend[socket->getSocketFd()] = response;
+}
+
+bool isValidPath(const std::string& basePath, const std::string& path)
+{
+	// Prevenir Path Traversal verificando la presencia de ".."
+	if (path.find("..") != std::string::npos)
+	{
+		return false;
+	}
+	std::string fullPath = path;
+	// Verificar si la ruta completa es un directorio permitido
+	if (!ConfigFile::isDirectory(fullPath))
+		return false; // No es un directorio o no es accesible
+
+	// Asegurarse de que el path no salga del directorio base
+	if (fullPath.find(basePath) != 0)
+		return false; // El path resultante no está dentro del basePath
+	return true; // La ruta es válida y está permitida
 }
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
@@ -489,9 +507,114 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	}
 	else if (request.getMethod() == "POST")
 	{
+		// Verificar si el Content-Length excede el máximo permitido
+		std::string contentLengthHeader = request.getHeader("Content-Length");
+		unsigned long contentLength = contentLengthHeader.empty() ? 0 : std::strtoul(contentLengthHeader.c_str(), NULL, 10);
+		if (contentLength > server.getClientMaxBodySize())
+		{
+			createErrorPage(413, processResponse, server, socket);
+			_responsesToSend[socket->getSocketFd()] = processResponse;
+			return;
+		}
+		
+		// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
+		std::string contentTypeHeader = request.getHeader("Content-Type");
+		if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
+			contentTypeHeader.find("chunked") != std::string::npos)
+		{
+			createErrorPage(501, processResponse, server, socket);
+			_responsesToSend[socket->getSocketFd()] = processResponse;
+			std::cout << "Content-Type no soportado" << std::endl;
+			return ;
+		}
+
+		// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
+		std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
+		std::cout << "Post ResourcePath: " << resourcePath << std::endl;
+		if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
+			: locationRequest->getRootLocation(), resourcePath))
+		{
+			createErrorPage(400, processResponse, server, socket);
+			_responsesToSend[socket->getSocketFd()] = processResponse;
+			std::cout << "resourcePath empty or invalid" << std::endl;
+			return ;
+		}
+
+		std::string filename;
+		std::string contentDispositionHeader = request.getHeader("Content-Disposition");
+		std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
+		size_t filenamePos = contentDispositionHeader.find("filename=");
+		if (filenamePos != std::string::npos)
+		{
+			// Extraer el nombre del archivo
+			size_t filenameStart = filenamePos + strlen("filename=");
+
+			// Buscar la primera comilla doble después del "filename="
+			size_t quotePos = contentDispositionHeader.find("\"", filenameStart);
+			if (quotePos != std::string::npos)
+			{
+				// La posición de inicio del nombre del archivo es después de la primera comilla doble
+				size_t filenameStartPos = quotePos + 1;
+
+				// Buscar la siguiente comilla doble para determinar el final del nombre del archivo
+				size_t filenameEndPos = contentDispositionHeader.find("\"", filenameStartPos);
+				if (filenameEndPos != std::string::npos)
+				{
+					// Extraer el nombre del archivo entre las comillas dobles
+					filename = contentDispositionHeader.substr(filenameStartPos, filenameEndPos - filenameStartPos);
+					std::cout << "filename: " << filename << std::endl;
+				}
+			}
+			else
+			{
+				size_t spacePos = contentDispositionHeader.find(" ", filenameStart);
+				if (spacePos != std::string::npos)
+				{
+					// Extraer el nombre del archivo entre "filename=" y el primer espacio en blanco
+					filename = contentDispositionHeader.substr(filenameStart, spacePos - filenameStart);
+					std::cout << "filename: " << filename << std::endl;
+				}
+				else
+				{
+					size_t filenameStart = filenamePos + strlen("filename=");
+					size_t filenameEnd = contentDispositionHeader.length();
+
+					// Extraer el nombre del archivo desde filenameStart hasta el final de la cadena
+					filename = contentDispositionHeader.substr(filenameStart, filenameEnd - filenameStart);
+					std::cout << "filename: " << filename << std::endl;
+				}
+			}
+		}
+		else
+		{
+			size_t lastSlashPos = request.getURL().find_last_of('/');
+			if (lastSlashPos != std::string::npos)
+				std::string filename = request.getURL().substr(lastSlashPos + 1);
+		}
+
+		// Concatenar el nombre del archivo al resourcePath
+		std::string fullResourcePath = resourcePath + "/" + filename;
+		if (fullResourcePath.size() >= 2)
+			fullResourcePath = &fullResourcePath[1];
+		std::cout << "fullResourcePath: " << fullResourcePath << std::endl;
+
+		std::ofstream outputFile(fullResourcePath.c_str(), std::ofstream::binary | std::ofstream::out);
+		if (!outputFile.is_open())
+		{
+			createErrorPage(500, processResponse, server, socket);
+			_responsesToSend[socket->getSocketFd()] = processResponse;
+			std::cout << "Error al abrir el archivo de la ruta" << std::endl;
+			return ;
+		}
+		outputFile.write(request.getBody().c_str(), request.getBody().length());
+		outputFile.close();
+
+		// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta
+		
 		processResponse.setStatusCode(200);
-		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
-		processResponse.setBody("");
+		processResponse.setHeader("Content-Type", "text/plain");
+		processResponse.setBody("Content uploaded successfully.");
+
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 	else if (request.getMethod() == "DELETE")
@@ -535,6 +658,42 @@ std::string Server::generateDirectoryIndex(const std::string& directoryPath)
 
 	html << "</ul>\n</body>\n</html>";
 	return html.str();
+}
+
+std::string Server::buildResourcePathForPost(HttpRequest& request,
+	const Location& location, VirtualServers& server)
+{
+	std::string requestURL = request.getURL();
+
+	// Eliminar parámetros de consulta
+	size_t queryPos = requestURL.find('?');
+	if (queryPos != std::string::npos)
+		requestURL = requestURL.substr(0, queryPos);
+
+	// Prevenir Path Traversal
+	if (requestURL.find("..") != std::string::npos)
+	{
+		// throw std::runtime_error("Invalid path: Path Traversal detected");
+		return "";
+	}
+
+	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
+
+	if (basePath != "/" && !basePath.empty() && basePath[basePath.length() - 1] == '/')
+        basePath.erase(basePath.length() - 1);
+
+	if (!requestURL.empty() && requestURL[0] != '/' && basePath != "/")
+        requestURL = "/" + requestURL;
+	
+	std::string resourcePath = basePath + requestURL;
+
+	// Prevenir la creación de archivos fuera del directorio raíz
+	if (!request.startsWith(resourcePath, basePath))
+	{
+		return "";
+	}
+
+	return resourcePath;
 }
 
 std::string Server::buildResourcePath(HttpRequest& request,

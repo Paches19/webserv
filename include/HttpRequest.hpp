@@ -45,6 +45,7 @@ class HttpRequest
 		std::string getHttpVersion();
 		std::string getBody();
 		std::map<std::string, std::string> getHeaders();
+		std::string getHeader(const std::string& header_name) const;
 		bool	getIsValidRequest();
 		bool 	getIsCompleteRequest();
 		std::string	getErrorMessage();
@@ -54,6 +55,7 @@ class HttpRequest
 		
 
 		void		invalidRequest();
+		bool 		startsWith(const std::string& str, const std::string& prefix);
 };
 
 #endif // HTTPREQUEST_HPP
