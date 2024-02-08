@@ -37,7 +37,7 @@ class ConnectionManager
 		void	writeData(Socket& socket,  int i,
 			HttpResponse &response, std::vector<struct pollfd> &_pollFds);
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
-		int		getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes);
+		int		getContentLength(const std::string& header);
 		
 		
 };

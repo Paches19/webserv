@@ -70,21 +70,35 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
 {
-	ConnectionData data(connections[socket.getSocketFd()]);
+	ConnectionData* data(&connections[socket.getSocketFd()]);
 
-	//std::cout << "    Socket read FD: " << socket.getSocketFd() << std::endl;
+	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
+
+	//Si no hay hueco en el buffer aumentamos tamaño
+	if (data->readBuffer.size() - data->accumulatedBytes == 0)
+		data->readBuffer.resize(data->readBuffer.size() + 1024);
+	if (!data->readBuffer.empty())
+	{
+		std::string headers(data->readBuffer.begin(), data->readBuffer.end());
+		size_t contentLength = getContentLength(headers);
+		if (contentLength > 0)
+			data->readBuffer.reserve(data->readBuffer.size() + contentLength);
+	}
+
 	// Leer datos del socket
-	int bytesRead = socket.receive(&data.readBuffer[0], data.readBuffer.size());
-	//std::cout << "    Bytes read: " << bytesRead << std::endl;
-	// data.responseSent = false;
+	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
+	// std::cout << "Bytes Read: " << bytesRead << std::endl;
+	// std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
+	// data->responseSent = false;
+
 	if (bytesRead > 0)
 	{
-		data.accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
+		data->accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
 
-		if (isHttpRequestComplete(data.readBuffer, data.accumulatedBytes))
+		if (isHttpRequestComplete(data->readBuffer, data->accumulatedBytes))
 		{
 			// Procesar la solicitud completa
-			HttpRequest request(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+			HttpRequest request(std::string(data->readBuffer.begin(), data->readBuffer.end()));
 
 			std::cout << "\n***** REQUEST *****" << std::endl;
 			std::cout << YELLOW << "Method: " << request.getMethod() << std::endl;
@@ -102,26 +116,30 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				request.setValidRequest(true);
 				request.setCompleteRequest(true);
 				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
-				data.readBuffer.clear();
-				data.readBuffer.resize(1024);
-				data.accumulatedBytes = 0;
-				data.headerReceived = false;
-				connections[socket.getSocketFd()] = data;
+				data->readBuffer.clear();
+				data->readBuffer.resize(1024);
+				data->accumulatedBytes = 0;
+				data->headerReceived = false;
+				connections[socket.getSocketFd()] = *data;
 				return request;
 			}
 			else
 			{
-				std::cerr << "Error: Invalid request" << std::endl;
+				std::cerr << "    Invalid request" << std::endl;
+				data->readBuffer.clear();
+				data->readBuffer.resize(1024);
+				data->accumulatedBytes = 0;
+				data->headerReceived = false;
 				request.setValidRequest(false);
 				return request;
 			}
 		}
-		connections[socket.getSocketFd()] = data;
+		connections[socket.getSocketFd()] = *data;
 	}
 	else
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets);
-		HttpRequest invalidRequest(std::string(data.readBuffer.begin(), data.readBuffer.end()));
+		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
 	}
@@ -170,53 +188,47 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 		}
 	}
 	connections[socket.getSocketFd()].responseSent = true;
-	if ( _pollFds[i].events > 0)
-		connections[socket.getSocketFd()].responseSent = true;
 	_pollFds[i].events = POLLIN | POLLERR | POLLHUP;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)
 {
-	accumulatedBytes = 1024;
-	if (accumulatedBytes)
-		accumulatedBytes = 1024;
-	
 	const std::string endOfHeader = "\r\n\r\n";
-	if (std::search(buffer.begin(), buffer.end(),
-		endOfHeader.begin(), endOfHeader.end()) != buffer.end())
-		return true;
+	std::vector<char>::const_iterator endOfHeaderPos =
+		std::search(buffer.begin(), buffer.end(), endOfHeader.begin(), endOfHeader.end());
 
+	if (endOfHeaderPos != buffer.end())
+	{
+		// Encabezados completos recibidos, calcular el tamaño total esperado de la solicitud
+		std::string header(buffer.begin(), endOfHeaderPos + endOfHeader.length());
+		size_t contentLength = getContentLength(header);
+		// Calcular el total de bytes recibidos hasta ahora y actualizar accumulatedBytes
+		size_t headersLength = endOfHeaderPos + endOfHeader.length() - buffer.begin();
+		accumulatedBytes = headersLength + contentLength;
+
+		// Comprobar si hemos recibido todo el cuerpo de la solicitud
+		return buffer.size() >= accumulatedBytes;
+	}
 	return false;
 }
 
-int ConnectionManager::getContentLength(const std::vector<char>& buffer, size_t accumulatedBytes)
+int ConnectionManager::getContentLength(const std::string& header)
 {
 	// Convertir el buffer actual a string para buscar el Content-Length
-	std::string header(buffer.begin(), buffer.begin() + accumulatedBytes);
-	std::size_t startPos = header.find("    Content-Length: ");
+	std::size_t startPos = header.find("Content-Length: ");
 	
 	if (startPos != std::string::npos)
 	{
-		startPos += std::string("    Content-Length: ").length();
+		startPos += std::string("Content-Length: ").length();
 		std::size_t endPos = header.find("\r\n", startPos);
 		if (endPos != std::string::npos)
 		{
 			std::string contentLengthValue = header.substr(startPos, endPos - startPos);
-			//std::cout << "Content-Length: " << contentLengthValue << std::endl;
-			try
-			{
-				std::istringstream iss(contentLengthValue);
-				int contentLength;
-				if (iss >> contentLength)
-					return contentLength;
-				else
-					std::cerr << "Throw exception" << std::endl;		
-			}
-			catch (const std::exception& e)
-			{
-			// Manejar excepción o valor no válido
-			}
+			std::istringstream iss(contentLengthValue);
+			int contentLength;
+			if (iss >> contentLength)
+				return contentLength;
 		}
 	}
-	return 0; // Retorna 0 si no se encuentra el encabezado Content-Length
+	return 0;
 }

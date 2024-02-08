@@ -58,6 +58,12 @@ class Server
 		std::string generateDirectoryIndex(const std::string& directoryPath);
 		std::string createBodyErrorPage(short &errorCode);
 
+		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
+				Socket* socket, VirtualServers server);
+		std::string getFilename(HttpRequest request, std::string resourcePath);
+		bool postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
+			Socket* socket);
+			
 		class ErrorException : public std::exception
 		{
 			private:

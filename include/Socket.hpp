@@ -34,7 +34,7 @@ class Socket
 		bool	open(int port, in_addr addr);
 		bool	accept(Socket& newSocket) const;
 		int		send(const char* buffer, int length) const;
-		int		receive(char* buffer, int length) const;
+		int		receive(char* buffer, int maxLength, size_t startOffset) const;
 		void	close();
 
 };

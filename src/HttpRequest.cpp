@@ -110,7 +110,7 @@ void HttpRequest::_parseRequest(const std::string& rawRequest)
 	if (this->_method == "POST")
 	{
 		std::string bodyStr;
-		while (getline(requestStream, line))
+		while (getline(requestStream, line) && line[0])
 			_body += line + "\n";
 	}
 }

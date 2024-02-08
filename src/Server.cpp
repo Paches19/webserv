@@ -273,6 +273,7 @@ void Server::run(std::vector<VirtualServers> servers)
 		if (ret < 0)
 		{
 			std::cerr << "    Poll error !" << std::endl;
+			//createErrorPage(500, _responsesToSend[_pollFds[0].fd], servers[0], _serverSockets[0]);
 			//break;
 		}
 
@@ -297,7 +298,8 @@ void Server::run(std::vector<VirtualServers> servers)
 					}
 					else if (!requestReceive.getIsValidRequest()) // Bad Request
 					{
-						--i;
+						if (_pollFds.size() > i - 1 && i > 0)
+							--i;
 						createErrorPage(400, _responsesToSend[dataSocket->getSocketFd()], bestServer, dataSocket);
 					}
 				}
@@ -436,49 +438,10 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	if (request.getMethod() == "GET")
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
-		if (ConfigFile::isDirectory(resourcePath))
-		{
-			if (locationRequest->getAutoindex())
-			{
-				// Autoindex activado: generar y enviar página de índice
-				std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
-				processResponse.setStatusCode(200);
-				processResponse.setHeader("Content-Type", "text/html");
-				processResponse.setBody(directoryIndexHTML);
-				_responsesToSend[socket->getSocketFd()] = processResponse;
-				return ;
-			}
-			else
-			{
-				// Autoindex desactivado: buscar archivo index por defecto
-				std::string indexPath = resourcePath;
-				if (ConfigFile::fileExistsAndReadable(indexPath))
-				{
-					// Enviar archivo index
-					std::string buffer = ConfigFile::readFile(indexPath);
-					processResponse.setStatusCode(200);
-					processResponse.setHeader("Content-Type", getMimeType(indexPath));
-					processResponse.setBody(buffer);
-					_responsesToSend[socket->getSocketFd()] = processResponse;
-					return ;
-				}
-				else
-				{
-					// Directorio sin archivo index y autoindex desactivado
-					std::cout << "Error: Forbidden" << std::endl;
-					createErrorPage(403, processResponse, server, socket);
-					return ;
-				}
-			}
-		}
-		else if (!ConfigFile::fileExistsAndReadable(resourcePath))
-		{
-			// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
-			std::cout << "Error: Read error page" << std::endl;
-			createErrorPage(404, processResponse, server, socket);
+		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
+		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
+		if (resourcePath.empty())
 			return ;
-		}
-		//std::cout << "    File exists and is readable" << std::endl;
 		std::string buffer = ConfigFile::readFile(resourcePath);
 		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
@@ -488,22 +451,21 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(500, processResponse, server, socket);
 			return;
 		}
-		
 		if (buffer.length() > locationRequest->getMaxBodySize())
 		{
-			std::cerr << "Error: Body too long" << std::endl;
 			// Si el archivo es demasiado grande, enviar respuesta 413
+			std::cerr << "body demasiado largo " << std::endl;
 			createErrorPage(413, processResponse, server, socket);
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
-		//std::cout << "buffer exito" << std::endl;
+		std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
 		processResponse.setBody(buffer);
-		//std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
-		//std::cout << "Response guardada en fd: " << socket->getSocketFd() << std::endl;
+		// std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
 		_responsesToSend[socket->getSocketFd()] = processResponse;
+
 	}
 	else if (request.getMethod() == "POST")
 	{
@@ -630,6 +592,135 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		processResponse.setBody("XXX Request not supported");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
+}
+
+bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
+	Socket* socket)
+{
+	HttpResponse processResponse;
+	std::ofstream outputFile(resourcePath.c_str(), std::ios::out | std::ios::binary);
+	if (!outputFile.is_open())
+	{
+		createErrorPage(500, processResponse, server, socket);
+		_responsesToSend[socket->getSocketFd()] = processResponse;
+		std::cout << "Error al abrir el archivo de la ruta" << std::endl;
+		return false;
+	}
+	outputFile.write(request.getBody().c_str(), request.getBody().size());
+	outputFile.close();
+	return true;
+}
+
+std::string Server::getFilename(HttpRequest request, std::string resourcePath)
+{
+	std::string filename;
+	std::string contentDispositionHeader = request.getHeader("Content-Disposition");
+	std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
+	size_t filenamePos = contentDispositionHeader.find("filename=");
+	if (filenamePos != std::string::npos)
+	{
+		// Extraer el nombre del archivo
+		size_t filenameStart = filenamePos + strlen("filename=");
+
+		// Buscar la primera comilla doble después del "filename="
+		size_t quotePos = contentDispositionHeader.find("\"", filenameStart);
+		if (quotePos != std::string::npos)
+		{
+			// La posición de inicio del nombre del archivo es después de la primera comilla doble
+			size_t filenameStartPos = quotePos + 1;
+
+			// Buscar la siguiente comilla doble para determinar el final del nombre del archivo
+			size_t filenameEndPos = contentDispositionHeader.find("\"", filenameStartPos);
+			if (filenameEndPos != std::string::npos)
+			{
+				// Extraer el nombre del archivo entre las comillas dobles
+				filename = contentDispositionHeader.substr(filenameStartPos, filenameEndPos - filenameStartPos);
+				std::cout << "filename: " << filename << std::endl;
+			}
+		}
+		else
+		{
+			size_t spacePos = contentDispositionHeader.find(" ", filenameStart);
+			if (spacePos != std::string::npos)
+			{
+				// Extraer el nombre del archivo entre "filename=" y el primer espacio en blanco
+				filename = contentDispositionHeader.substr(filenameStart, spacePos - filenameStart);
+				std::cout << "filename: " << filename << std::endl;
+			}
+			else
+			{
+				size_t filenameStart = filenamePos + strlen("filename=");
+				size_t filenameEnd = contentDispositionHeader.length();
+
+				// Extraer el nombre del archivo desde filenameStart hasta el final de la cadena
+				filename = contentDispositionHeader.substr(filenameStart, filenameEnd - filenameStart);
+				std::cout << "filename: " << filename << std::endl;
+			}
+		}
+	}
+	else
+	{
+		size_t lastSlashPos = request.getURL().find_last_of('/');
+		if (lastSlashPos != std::string::npos)
+			filename = request.getURL().substr(lastSlashPos + 1);
+	}
+	if (!filename.empty())
+		resourcePath += "/" + filename;
+	if (resourcePath.size() >= 2 && resourcePath[0] == '/')
+		resourcePath = &resourcePath[1];
+	return resourcePath;
+}
+
+std::string Server::checkGetPath(std::string resourcePath, const Location* locationRequest,
+		Socket* socket, VirtualServers server)
+{
+	HttpResponse processResponse;
+	if (ConfigFile::isDirectory(resourcePath))
+	{
+		std::cout << " Es directorio " << std::endl;
+		if (locationRequest->getAutoindex())
+		{
+			std::cout << " Autoindex on " << std::endl;
+			// Autoindex activado: generar y enviar página de índice
+			std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
+			processResponse.setStatusCode(200);
+			processResponse.setHeader("Content-Type:", "text/html");
+			processResponse.setBody(directoryIndexHTML);
+			_responsesToSend[socket->getSocketFd()] = processResponse;
+			return "";
+		}
+		else
+		{
+			// Autoindex desactivado: buscar archivo index por defecto
+			std::string indexPath = resourcePath;
+			if (ConfigFile::fileExistsAndReadable(indexPath))
+			{
+				// Enviar archivo index
+				std::string buffer = ConfigFile::readFile(indexPath);
+				processResponse.setStatusCode(200);
+				processResponse.setHeader("Content-Type:", getMimeType(indexPath));
+				processResponse.setBody(buffer);
+				_responsesToSend[socket->getSocketFd()] = processResponse;
+				return "";
+			}
+			else
+			{
+				// Directorio sin archivo index y autoindex desactivado
+				std::cout << "    Forbidden" << std::endl;
+				createErrorPage(403, processResponse, server, socket);
+				return "";
+			}
+		}
+	}
+	else if (!ConfigFile::fileExistsAndReadable(resourcePath))
+	{
+		// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
+		std::cout << "Error: Read error page" << std::endl;
+		createErrorPage(404, processResponse, server, socket);
+		return "";
+	}
+	std::cout << "File exists and is readable" << std::endl;
+	return resourcePath;
 }
 
 std::string Server::generateDirectoryIndex(const std::string& directoryPath)

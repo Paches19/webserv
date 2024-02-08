@@ -94,12 +94,9 @@ int Socket::send(const char* buffer, int length) const
 	return (n == -1) ? -1 : totalSent;
 }
 
-int Socket::receive(char* buffer, int length) const
+int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 {
-	int totalReceived = 0;
-	int n;
-	
-	n = ::recv(_socketFd, buffer + totalReceived, length - totalReceived, 0);
+	int n = ::recv(_socketFd, buffer + startOffset, maxLength - startOffset, 0);
 	if (n == -1)
 	{
 		std::cerr << "Error: receive" << std::endl;
@@ -107,11 +104,10 @@ int Socket::receive(char* buffer, int length) const
 	}
 	else if (n == 0)
 	{
-		std::cout << "Connection closed" << std::endl;
+		std::cout << "Conexion cerrada" << std::endl;
 		return 0;
 	}
-		totalReceived += n;
-	return (n <= 0) ? -1 : totalReceived;
+	return (n <= 0) ? -1 : n;
 }
 
 void Socket::close()
