@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "ConfigFile.hpp"
-
+#include <iomanip>
 //*******************************************************************
 // Constructores y destructor de la clase canónica
 //*******************************************************************
@@ -87,8 +87,10 @@ std::string	ConfigFile::readFile(std::string path)
 
 	std::string expath = prefixPath(path);
 	std::ifstream config_file(expath.c_str());
+
 	if (!config_file || !config_file.is_open())
 		return (NULL);
+	
 	std::stringstream stream_binding;
 	stream_binding << config_file.rdbuf();
 	return (stream_binding.str());

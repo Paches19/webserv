@@ -194,6 +194,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)
 {
 	const std::string endOfHeader = "\r\n\r\n";
+
 	std::vector<char>::const_iterator endOfHeaderPos =
 		std::search(buffer.begin(), buffer.end(), endOfHeader.begin(), endOfHeader.end());
 

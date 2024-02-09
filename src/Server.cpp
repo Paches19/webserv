@@ -300,7 +300,6 @@ void Server::run(std::vector<VirtualServers> servers)
 					{
 						if (_pollFds.size() > i - 1 && i > 0)
 							--i;
-						createErrorPage(400, _responsesToSend[dataSocket->getSocketFd()], bestServer, dataSocket);
 					}
 				}
 			}
@@ -438,10 +437,10 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	if (request.getMethod() == "GET")
 	{
 		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
-		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
 		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 		if (resourcePath.empty())
 			return ;
+		
 		std::string buffer = ConfigFile::readFile(resourcePath);
 		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
@@ -463,6 +462,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
 		processResponse.setBody(buffer);
+	
 		// std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 
@@ -696,6 +696,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 			if (ConfigFile::fileExistsAndReadable(indexPath))
 			{
 				// Enviar archivo index
+			
 				std::string buffer = ConfigFile::readFile(indexPath);
 				processResponse.setStatusCode(200);
 				processResponse.setHeader("Content-Type:", getMimeType(indexPath));
