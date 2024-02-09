@@ -380,9 +380,8 @@ bool isValidPath(const std::string& basePath, const std::string& path)
 {
 	// Prevenir Path Traversal verificando la presencia de ".."
 	if (path.find("..") != std::string::npos)
-	{
 		return false;
-	}
+
 	std::string fullPath = path;
 	// Verificar si la ruta completa es un directorio permitido
 	if (!ConfigFile::isDirectory(fullPath))
@@ -391,6 +390,7 @@ bool isValidPath(const std::string& basePath, const std::string& path)
 	// Asegurarse de que el path no salga del directorio base
 	if (fullPath.find(basePath) != 0)
 		return false; // El path resultante no está dentro del basePath
+
 	return true; // La ruta es válida y está permitida
 }
 
@@ -424,7 +424,6 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
 	if (locationRequest->getReturn()[0] != "")
 	{
-		//std::cout << "    Return directive found" << std::endl;
 		processReturnDirective(*locationRequest, processResponse);
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 		return ;
@@ -432,6 +431,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	std::string resourcePath = buildResourcePath(request, *locationRequest, server);
 	std::cout << "    Resource path: " << resourcePath << std::endl;
 
+	//****************************GET Method****************************
 	if (request.getMethod() == "GET")
 	{
 		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
@@ -441,151 +441,99 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		std::string buffer = ConfigFile::readFile(resourcePath);
 		if (buffer.empty())
 		{
-			//Error del archivo:  vacío o no se pudo abrir
+			//Error si el archivo está vacío o no se pudo abrir
 			createErrorPage(500, processResponse, server, socket);
 			return;
 		}
 
 		if (buffer.size() > locationRequest->getMaxBodySize())
 		{
-			// Si el archivo es demasiado grande, enviar respuesta 413
-			std::cerr << "Error: Body too long" << std::endl;
+			// Error si el archivo es demasiado grande
 			createErrorPage(413, processResponse, server, socket);
 			return;
 		}
+
 		// Si se leyó con éxito, construir la respuesta
-		//std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
-		//processResponse.setBody(buffer.str());
-		processResponse.setBody(buffer);	
-		// std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
+		processResponse.setBody(buffer);
 		_responsesToSend[socket->getSocketFd()] = processResponse;
-
 	}
+
+	//****************************POST Method****************************
 	else if (request.getMethod() == "POST")
 	{
 		// Verificar si el Content-Length excede el máximo permitido
 		std::string contentLengthHeader = request.getHeader("Content-Length");
-		unsigned long contentLength = contentLengthHeader.empty() ? 0 : std::strtoul(contentLengthHeader.c_str(), NULL, 10);
+		unsigned long contentLength;
+		if (contentLengthHeader.empty())
+			contentLength = 0;
+		else
+			contentLength = std::strtoul(contentLengthHeader.c_str(), NULL, 10);
 		if (contentLength > server.getClientMaxBodySize())
 		{
 			createErrorPage(413, processResponse, server, socket);
-			_responsesToSend[socket->getSocketFd()] = processResponse;
 			return;
 		}
-		
+
 		// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
 		std::string contentTypeHeader = request.getHeader("Content-Type");
 		if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
 			contentTypeHeader.find("chunked") != std::string::npos)
 		{
 			createErrorPage(501, processResponse, server, socket);
-			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "Error: Unsupported Content-Type" << std::endl;
 			return ;
 		}
 
 		// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
+		// Error si la ruta es inválida o no se puede escribir
 		std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
-		std::cout << "Post ResourcePath: " << resourcePath << std::endl;
 		if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
 			: locationRequest->getRootLocation(), resourcePath))
 		{
 			createErrorPage(400, processResponse, server, socket);
-			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "Error: resourcePath empty or invalid" << std::endl;
 			return ;
 		}
-
-		std::string filename;
-		std::string contentDispositionHeader = request.getHeader("Content-Disposition");
-		std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
-		size_t filenamePos = contentDispositionHeader.find("filename=");
-		if (filenamePos != std::string::npos)
-		{
-			// Extraer el nombre del archivo
-			size_t filenameStart = filenamePos + strlen("filename=");
-
-			// Buscar la primera comilla doble después del "filename="
-			size_t quotePos = contentDispositionHeader.find("\"", filenameStart);
-			if (quotePos != std::string::npos)
-			{
-				// La posición de inicio del nombre del archivo es después de la primera comilla doble
-				size_t filenameStartPos = quotePos + 1;
-
-				// Buscar la siguiente comilla doble para determinar el final del nombre del archivo
-				size_t filenameEndPos = contentDispositionHeader.find("\"", filenameStartPos);
-				if (filenameEndPos != std::string::npos)
-				{
-					// Extraer el nombre del archivo entre las comillas dobles
-					filename = contentDispositionHeader.substr(filenameStartPos, filenameEndPos - filenameStartPos);
-					std::cout << "filename: " << filename << std::endl;
-				}
-			}
-			else
-			{
-				size_t spacePos = contentDispositionHeader.find(" ", filenameStart);
-				if (spacePos != std::string::npos)
-				{
-					// Extraer el nombre del archivo entre "filename=" y el primer espacio en blanco
-					filename = contentDispositionHeader.substr(filenameStart, spacePos - filenameStart);
-					std::cout << "filename: " << filename << std::endl;
-				}
-				else
-				{
-					size_t filenameStart = filenamePos + strlen("filename=");
-					size_t filenameEnd = contentDispositionHeader.length();
-
-					// Extraer el nombre del archivo desde filenameStart hasta el final de la cadena
-					filename = contentDispositionHeader.substr(filenameStart, filenameEnd - filenameStart);
-					std::cout << "filename: " << filename << std::endl;
-				}
-			}
-		}
-		else
-		{
-			size_t lastSlashPos = request.getURL().find_last_of('/');
-			if (lastSlashPos != std::string::npos)
-				std::string filename = request.getURL().substr(lastSlashPos + 1);
-		}
-
-		// Concatenar el nombre del archivo al resourcePath
-		std::string fullResourcePath = resourcePath + "/" + filename;
-		if (fullResourcePath.size() >= 2)
-			fullResourcePath = &fullResourcePath[1];
-		std::cout << "fullResourcePath: " << fullResourcePath << std::endl;
-
-		std::ofstream outputFile(fullResourcePath.c_str(), std::ofstream::binary | std::ofstream::out);
-		if (!outputFile.is_open())
-		{
-			createErrorPage(500, processResponse, server, socket);
-			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "Error: cannot open the file" << std::endl;
-			return ;
-		}
-		outputFile.write(request.getBody().c_str(), request.getBody().length());
-		outputFile.close();
 
 		// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta
-		
+		// Error si no se puede abrir el archivo
+		std::string fullResourcePath = getFilename(request, resourcePath);
+		if (!postFile(fullResourcePath, request, server, socket))
+			return ;
+
+		// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta	
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type", "text/plain");
 		processResponse.setBody("Content uploaded successfully.");
-
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
+	//****************************DELETE Method****************************
 	else if (request.getMethod() == "DELETE")
 	{
+		// Verificar si el recurso existe y es legible
+		if (!ConfigFile::fileExistsAndReadable(resourcePath))
+		{
+			createErrorPage(404, processResponse, server, socket);
+			return;
+		}
+		// Eliminar el recurso
+		if (remove(resourcePath.c_str()) != 0)
+		{
+			createErrorPage(500, processResponse, server, socket);
+			return;
+		}
+		// Construir la respuesta
 		processResponse.setStatusCode(200);
-		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
-		processResponse.setBody("DELETE process");
+		processResponse.setBody("");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
+	//****************************Unknown Method****************************
 	else
 	{
+		// Método no soportado
 		processResponse.setStatusCode(555);
-		processResponse.setBody("XXX Request not supported");
+		processResponse.setHeader("Content-Type", "text/plain");
+		processResponse.setBody("Request Method not supported");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 }
@@ -598,8 +546,6 @@ bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServ
 	if (!outputFile.is_open())
 	{
 		createErrorPage(500, processResponse, server, socket);
-		_responsesToSend[socket->getSocketFd()] = processResponse;
-		std::cout << "Error: cannot open the file" << std::endl;
 		return false;
 	}
 	outputFile.write(request.getBody().c_str(), request.getBody().size());
@@ -613,25 +559,24 @@ std::string Server::getFilename(HttpRequest request, std::string resourcePath)
 	std::string contentDispositionHeader = request.getHeader("Content-Disposition");
 	std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
 	size_t filenamePos = contentDispositionHeader.find("filename=");
+
 	if (filenamePos != std::string::npos)
 	{
 		// Extraer el nombre del archivo
 		size_t filenameStart = filenamePos + strlen("filename=");
-
 		// Buscar la primera comilla doble después del "filename="
 		size_t quotePos = contentDispositionHeader.find("\"", filenameStart);
 		if (quotePos != std::string::npos)
 		{
 			// La posición de inicio del nombre del archivo es después de la primera comilla doble
 			size_t filenameStartPos = quotePos + 1;
-
 			// Buscar la siguiente comilla doble para determinar el final del nombre del archivo
 			size_t filenameEndPos = contentDispositionHeader.find("\"", filenameStartPos);
 			if (filenameEndPos != std::string::npos)
 			{
 				// Extraer el nombre del archivo entre las comillas dobles
 				filename = contentDispositionHeader.substr(filenameStartPos, filenameEndPos - filenameStartPos);
-				std::cout << "filename: " << filename << std::endl;
+				//std::cout << "filename: " << filename << std::endl;
 			}
 		}
 		else
@@ -641,16 +586,15 @@ std::string Server::getFilename(HttpRequest request, std::string resourcePath)
 			{
 				// Extraer el nombre del archivo entre "filename=" y el primer espacio en blanco
 				filename = contentDispositionHeader.substr(filenameStart, spacePos - filenameStart);
-				std::cout << "filename: " << filename << std::endl;
+				//std::cout << "filename: " << filename << std::endl;
 			}
 			else
 			{
 				size_t filenameStart = filenamePos + strlen("filename=");
 				size_t filenameEnd = contentDispositionHeader.length();
-
 				// Extraer el nombre del archivo desde filenameStart hasta el final de la cadena
 				filename = contentDispositionHeader.substr(filenameStart, filenameEnd - filenameStart);
-				std::cout << "filename: " << filename << std::endl;
+				//std::cout << "filename: " << filename << std::endl;
 			}
 		}
 	}
@@ -665,6 +609,12 @@ std::string Server::getFilename(HttpRequest request, std::string resourcePath)
 	if (resourcePath.size() >= 2 && resourcePath[0] == '/')
 		resourcePath = &resourcePath[1];
 	return resourcePath;
+
+	// Concatenar el nombre del archivo al resourcePath
+	//std::string resourcePath = resourcePath + "/" + filename;
+	//if (resourcePath.size() >= 2)
+	//	resourcePath = &resourcePath[1];
+	//return resourcePath;
 }
 
 std::string Server::checkGetPath(std::string resourcePath, const Location* locationRequest,
@@ -676,7 +626,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 		//std::cout << " Es directorio " << std::endl;
 		if (locationRequest->getAutoindex())
 		{
-			std::cout << " Autoindex on " << std::endl;
 			// Autoindex activado: generar y enviar página de índice
 			std::string directoryIndexHTML = generateDirectoryIndex(resourcePath);
 			processResponse.setStatusCode(200);
@@ -692,7 +641,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 			if (ConfigFile::fileExistsAndReadable(indexPath))
 			{
 				// Enviar archivo index
-			
 				std::string buffer = ConfigFile::readFile(indexPath);
 				processResponse.setStatusCode(200);
 				processResponse.setHeader("Content-Type:", getMimeType(indexPath));
@@ -703,7 +651,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 			else
 			{
 				// Directorio sin archivo index y autoindex desactivado
-				std::cout << "    Forbidden" << std::endl;
 				createErrorPage(403, processResponse, server, socket);
 				return "";
 			}
@@ -712,7 +659,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	else if (!ConfigFile::fileExistsAndReadable(resourcePath))
 	{
 		// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
-		std::cout << "    Error: Read error page" << std::endl;
 		createErrorPage(404, processResponse, server, socket);
 		return "";
 	}
@@ -758,12 +704,9 @@ std::string Server::buildResourcePathForPost(HttpRequest& request,
 	if (queryPos != std::string::npos)
 		requestURL = requestURL.substr(0, queryPos);
 
-	// Prevenir Path Traversal
+	// Prevenir Path Transversal
 	if (requestURL.find("..") != std::string::npos)
-	{
-		// throw std::runtime_error("Invalid path: Path Traversal detected");
 		return "";
-	}
 
 	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
 
@@ -777,9 +720,7 @@ std::string Server::buildResourcePathForPost(HttpRequest& request,
 
 	// Prevenir la creación de archivos fuera del directorio raíz
 	if (!request.startsWith(resourcePath, basePath))
-	{
 		return "";
-	}
 
 	return resourcePath;
 }
@@ -830,14 +771,10 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 		else
 			return fullPath;
 	}
-	else if (ConfigFile::fileExistsAndReadable(fullPath))
-		return fullPath;
-
 	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
 	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URL
-	//if (ConfigFile::fileExistsAndReadable(fullPath))
-	//	return fullPath;
-
+	else if (ConfigFile::fileExistsAndReadable(fullPath))
+		return fullPath;
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
 	return requestURL;
 }

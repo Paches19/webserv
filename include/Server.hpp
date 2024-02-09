@@ -37,23 +37,23 @@ class Server
 		Server(const Server& other);
 		Server& operator=(const Server& other);
 
-		void createErrorPage(short errorCode, HttpResponse &response,
+		void 			createErrorPage(short errorCode, HttpResponse &response,
 			VirtualServers &server, Socket* socket);
-		std::string getMimeType(const std::string& filePath);
-		VirtualServers getBestServer(HttpRequest &request, size_t i, 
+		std::string 	getMimeType(const std::string& filePath);
+		VirtualServers 	getBestServer(HttpRequest &request, size_t i, 
 			std::vector<VirtualServers> servers);
 		
-		void run(std::vector<VirtualServers> servers);
-		bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
-		Socket* handleNewConnection(int i);
-		void processRequest(HttpRequest request, VirtualServers server, Socket* socket);
-		std::string buildResourcePath(HttpRequest& request,
+		void 		run(std::vector<VirtualServers> servers);
+		bool 		areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
+		Socket* 	handleNewConnection(int i);
+		void 		processRequest(HttpRequest request, VirtualServers server, Socket* socket);
+		std::string	buildResourcePath(HttpRequest& request,
 			const Location& location, VirtualServers& server);
 		std::string buildResourcePathForPost(HttpRequest& request,
 			const Location& location, VirtualServers& server);
-		std::string adjustPathForDirectory(const std::string& requestURL,
+		std::string	adjustPathForDirectory(const std::string& requestURL,
 			const std::string& basePath, const Location& location, VirtualServers& server);
-		void processReturnDirective(const Location& locationRequest,
+		void 		processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);
 		std::string generateDirectoryIndex(const std::string& directoryPath);
 		std::string createBodyErrorPage(short &errorCode);
@@ -61,7 +61,7 @@ class Server
 		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
 				Socket* socket, VirtualServers server);
 		std::string getFilename(HttpRequest request, std::string resourcePath);
-		bool postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
+		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
 			Socket* socket);
 			
 		class ErrorException : public std::exception
