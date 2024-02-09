@@ -122,12 +122,10 @@ std::string HttpResponse::buildResponse()
 		
 
 	// Agrega la longitud del cuerpo y la línea en blanco que indica el final de las cabeceras
-	response << "Content-Length: " << _body.length() << "\r\n";
-	response << "\r\n";
+	response << "Content-Length: " << _body.length() << "\r\n\r\n";
 
 	// Agrega el cuerpo
 	response << _body;
-	// std::cout << "body: " << _body << std::endl << std::endl;
 
 	return response.str();
 }
