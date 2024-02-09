@@ -62,9 +62,7 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
         std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
     }
     else
-    {
-        //std::cout << "\nConexión no encontrada. Socket FD = " << socketFd << std::endl;
-    }
+        std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
 }
 
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
@@ -72,7 +70,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 {
 	ConnectionData* data(&connections[socket.getSocketFd()]);
 
-	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
+	//std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
 
 	//Si no hay hueco en el buffer aumentamos tamaño
 	if (data->readBuffer.size() - data->accumulatedBytes == 0)
@@ -89,7 +87,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
 	// std::cout << "Bytes Read: " << bytesRead << std::endl;
 	// std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
-	// data->responseSent = false;
 
 	if (bytesRead > 0)
 	{
@@ -100,16 +97,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data->readBuffer.begin(), data->readBuffer.end()));
 
-			std::cout << "\n***** REQUEST *****" << std::endl;
-			std::cout << YELLOW << "Method: " << request.getMethod() << std::endl;
-			std::cout << "URL: " << request.getURL() << std::endl;
-			std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-			std::cout << "Headers: " << std::endl;
-			std::map<std::string, std::string> headers = request.getHeaders();
-			std::map<std::string, std::string>::const_iterator it;
-			for (it = headers.begin(); it != headers.end(); ++it)
-				std::cout << "   " << it->first << ": " << it->second << std::endl;
-			std::cout << RESET << std::endl;
 			if (request.getIsValidRequest())
 			{
 				connections[socket.getSocketFd()].responseSent = false;
@@ -121,6 +108,9 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->accumulatedBytes = 0;
 				data->headerReceived = false;
 				connections[socket.getSocketFd()] = *data;
+
+				request.printRequest();
+
 				return request;
 			}
 			else
@@ -151,22 +141,23 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 	std::vector<struct pollfd> &_pollFds) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
-	// if (data.responseSent == true)
-	// 	return ;
 
 	std::string responseStr = response.buildResponse();
+	data.accumulatedBytes = responseStr.size();
+	data.writeBuffer = new char[data.accumulatedBytes];
 
-	data.writeBuffer = new char[responseStr.length() + 1];
-	std::strcpy(data.writeBuffer, responseStr.c_str());
-	data.accumulatedBytes = responseStr.length();
+	//std::strcpy(data.writeBuffer, responseStr.c_str());  //********NO FUNCIONA CON IMAGENES********
+	
+	std::copy(responseStr.begin(), responseStr.end(), data.writeBuffer);
 	
 	//std::cout << "\nENTRO writeData" << std::endl;
 	
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		std::cout << "\n***** RESPONSE *****" << std::endl;
-		std::cout << CYAN << responseStr << RESET << std::endl;
+		
+		response.printResponse(responseStr);
+
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;

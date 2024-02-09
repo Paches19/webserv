@@ -27,7 +27,7 @@ class Location
 		std::vector<short>			_methods; // GET, POST, DELETE
 		std::vector<std::string>	_return; 
 		std::string					_alias;
-		std::map<short, std::string>	_errorPages;
+		std::map<short, std::string>_errorPages;
 		std::vector<std::string>	_cgiPath;
 		std::vector<std::string>	_cgiExt;
 		unsigned long				_clientMaxBodySize;
@@ -44,20 +44,19 @@ class Location
 		~Location();
 		Location &operator=(const Location &rhs);
 
-		const std::string &getPath() const;
-		const std::string &getRootLocation() const;
-		const std::vector<short> &getMethods() const;
-		const bool &getAutoindex() const;
-		const std::string &getIndexLocation() const;
-		const std::vector<std::string> &getReturn() const;
-		const std::string &getAlias() const;
-		const std::vector<std::string> &getCgiPath() const;
-		const std::vector<std::string> &getCgiExtension() const;
+		const std::string 				&getPath() const;
+		const std::string 				&getRootLocation() const;
+		const std::vector<short> 		&getMethods() const;
+		const bool 						&getAutoindex() const;
+		const std::string 				&getIndexLocation() const;
+		const std::vector<std::string> 	&getReturn() const;
+		const std::string 				&getAlias() const;
+		const std::vector<std::string> 	&getCgiPath() const;
+		const std::vector<std::string> 	&getCgiExtension() const;
 		const std::map<std::string, std::string> &getExtensionPath() const;
-		const unsigned long &getMaxBodySize() const;
-		const std::string &getModifier() const;
-		const std::string getErrorPage(short i) const;	
-		std::string getPrintMethods() const;
+		const unsigned long 			&getMaxBodySize() const;
+		const std::string 				&getModifier() const;
+		const std::string 				getErrorPage(short i) const;	
 
 		void setPath(std::string parametr);
 		void setRootLocation(std::string parametr);
@@ -73,16 +72,17 @@ class Location
 		void setModifier(std::string parametr);
 		void setErrorPage(std::vector<std::string> &parametr);
 	
-		void configureLocation(std::string &path, std::vector<std::string> &parametr);
+		void 			configureLocation(std::string &path, std::vector<std::string> &parametr);
 		const Location* selectLocation(const std::string& requestURL,
 			const std::vector<Location>& locations);
 		const Location* findExactMatch(const std::string& requestURL,
 			const std::vector<Location>& locations);
 		const Location* findLongestPrefixMatch(const std::string& requestURI,
 			const std::vector<Location>& locations);
-		bool startsWith(const std::string& str, const std::string& prefix);
-		static void checkToken(std::string &parametr);
-		static int ft_stoi(std::string str);
+		bool 			startsWith(const std::string& str, const std::string& prefix);
+		static void 	checkToken(std::string &parametr);
+		static int 		ft_stoi(std::string str);
+		std::string 	printMethods() const;
 		
 		class ErrorException : public std::exception
 		{

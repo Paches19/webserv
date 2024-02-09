@@ -430,39 +430,35 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		return ;
 	}
 	std::string resourcePath = buildResourcePath(request, *locationRequest, server);
-	if (request.getURL() == "/favicon.ico")
-		resourcePath = "." + locationRequest->getRootLocation() + "/favicon.ico";
 	std::cout << "    Resource path: " << resourcePath << std::endl;
 
 	if (request.getMethod() == "GET")
 	{
-		//CONSTRUIMOS RUTA DEL ARCHIVO SOLICITADO
 		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 		if (resourcePath.empty())
 			return ;
 		
 		std::string buffer = ConfigFile::readFile(resourcePath);
-		// std::cout << "buffer resource path: " << buffer << std::endl;
 		if (buffer.empty())
 		{
-			std::cout << "Error: buffer empty" << std::endl;
 			//Error del archivo:  vacío o no se pudo abrir
 			createErrorPage(500, processResponse, server, socket);
 			return;
 		}
-		if (buffer.length() > locationRequest->getMaxBodySize())
+
+		if (buffer.size() > locationRequest->getMaxBodySize())
 		{
 			// Si el archivo es demasiado grande, enviar respuesta 413
-			std::cerr << "body demasiado largo " << std::endl;
+			std::cerr << "Error: Body too long" << std::endl;
 			createErrorPage(413, processResponse, server, socket);
 			return;
 		}
 		// Si se leyó con éxito, construir la respuesta
-		std::cout << "buffer exito" << std::endl;
+		//std::cout << "buffer exito" << std::endl;
 		processResponse.setStatusCode(200);
 		processResponse.setHeader("Content-Type", getMimeType(resourcePath));
-		processResponse.setBody(buffer);
-	
+		//processResponse.setBody(buffer.str());
+		processResponse.setBody(buffer);	
 		// std::cout << "buffer guardado en response: " << processResponse.getBody() << std::endl;
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 
@@ -486,7 +482,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		{
 			createErrorPage(501, processResponse, server, socket);
 			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "Content-Type no soportado" << std::endl;
+			std::cout << "Error: Unsupported Content-Type" << std::endl;
 			return ;
 		}
 
@@ -498,7 +494,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		{
 			createErrorPage(400, processResponse, server, socket);
 			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "resourcePath empty or invalid" << std::endl;
+			std::cout << "Error: resourcePath empty or invalid" << std::endl;
 			return ;
 		}
 
@@ -565,7 +561,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		{
 			createErrorPage(500, processResponse, server, socket);
 			_responsesToSend[socket->getSocketFd()] = processResponse;
-			std::cout << "Error al abrir el archivo de la ruta" << std::endl;
+			std::cout << "Error: cannot open the file" << std::endl;
 			return ;
 		}
 		outputFile.write(request.getBody().c_str(), request.getBody().length());
@@ -603,7 +599,7 @@ bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServ
 	{
 		createErrorPage(500, processResponse, server, socket);
 		_responsesToSend[socket->getSocketFd()] = processResponse;
-		std::cout << "Error al abrir el archivo de la ruta" << std::endl;
+		std::cout << "Error: cannot open the file" << std::endl;
 		return false;
 	}
 	outputFile.write(request.getBody().c_str(), request.getBody().size());
@@ -677,7 +673,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	HttpResponse processResponse;
 	if (ConfigFile::isDirectory(resourcePath))
 	{
-		std::cout << " Es directorio " << std::endl;
+		//std::cout << " Es directorio " << std::endl;
 		if (locationRequest->getAutoindex())
 		{
 			std::cout << " Autoindex on " << std::endl;
@@ -716,11 +712,11 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	else if (!ConfigFile::fileExistsAndReadable(resourcePath))
 	{
 		// Si no existe, intenta enviar página de error personalizada o respuesta 404 genérica
-		std::cout << "Error: Read error page" << std::endl;
+		std::cout << "    Error: Read error page" << std::endl;
 		createErrorPage(404, processResponse, server, socket);
 		return "";
 	}
-	std::cout << "File exists and is readable" << std::endl;
+	std::cout << "    File exists and is readable" << std::endl;
 	return resourcePath;
 }
 

@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 			// Configuration file as argument or default path
 			config = (argc == 1 ? "config/default.conf" : argv[1]);
 			cluster.initParser(config);
-			//cluster.print();
+			//cluster.printConfig();
 		}
 		catch (std::exception &e)
 		{

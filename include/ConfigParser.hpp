@@ -35,7 +35,7 @@ class ConfigParser
 
 		int		initParser(const std::string &configFile);
 		void	splitServers(std::string &content);
-		int 	print();
+		int 	printConfig();
 		
 		class ErrorException : public std::exception
 		{

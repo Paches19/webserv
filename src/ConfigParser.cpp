@@ -163,7 +163,7 @@ int ConfigParser::initParser(const std::string &configFile)
 }
 
 // PRINTING servers configurations
-int ConfigParser::print()
+int ConfigParser::printConfig()
 {
 	for (size_t i = 0; i < _servers.size(); i++)
 	{
@@ -188,7 +188,7 @@ int ConfigParser::print()
 		while (itl != _servers[i].getLocations().end())
 		{
 			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
-			std::cout << LIGHTRED << "      methods: " << RESET << itl->getPrintMethods() << std::endl;
+			std::cout << LIGHTRED << "      methods: " << RESET << itl->printMethods() << std::endl;
 			std::cout << LIGHTRED << "      autoindex: " << RESET;
 			if (!itl->getAutoindex())
 				std::cout << "off" << std::endl;

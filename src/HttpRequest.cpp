@@ -154,3 +154,16 @@ bool HttpRequest::startsWith(const std::string& str, const std::string& prefix)
 {
     return str.substr(0, prefix.size()) == prefix;
 }
+
+void HttpRequest::printRequest()
+{
+	std::cout << "\n***** REQUEST *****" << std::endl;
+	std::cout << YELLOW << "Method: " <<_method << std::endl;
+	std::cout << "URL: " << _url << std::endl;
+	std::cout << "HTTP Version: " << _httpVersion << std::endl;
+	std::cout << "Headers: " << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it)
+		std::cout << "    " << it->first << ": " << it->second << std::endl;
+	std::cout << "Body: " << _body << std::endl;
+	std::cout << RESET << std::endl;
+}

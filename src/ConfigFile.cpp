@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "ConfigFile.hpp"
-#include <iomanip>
+
 //*******************************************************************
 // Constructores y destructor de la clase canónica
 //*******************************************************************
@@ -99,10 +99,7 @@ std::string	ConfigFile::readFile(std::string path)
 int ConfigFile::isFileExistAndReadable(std::string path, std::string index)
 {
 	std::string expath = prefixPath(path);
-//	if (expath[expath.length() - 1] == '/')
-//		expath = expath.substr(0, expath.length() - 1);
-//	if (index[0] == '/')
-//		index = index.substr(1);
+
 	if (getTypePath(expath + "/" + index) == 1 && checkFile(path + "/" + index, 4) == 0)
 		return (0);
 	return (-1);

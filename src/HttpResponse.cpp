@@ -103,7 +103,7 @@ std::string HttpResponse::buildResponse()
 {
 	std::stringstream response;
 
-	std::cout << std::endl;
+	//std::cout << std::endl;
 	// std::cout << "build Response: " << std::endl;
 	// Obtiene el mensaje de estado correspondiente al código de estado
 	std::string statusMessage = getStatusMessage(_statusCode);
@@ -111,7 +111,6 @@ std::string HttpResponse::buildResponse()
 	// Agrega la línea de estado (código de estado y mensaje)
 	response << "HTTP/1.1 " << _statusCode << " " << statusMessage << "\r\n";
 	// std::cout << "HTTP/1.1 " << _statusCode << " " << statusMessage << std::endl;
-
 	// Agrega las cabeceras
 	for (std::map<std::string, std::string>::const_iterator it =	
 		_headers.begin(); it != _headers.end(); ++it)
@@ -119,13 +118,18 @@ std::string HttpResponse::buildResponse()
 		response << it->first << ": " << it->second << "\r\n";
 		// std::cout << it->first << ": " << it->second << std::endl;
 	}
-		
-
 	// Agrega la longitud del cuerpo y la línea en blanco que indica el final de las cabeceras
-	response << "Content-Length: " << _body.length() << "\r\n\r\n";
-
+	//response << "Content-Length: " << convert.str() << "\r\n";
 	// Agrega el cuerpo
-	response << _body;
+	response << "Content-Length: " << _body.size() << "\r\n";
+	response << "\r\n" << _body;
 
 	return response.str();
+}
+
+void HttpResponse::printResponse(std::string responseStr)
+{
+	std::cout << "\n***** RESPONSE *****" << std::endl;
+
+	std::cout << CYAN << responseStr << RESET << std::endl;
 }

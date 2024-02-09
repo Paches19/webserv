@@ -490,10 +490,7 @@ bool Location::startsWith(const std::string& str, const std::string& prefix)
     return str.substr(0, prefix.size()) == prefix;
 }
 
-//*******************************************************************
-// To print methods.  Remove before send the project
-//*******************************************************************
-std::string Location::getPrintMethods() const
+std::string Location::printMethods() const
 {
 	std::string res;
 	if (_methods[2])
