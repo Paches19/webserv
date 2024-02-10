@@ -48,7 +48,7 @@ class VirtualServers
 		const std::string &getIndex();
 		const bool &getAutoindex();
 		const std::vector<Location> &getLocations();
-		const std::string getErrorPage(int short);
+		const std::string getErrorPage(short i);
 		const std::map<short, std::string> &getErrorPages();
 		const unsigned long &getClientMaxBodySize();
 		const in_addr &getIpAddress();

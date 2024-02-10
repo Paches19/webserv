@@ -210,13 +210,12 @@ int ConfigParser::printConfig()
 			}
 			else
 			{
-				std::cout << LIGHTRED << "      cgi root: " << RESET << itl->getRootLocation() << std::endl;
-				std::cout << LIGHTRED << "      sgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
-				std::cout << LIGHTRED << "      sgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
+				std::cout << LIGHTRED << "      cgi_root: " << RESET << itl->getRootLocation() << std::endl;
+				std::cout << LIGHTRED << "      cgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
+				std::cout << LIGHTRED << "      cgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
 			}
 			++itl;
 		}
-		itl = _servers[i].getLocations().begin();
 	}
 	return (0);
 }

@@ -32,12 +32,11 @@ class Location
 		std::vector<std::string>	_cgiExt;
 		unsigned long				_clientMaxBodySize;
 		std::string					_modifier;
+		std::map<std::string, std::string> _extPath;
 
 		int _checkLocation(Location &location) const;
 
 	public:
-		std::map<std::string, std::string> _extPath;
-
 		Location();
 		Location(std::string &path, std::string &modifier, std::vector<std::string> &paramtr, std::string &r);
 		Location(const Location &other);

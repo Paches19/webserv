@@ -393,6 +393,102 @@ bool isValidPath(const std::string& basePath, const std::string& path)
 
 	return true; // La ruta es válida y está permitida
 }
+bool isCGIScript(const std::string& resourcePath)
+{
+    // Determine if the resource is a CGI script based on some criteria
+    // For example, check the file extension or any other condition
+    // Return true if it's a CGI script, false otherwise
+
+    // Example: Check if the file extension is ".cgi"
+    if (resourcePath.size() >= 4)
+	{
+		if ((resourcePath.substr(resourcePath.size() - 4) == ".cgi") || 
+			(resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
+			(resourcePath.substr(resourcePath.size() - 3) == ".sh"))
+			return true;
+	}
+	return false;
+}
+
+void Server::executeCGIScript(std::string& scriptPath, HttpRequest& request, 
+	HttpResponse& response, VirtualServers& server, Socket* socket)
+{
+    pid_t pid = fork();
+
+    if (pid == -1) // Error handling if fork fails
+        createErrorPage(500, response, server, socket);
+
+    else if (pid == 0)  // Child process
+    {
+        // Redirect stdout to a pipe
+        int pipefd[2];
+        if (pipe(pipefd) == -1)
+		{
+            perror("pipe");
+            exit(EXIT_FAILURE);
+        }
+
+        pid_t scriptPid = fork();// Fork a child process to execute the CGI script
+        if (scriptPid == -1)
+		{
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+        else if (scriptPid == 0) // Child process (script execution)
+		{
+        	// Close read end of the pipe
+            close(pipefd[0]);
+
+            // Redirect stdout to the write end of the pipe
+            dup2(pipefd[1], STDOUT_FILENO);
+
+            // Set up arguments for execve
+            const char* scriptName = scriptPath.c_str();
+            char* const argv[] = { const_cast<char*>(scriptName), const_cast<char*>(request.getURL().c_str()), NULL };
+            char* const envp[] = { NULL };  // No additional environment variables
+
+            execve(scriptName, argv, envp);// Execute the CGI script
+
+            // If execve() is successful, this code won't be reached
+            perror("execve");
+            exit(EXIT_FAILURE);
+        }
+        else // Parent process (script execution)
+		{
+			close(pipefd[1]);// Close write end of the pipe
+
+            // Read from the read end of the pipe and store in response body
+            char buffer[4096];
+            ssize_t bytesRead;
+			std::string body;
+
+            while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+				body.append(buffer, bytesRead);
+            response.setBody(body);
+
+            close(pipefd[0]);// Close the read end of the pipe
+
+            // Wait for the CGI script to complete
+            int scriptStatus;
+            waitpid(scriptPid, &scriptStatus, 0);
+
+            // Handle the child process completion status if needed
+
+            exit(EXIT_SUCCESS);// Exit the child process
+        }
+    }
+    else  // Parent process
+    {
+        // Wait for the child to complete
+        int status;
+        waitpid(pid, &status, 0);
+
+        // Set appropriate CGI-related response headers
+        response.setStatusCode(200);
+        response.setHeader("Content-Type", "text/html");
+        _responsesToSend[socket->getSocketFd()] = response;
+    }
+}
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
 {
@@ -438,6 +534,14 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		if (resourcePath.empty())
 			return ;
 		
+		    // Check if the requested resource is a CGI script
+    	if (isCGIScript(resourcePath))
+    	{
+       	 // Perform CGI processing
+       		executeCGIScript(resourcePath, request, processResponse, server, socket);
+        	return;
+    	}
+
 		std::string buffer = ConfigFile::readFile(resourcePath);
 		if (buffer.empty())
 		{

@@ -24,6 +24,7 @@ class ConnectionManager
 {
 	public:
 		std::map<int, ConnectionData> connections;
+
 		ConnectionManager();
 		~ConnectionManager();
 		ConnectionManager(const ConnectionManager& other);
