@@ -33,7 +33,7 @@ class VirtualServers
 		std::map<short, std::string>	_errorPages;
 		
 		void _createServer(std::string &config, VirtualServers &server);
-		bool _checkErrorPages();
+		void _checkServer(VirtualServers &server);
 	
 	public:
 		VirtualServers();
@@ -47,21 +47,22 @@ class VirtualServers
 		const std::string &getRoot();
 		const std::string &getIndex();
 		const bool &getAutoindex();
-		const std::vector<Location> &getLocations();
+		std::vector<Location> &getLocations();
 		const std::string getErrorPage(short i);
-		const std::map<short, std::string> &getErrorPages();
 		const unsigned long &getClientMaxBodySize();
 		const in_addr &getIpAddress();
 		const bool &getDefaultServer();
+		const std::map<short, std::string> &getErrorPages();
 
 		void setPort(std::string parametr);
 		void setServerName(std::string parametr);
 		void setRoot(std::string parametr);
 		void setIndex(std::string parametr);
 		void setAutoindex(std::string parametr);
-		void setErrorPages(std::vector<std::string> &parametr);
+		void setErrorPage(short i, std::string parametr);
 		void setClientMaxBodySize(std::string parametr);
 		void setIpAddress(std::string parametr);
+		void setLocation(std::vector<std::string> &parametrs, long unsigned &i);
 	
 		class ErrorException : public std::exception
 		{

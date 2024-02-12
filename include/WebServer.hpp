@@ -49,6 +49,13 @@
 # define LIGHTMAGENTA   "\x1B[95m"
 # define GREEN 			"\x1B[32m"
 
+// HTTP Methods
+# define GET_METHOD 0
+# define POST_METHOD 1
+# define DELETE_METHOD 2
+# define IS_DIR 2
+# define IS_FILE 1
+
 // Macros
 # define MAX_CONTENT_LENGTH 1000000
 

@@ -32,51 +32,35 @@ ConfigFile::~ConfigFile() { }
 //*******************************************************************
 std::string ConfigFile::getPath() {	return (_path); }
 
-int ConfigFile::getTypePath(std::string path)
-{
-	struct stat	buffer;
-
-	std::string expath = prefixPath(path);
-	if (stat(expath.c_str(), &buffer) == 0)
-	{
-		if (buffer.st_mode & S_IFREG)
-			return (1); //is file
-		if (buffer.st_mode & S_IFDIR)
-			return (2); //is folder
-		return (3); //is something else
-	}
-	return (-1);
-}
-
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
 std::string ConfigFile::prefixPath(std::string const path)
 {
-	if (path[0] != '/' && path[0] != '.')
-		return ("./" + path);
-	if (path[0] == '/')
-		return ("." + path);
-	return (path);
+	std::string name = path;
+	if (path[path.length() - 1] == '/')
+		name = path.substr(0, path.length() - 1);
+	if (path[0] == '/' || path[0] == '.' || path[0] == '~')
+		return (name);
+	return ("./" + name);
 }
 
+// Check if path is a file(1) or a folder (2)
+// or something else (3) or doesn't exist (-1)
 int ConfigFile::checkPath(std::string path)
 {
 	struct stat	buffer;
-	int			result;
-	
-	std::string expath = prefixPath(path);
-	result = stat(expath.c_str(), &buffer);
-	if (result == 0)
-		return (1);
-	return (-1);
-}
 
-// Check is the file exists and accessable
-int	ConfigFile::checkFile(std::string  path, int mode)
-{
-	std::string expath = prefixPath(path);
-	return (access(expath.c_str(), mode));
+	if (stat(path.c_str(), &buffer) != 0)
+		return (-1);
+	
+	if (buffer.st_mode & S_IFREG)
+		return (IS_FILE); //is file
+
+	if (buffer.st_mode & S_IFDIR)
+		return (IS_DIR); //is folder
+
+	return (3); //is something else
 }
 
 // Read from file to string
@@ -96,29 +80,30 @@ std::string	ConfigFile::readFile(std::string path)
 	return (stream_binding.str());
 }
 
-int ConfigFile::isFileExistAndReadable(std::string path, std::string index)
-{
-	std::string expath = prefixPath(path);
-
-	if (getTypePath(expath + "/" + index) == 1 && checkFile(path + "/" + index, 4) == 0)
-		return (0);
-	return (-1);
-}
-
-bool ConfigFile::isDirectory(std::string& path)
-{
-	std::string expath = prefixPath(path);
-	struct stat statbuf;
-	if (stat(expath.c_str(), &statbuf) != 0)
-		return false;
-	return S_ISDIR(statbuf.st_mode);
-}
-
-bool ConfigFile::fileExistsAndReadable(std::string& filePath)
+// Check if file exists and is readable
+bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
 {
 	std::string exFilePath = prefixPath(filePath);
 	std::ifstream file(exFilePath.c_str());
 	bool existsAndReadable = file.good();
 	file.close();
 	return existsAndReadable;
+}
+
+// Adjust name to be used in the server
+// it will be /name for files
+std::string ConfigFile::adjustName(std::string const name)
+{
+	std::string exName = name;
+
+	if (name == "/")
+		return (name);
+	//Quito / del final, si lo hubiera
+	if (name[name.length() - 1] == '/')
+		exName = name.substr(0, name.length() - 1);
+	//Añado / del principio, si no lo hubiera
+	if (name[0] != '/')
+		exName = "/" + exName;
+
+	return (exName);
 }

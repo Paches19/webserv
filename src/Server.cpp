@@ -224,27 +224,31 @@ std::string Server::getMimeType(const std::string& filePath)
 
 	mimeTypes[".html"] = "text/html";
 	mimeTypes[".css"]  = "text/css";
-	mimeTypes[".js"]   = "application/javascript";
+	mimeTypes[".txt"]  = "text/plain";
+	mimeTypes[".csv"]  = "text/csv";
+	mimeTypes[".htm"]  = "text/html";
+	
 	mimeTypes[".jpg"]  = "image/jpeg";
 	mimeTypes[".jpeg"] = "image/jpeg";
 	mimeTypes[".png"]  = "image/png";
 	mimeTypes[".gif"]  = "image/gif";
 	mimeTypes[".svg"]  = "image/svg+xml";
 	mimeTypes[".ico"]  = "image/x-icon";
-	mimeTypes[".txt"]  = "text/plain";
+
 	mimeTypes[".pdf"]  = "application/pdf";
 	mimeTypes[".zip"]  = "application/zip";
 	mimeTypes[".tar"]  = "application/x-tar";
 	mimeTypes[".gz"]   = "application/gzip";
+	mimeTypes[".js"]   = "application/javascript";
+	mimeTypes[".json"] = "application/json";
+	mimeTypes[".xml"]  = "application/xml";
+	mimeTypes[".doc"]  = "application/msword";
+
 	mimeTypes[".mp3"]  = "audio/mpeg";
 	mimeTypes[".mp4"]  = "video/mp4";
 	mimeTypes[".avi"]  = "video/x-msvideo";
 	mimeTypes[".mpeg"] = "video/mpeg";
 	mimeTypes[".webm"] = "video/webm";
-	mimeTypes[".json"] = "application/json";
-	mimeTypes[".xml"]  = "application/xml";
-	mimeTypes[".csv"]  = "text/csv";
-	mimeTypes[".doc"]  = "application/msword";
 
 	if (dotPos != std::string::npos)
 	{
@@ -384,7 +388,7 @@ bool isValidPath(const std::string& basePath, const std::string& path)
 
 	std::string fullPath = path;
 	// Verificar si la ruta completa es un directorio permitido
-	if (!ConfigFile::isDirectory(fullPath))
+	if (ConfigFile::checkPath(fullPath) != 2)
 		return false; // No es un directorio o no es accesible
 
 	// Asegurarse de que el path no salga del directorio base
@@ -402,10 +406,12 @@ bool isCGIScript(const std::string& resourcePath)
     // Example: Check if the file extension is ".cgi"
     if (resourcePath.size() >= 4)
 	{
-		if ((resourcePath.substr(resourcePath.size() - 4) == ".cgi") || 
-			(resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
+		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
 			(resourcePath.substr(resourcePath.size() - 3) == ".sh"))
-			return true;
+			{
+				std::cout << "    CGI script detected" << std::endl;
+				return true;
+			}
 	}
 	return false;
 }
@@ -445,9 +451,29 @@ void Server::executeCGIScript(std::string& scriptPath, HttpRequest& request,
             // Set up arguments for execve
             const char* scriptName = scriptPath.c_str();
             char* const argv[] = { const_cast<char*>(scriptName), const_cast<char*>(request.getURL().c_str()), NULL };
-            char* const envp[] = { NULL };  // No additional environment variables
+			// Prepare environment variables
+            std::vector<char*> envp;
+            // Add your custom environment variables
+			//envp.push_back(strdup("CUSTOM_VARIABLE=value"));
+ 			envp.push_back(NULL); // Terminate the envp array
+			/*Some CGI environment variables for Chrome browser:
+				HTTP_ACCEPT: Specifies the media types that the client can process, such as text/html or image/png.
+				HTTP_ACCEPT_LANGUAGE: Indicates the natural languages that the client can understand.
+				HTTP_USER_AGENT: Identifies the user agent (browser) making the request, including information about the browser type and version, as well as the operating system.
+				HTTP_REFERER: Contains the URL of the page that referred the user to the current page.
+				HTTP_COOKIE: Holds any cookies that have been sent by the server to the client.
+				HTTP_HOST: Provides the domain name of the server.
+				REMOTE_ADDR: Represents the IP address of the client.
+				REMOTE_PORT: Specifies the port number on the client.
+				REQUEST_METHOD: Indicates the HTTP request method, such as GET or POST.
+				QUERY_STRING: Holds the query string portion of the URL for a GET request.
+				CONTENT_LENGTH: Specifies the size of the message body for requests with a body, such as POST requests.
+				CONTENT_TYPE: Describes the type of data in the body of the request, particularly relevant for POST requests.
+				PATH_INFO: Contains the path information that follows the actual script name in the URL.
+			*/		
+			char* const* envpArray = envp.data(); // Convert to char* array
 
-            execve(scriptName, argv, envp);// Execute the CGI script
+            execve(scriptName, argv, envpArray);// Execute the CGI script
 
             // If execve() is successful, this code won't be reached
             perror("execve");
@@ -530,11 +556,16 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	//****************************GET Method****************************
 	if (request.getMethod() == "GET")
 	{
+		if (!locationRequest->getMethods()[GET_METHOD])
+		{
+			createErrorPage(405, processResponse, server, socket);
+			return ;
+		}
 		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 		if (resourcePath.empty())
 			return ;
 		
-		    // Check if the requested resource is a CGI script
+		// Check if the requested resource is a CGI script
     	if (isCGIScript(resourcePath))
     	{
        	 // Perform CGI processing
@@ -567,6 +598,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	//****************************POST Method****************************
 	else if (request.getMethod() == "POST")
 	{
+		// Verificar si el método POST está permitido
+		if (!locationRequest->getMethods()[POST_METHOD])
+		{
+			createErrorPage(405, processResponse, server, socket);
+			return ;
+		}
 		// Verificar si el Content-Length excede el máximo permitido
 		std::string contentLengthHeader = request.getHeader("Content-Length");
 		unsigned long contentLength;
@@ -614,6 +651,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	//****************************DELETE Method****************************
 	else if (request.getMethod() == "DELETE")
 	{
+		// Verificar si el método DELETE está permitido
+		if (!locationRequest->getMethods()[DELETE_METHOD])
+		{
+			createErrorPage(405, processResponse, server, socket);
+			return ;
+		}
 		// Verificar si el recurso existe y es legible
 		if (!ConfigFile::fileExistsAndReadable(resourcePath))
 		{
@@ -627,7 +670,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			return;
 		}
 		// Construir la respuesta
-		processResponse.setStatusCode(200);
+		processResponse.setStatusCode(204);
 		processResponse.setBody("");
 		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
@@ -661,7 +704,7 @@ std::string Server::getFilename(HttpRequest request, std::string resourcePath)
 {
 	std::string filename;
 	std::string contentDispositionHeader = request.getHeader("Content-Disposition");
-	std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
+	//std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
 	size_t filenamePos = contentDispositionHeader.find("filename=");
 
 	if (filenamePos != std::string::npos)
@@ -725,7 +768,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 		Socket* socket, VirtualServers server)
 {
 	HttpResponse processResponse;
-	if (ConfigFile::isDirectory(resourcePath))
+	if (ConfigFile::checkPath(resourcePath) == IS_DIR)
 	{
 		//std::cout << " Es directorio " << std::endl;
 		if (locationRequest->getAutoindex())
@@ -766,7 +809,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 		createErrorPage(404, processResponse, server, socket);
 		return "";
 	}
-	std::cout << "    File exists and is readable" << std::endl;
+	//std::cout << "    File exists and is readable" << std::endl;
 	return resourcePath;
 }
 
@@ -862,7 +905,7 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	//std::cout << "    fullPath: " << fullPath << std::endl;
 	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 	// Comprobar si la ruta completa apunta a un directorio
-	if (ConfigFile::isDirectory(fullPath))
+	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
 		std::string indexPath = fullPath;
 		if (indexFile[0] != '/')

@@ -143,7 +143,7 @@ int ConfigParser::initParser(const std::string &configFile)
 	// Checking and read config file
 	if (file.checkPath(file.getPath()) == -1)
 		throw ErrorException("File is invalid");
-	if (file.checkFile(file.getPath(), 4) == -1)
+	if (!file.fileExistsAndReadable(file.getPath()))
 		throw ErrorException("File is not accessible");
 	content = file.readFile(configFile);
 	if (content.empty())
@@ -158,64 +158,6 @@ int ConfigParser::initParser(const std::string &configFile)
 	{
 		VirtualServers server(_serverConfig[i]);
 		this->_servers.push_back(server);
-	}
-	return (0);
-}
-
-// PRINTING servers configurations
-int ConfigParser::printConfig()
-{
-	for (size_t i = 0; i < _servers.size(); i++)
-	{
-		std::cout << YELLOW <<  "SERVER #" << i + 1 << RESET << std::endl;
-		std::cout << CYAN << "Server name: " << RESET << _servers[i].getServerName() << std::endl;
-		std::cout << CYAN << "Root: " << RESET << _servers[i].getRoot() << std::endl;
-		std::cout << CYAN << "Index: " << RESET << _servers[i].getIndex() << std::endl;
-		
-		std::cout << CYAN << "IP:Port " << RESET << inet_ntoa(_servers[i].getIpAddress());
-		std::cout << ": " << _servers[i].getPort() << std::endl;
-
-		std::cout << CYAN << "Max body size: " << RESET << _servers[i].getClientMaxBodySize() << " bytes" << std::endl;
-		std::cout << CYAN << "Error pages: " << RESET << _servers[i].getErrorPages().size() << std::endl;
-		std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
-		while (it != _servers[i].getErrorPages().end())
-		{
-			std::cout << "   " << LIGHTRED << (*it).first << " - " << RESET << it->second << std::endl;
-			++it;
-		}
-		std::cout << CYAN << "Locations: " << _servers[i].getLocations().size() << std::endl;
-		std::vector<Location>::const_iterator itl = _servers[i].getLocations().begin();
-		while (itl != _servers[i].getLocations().end())
-		{
-			std::cout << GREEN << "   name location: " << RESET << itl->getPath() << std::endl;
-			std::cout << LIGHTRED << "      methods: " << RESET << itl->printMethods() << std::endl;
-			std::cout << LIGHTRED << "      autoindex: " << RESET;
-			if (!itl->getAutoindex())
-				std::cout << "off" << std::endl;
-			else
-				std::cout << "on" << std::endl;
-			if (!itl->getIndexLocation().empty())
-				std::cout << LIGHTRED << "      index: " << RESET << itl->getIndexLocation() << std::endl;
-			std::cout << LIGHTRED << "      max body size: " << RESET << itl->getMaxBodySize() << " bytes" << std::endl;
-			if (!itl->getModifier().empty())
-				std::cout << LIGHTRED << "      modifier: " << RESET << itl->getModifier() << std::endl;
-			if (itl->getCgiPath().empty())
-			{
-				std::cout << LIGHTRED << "      root: " << RESET << itl->getRootLocation() << std::endl;
-				std::vector<std::string> r = itl->getReturn();
-				if (!r[1].empty())
-					std::cout << LIGHTRED << "      return: " << RESET << r[0] << " " << r[1] << std::endl;
-				if (!itl->getAlias().empty())
-					std::cout << LIGHTRED << "      alias: " << RESET << itl->getAlias() << std::endl;
-			}
-			else
-			{
-				std::cout << LIGHTRED << "      cgi_root: " << RESET << itl->getRootLocation() << std::endl;
-				std::cout << LIGHTRED << "      cgi_path: " << RESET << itl->getCgiPath().size() << std::endl;
-				std::cout << LIGHTRED << "      cgi_ext: "  << RESET << itl->getCgiExtension().size() << std::endl;
-			}
-			++itl;
-		}
 	}
 	return (0);
 }

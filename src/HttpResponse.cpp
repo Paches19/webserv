@@ -58,6 +58,13 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 	{
 		case 200:
 			return "OK";
+		case 201:
+			return "Created";
+		case 202:
+			return "Accepted";
+		case 204:
+			return "No Content";
+
 		//in case of redirection
 		case 301:
 			return "Moved Permanently";
@@ -69,6 +76,7 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Temporary Redirect";
 		case 308:
 			return "Permanent Redirect";
+
 		//in case of client error
 		case 400:
 			return "Bad Request";
@@ -84,6 +92,7 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Request Timeout";
 		case 413:
 			return "Payload Too Large";
+			
 		//in case of server error
 		case 415:
 			return "Unsupported Media Type";
@@ -131,5 +140,22 @@ void HttpResponse::printResponse(std::string responseStr)
 {
 	std::cout << "\n***** RESPONSE *****" << std::endl;
 
-	std::cout << CYAN << responseStr << RESET << std::endl;
+	std::stringstream resp(responseStr);
+	std::string line;
+	resp >> line;
+	std::cout << CYAN << line;
+	resp >> line;
+	std::cout << GREEN << " " << line;
+	resp >> line;
+	std::cout << GREEN << " " << line << std::endl;
+	resp >> line;
+	std::cout << CYAN << line;
+	resp >> line;
+	std::cout << GREEN << " " << line << std::endl;
+	resp >> line;
+	std::cout << CYAN << line;
+	resp >> line;
+	std::cout << GREEN << " " << line << std::endl;
+	std::cout << CYAN << "\n( body )" << RESET << std::endl;
+	std::cout << "*******************" << std::endl;
 }

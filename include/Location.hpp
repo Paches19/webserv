@@ -34,11 +34,9 @@ class Location
 		std::string					_modifier;
 		std::map<std::string, std::string> _extPath;
 
-		int _checkLocation(Location &location) const;
-
 	public:
 		Location();
-		Location(std::string &path, std::string &modifier, std::vector<std::string> &paramtr, std::string &r);
+		Location(std::string &path, std::string &modifier, std::vector<std::string> &paramtr);
 		Location(const Location &other);
 		~Location();
 		Location &operator=(const Location &rhs);
@@ -55,8 +53,9 @@ class Location
 		const std::map<std::string, std::string> &getExtensionPath() const;
 		const unsigned long 			&getMaxBodySize() const;
 		const std::string 				&getModifier() const;
-		const std::string 				getErrorPage(short i) const;	
-
+		const std::string 				getErrorPage(short i) const;
+		const std::map<short, std::string> &getErrorPages() const;
+	
 		void setPath(std::string parametr);
 		void setRootLocation(std::string parametr);
 		void setMethods(std::vector<std::string> methods);
@@ -69,7 +68,7 @@ class Location
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
 		void setModifier(std::string parametr);
-		void setErrorPage(std::vector<std::string> &parametr);
+		void setErrorPage(short i, std::string parametr);
 	
 		void 			configureLocation(std::string &path, std::vector<std::string> &parametr);
 		const Location* selectLocation(const std::string& requestURL,
@@ -81,6 +80,8 @@ class Location
 		bool 			startsWith(const std::string& str, const std::string& prefix);
 		static void 	checkToken(std::string &parametr);
 		static int 		ft_stoi(std::string str);
+		int				checkLocation(Location &location) const;
+
 		std::string 	printMethods() const;
 		
 		class ErrorException : public std::exception

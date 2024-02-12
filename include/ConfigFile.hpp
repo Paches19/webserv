@@ -29,15 +29,12 @@ class ConfigFile
 		ConfigFile &operator=(const ConfigFile &rhs);
 		
 		std::string	getPath();
-		static int	getTypePath(std::string path);
 
 		static int	checkPath(std::string path);
-		static int	checkFile(std::string path, int mode);
 		static std::string	readFile(std::string path);
-		static int 	isFileExistAndReadable(std::string path, std::string index);
-		static bool isDirectory(std::string& path);
-		static bool fileExistsAndReadable(std::string& filePath);
+		static bool fileExistsAndReadable(const std::string& filePath);
 		static std::string prefixPath(std::string const path);
+		static std::string adjustName(std::string const name);
 };
 
 #endif // CONFIGFILE_HPP

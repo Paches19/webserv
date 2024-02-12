@@ -51,10 +51,10 @@ Location &Location::operator=(const Location &rhs)
 	return (*this);
 }
 Location::~Location() { }
-Location::Location(std::string &path, std::string &modifier, std::vector<std::string> &parametr, std::string &r)
+Location::Location(std::string &path, std::string &modifier, std::vector<std::string> &parametr)
 {
 	_path = path;
-	_root = r;
+	_root = "";
 	_autoindex = false;
 	_index = "";
 	_return.reserve(2);
@@ -63,13 +63,7 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	_alias = "";
 	_modifier = modifier;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
-	//Páginas de error por defecto (Las mismas que el server)
-	_errorPages[400] = "error_pages/400.html";
-	_errorPages[403] = "error_pages/403.html";
-	_errorPages[404] = "error_pages/404.html";
-	_errorPages[405] = "error_pages/405.html";
-	_errorPages[413] = "error_pages/413.html";
-	_errorPages[500] = "error_pages/500.html";
+
 	//Métodos implementados
 	_methods.reserve(3);
 	_methods.push_back(1); // GET
@@ -115,27 +109,37 @@ const std::string Location::getErrorPage(short i) const
 	return ("");
  }
 
+const std::map<short, std::string> &Location::getErrorPages() const { return (_errorPages); }
+
  //*******************************************************************
  // Setters
  //*******************************************************************
 void Location::setPath(std::string parametr) { _path = parametr; }
 
-void Location::setRootLocation(std::string parametr) { _root = parametr; }
+void Location::setRootLocation(std::string parametr)
+{
+	checkToken(parametr);
+	parametr = ConfigFile::prefixPath(parametr);
+	if (ConfigFile::checkPath(parametr + getPath()) != 2)
+		throw ErrorException("Root of location");
+	
+	_root = parametr;
+}
 
 void Location::setMethods(std::vector<std::string> methods)
 {
-	_methods[0] = 0;
-	_methods[1] = 0;
-	_methods[2] = 0;
+	_methods[GET_METHOD] = 0;
+	_methods[POST_METHOD] = 0;
+	_methods[DELETE_METHOD] = 0;
 
 	for (size_t i = 0; i < methods.size(); i++)
 	{
 		if (methods[i] == "GET")
-			_methods[0] = 1;
+			_methods[GET_METHOD] = 1;
 		else if (methods[i] == "POST")
-			_methods[1] = 1;
+			_methods[POST_METHOD] = 1;
 		else if (methods[i] == "DELETE")
-			_methods[2] = 1;
+			_methods[DELETE_METHOD] = 1;
 		else
 			throw ErrorException("Method not supported " + methods[i]);
 	}
@@ -143,15 +147,33 @@ void Location::setMethods(std::vector<std::string> methods)
 
 void Location::setAutoindex(std::string parametr) { _autoindex = (parametr == "on"); }
 
-void Location::setIndexLocation(std::string parametr) {	_index = parametr; }
+void Location::setIndexLocation(std::string parametr)
+{
+	checkToken(parametr);
+	if (getIndexLocation().empty())
+		_index = ConfigFile::adjustName(parametr);
+}
 
 void Location::setReturn(std::string parametr1, std::string parametr2)
 {
-	_return[0] = parametr1;
-	_return[1] = parametr2;
+	if (!parametr2.empty())
+		checkToken(parametr2);
+	else
+	{
+		checkToken(parametr1);
+		int code = ft_stoi(parametr1);
+		if (code < 100 || code > 599)
+			throw ErrorException("Invalid return code");
+	}
+	_return[0] = parametr1; // Código de redirección	
+	_return[1] = parametr2; // Ruta de redirección
 }
 
-void Location::setAlias(std::string parametr) {	_alias = parametr; }
+void Location::setAlias(std::string parametr)
+{
+	checkToken(parametr);
+	_alias = ConfigFile::prefixPath(parametr);
+}
 
 void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
 
@@ -163,25 +185,10 @@ void Location::setMaxBodySize(unsigned long parametr) { _clientMaxBodySize = par
 
 void Location::setModifier(std::string parametr) { _modifier = parametr; }
 
-void Location::setErrorPage(std::vector<std::string> &parametr)
+void Location::setErrorPage(short i, std::string parametr)
 {
-	if (parametr.size() % 2 != 0)
-		throw ErrorException("Wrong error_page syntax");
-	if (parametr.size() == 0)
-		return;
-	for (size_t i = 0; i < parametr.size() - 1; i++)
-	{
-		short codeError = ft_stoi(parametr[i]);
-		if (codeError < 100 || codeError > 599)
-			throw ErrorException ("Incorrect error code: " + parametr[i]);
-		i++;
-		std::string path = parametr[i];
-		std::map<short, std::string>::iterator it = _errorPages.find(codeError);
-		if (it != _errorPages.end())
-			_errorPages[codeError] = path;
-		else
-			_errorPages.insert(std::make_pair(codeError, path));
-	}
+	std::string path = ConfigFile::prefixPath(parametr);
+	_errorPages[i] = path;
 }
 
 //*******************************************************************
@@ -190,7 +197,8 @@ void Location::setErrorPage(std::vector<std::string> &parametr)
 void Location::configureLocation(std::string &path, std::vector<std::string> &parametr)
 {
 	std::vector<std::string>	methods;
-	std::vector<std::string>	errorCodes;
+	std::string errorCodePath;
+	short errorCode;
 	bool flag_methods = false;
 	bool flag_autoindex = false;
 
@@ -198,16 +206,16 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 	{
 		if (parametr[i] == "error_page" && (i + 1) < parametr.size())
 		{
-			errorCodes.push_back(parametr[++i]);
+			errorCode = ft_stoi(parametr[++i]);
 			checkToken(parametr[++i]);	
-			errorCodes.push_back(parametr[i]);	
+			errorCodePath = parametr[i];
+			setErrorPage(errorCode, errorCodePath);
 		}
 		else if (parametr[i] == "root" && (i + 1) < parametr.size())
 		{
-			checkToken(parametr[++i]);
-			if (ConfigFile::getTypePath(parametr[i]) != 2)
-				throw ErrorException("Root of location");
-			setRootLocation(parametr[i]);
+			++i;
+			if (getRootLocation().empty())
+				setRootLocation(parametr[i]);
 		}
 		
 		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())
@@ -247,9 +255,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		}
 		else if (parametr[i] == "index" && (i + 1) < parametr.size())
 		{
-			if (!getIndexLocation().empty())
-				throw ErrorException("Index of location is duplicated");
-			checkToken(parametr[++i]);
+			++i;
 			setIndexLocation(parametr[i]);
 		}
 		else if (parametr[i] == "return" && (i + 1) < parametr.size())
@@ -258,21 +264,10 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 				throw ErrorException("Parametr return not allow for CGI");
 			std::string codeString = parametr[++i];
 			if (codeString.find(";") != std::string::npos)
-			{
-				checkToken(codeString);
 				setReturn(codeString, "");
-			}
 			else
-			{
-				int code = ft_stoi(codeString);
-				if (code < 100 || code > 599)
-					throw ErrorException("Invalid return code");
-				std::string cad = parametr[++i];
-				while (parametr[i].find(";") == std::string::npos && i + 1 < parametr.size())
-					cad += " " + parametr[++i];
-				checkToken(cad);
-				setReturn(codeString, cad);
-			}
+				setReturn(codeString, parametr[++i]);
+			break;
 		}
 		else if (parametr[i] == "alias" && (i + 1) < parametr.size())
 		{
@@ -280,7 +275,6 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 				throw ErrorException("Parametr alias not allow for CGI");
 			if (!getAlias().empty())
 				throw ErrorException("Alias of location is duplicated");
-			checkToken(parametr[++i]);
 			setAlias(parametr[i]);
 		}
 		else if (parametr[i] == "cgi_ext" && (i + 1) < parametr.size())
@@ -325,22 +319,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			}
 			setCgiPath(path);
 		}
-		else if (i < parametr.size())
-			throw ErrorException("Parametr in a location is invalid");
 	}
-	setErrorPage(errorCodes);
-	if (getRootLocation().empty())
-		setRootLocation(_root);
-	
-	int valid = _checkLocation(*this);
-	if (valid == 1)
-		throw ErrorException("Failed CGI validation");
-	else if (valid == 2)
-		throw ErrorException("Failed path in location validation");
-	else if (valid == 3)
-		throw ErrorException("Failed redirection file in location validation");
-	else if (valid == 4)
-		throw ErrorException("Failed alias file in location validation");
 }
 
 void Location::checkToken(std::string &parametr)
@@ -366,58 +345,64 @@ int Location::ft_stoi(std::string str)
     return (res);
 }
 
-int Location::_checkLocation(Location &location) const
+int Location::checkLocation(Location &location) const
 {
-	if (location.getPath() != "/cgi-bin")
-	{
-		if (location.getPath()[0] != '/')
-			return (2);
+	std::string path = location.getPath();
+	std::cout << "location " << path << std::endl;
+	
+	if (path == "/")
+		path = "";
+	std::string root = location.getRootLocation();
 
+	if (path != "/cgi-bin")
+	{
 		if (!location.getReturn()[1].empty())
 		{
-			std::string expath = ConfigFile::prefixPath(location.getRootLocation());
-			if (expath[expath.length() - 1] == '/')
-				expath = expath.substr(0, expath.length() - 1);
-			std::string index = location.getReturn()[1];
-			
-			if (index[0] == '\"' && index[index.length() - 1] == '\"')
-				return (0);
-			if (index[0] == '/')
-				index = index.substr(1);
-			std::string pathComplete = expath + "/" + index;
-			if (!ConfigFile::isDirectory(pathComplete) && ConfigFile::isFileExistAndReadable(expath, index))
-				return (3);	
+			std::string newpath = location.getReturn()[1];	
+			if (newpath[0] == '/')
+			{
+				std::cout << "         root      = from the " << newpath << std::endl;
+				std::cout << "         new path  = " << newpath << std::endl;
+			}	
 		}
-		if (location.getAlias() != "" &&
-			ConfigFile::isFileExistAndReadable(location.getRootLocation(), location.getAlias()))
-			return (4);
-		if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath(), location.getIndexLocation()))
-			return (5);
+		else if (!location.getAlias().empty())
+		{
+			std::string fullpath = root + location.getAlias();
+			std::cout << "         root  = " << root << std::endl;
+			std::cout << "         index = " << fullpath << std::endl;
+			if (!ConfigFile::fileExistsAndReadable(fullpath))
+				return (4);
+		}
+		else
+		{
+			std::string fullpath = root + path + location.getIndexLocation();
+			std::cout << "         root  = " << root << std::endl;
+			std::cout << "         index = " << fullpath << std::endl;
+			if (!ConfigFile::fileExistsAndReadable(fullpath))
+				return (5);
+		}
 	}
 	else
 	{
-		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
+		std::string fullpath = root + path + location.getIndexLocation();
+
+		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || !ConfigFile::fileExistsAndReadable(fullpath))
 			return (1);
-		if (ConfigFile::checkFile(location.getIndexLocation(), 4) < 0)
-		{
-			std::string path = location.getRootLocation() + location.getPath() + location.getIndexLocation();
-			if (ConfigFile::getTypePath(path) != 1)
-			{				
-				std::string root = getcwd(NULL, 0);
-				location.setRootLocation(root);
-				path = root + location.getPath() + location.getIndexLocation();
-			}
-			if (path.empty() || ConfigFile::getTypePath(path) != 1 || ConfigFile::checkFile(path, 4) < 0)
-				return (1);
-		}
+
 		if (location.getCgiPath().size() != location.getCgiExtension().size())
 			return (1);
+
 		std::vector<std::string>::const_iterator it;
 		for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); ++it)
 		{
-			if (ConfigFile::getTypePath(*it) < 0)
+			if (ConfigFile::checkPath(*it) < 0)
 				return (1);
 		}
+
+		std::cout << "         root  = " << root << std::endl;
+		std::cout << "         path  = " << path << std::endl;
+		std::cout << "         index = " << location.getIndexLocation() << std::endl;
+
 		std::vector<std::string>::const_iterator it_path;
 		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
 		{
@@ -433,10 +418,10 @@ int Location::_checkLocation(Location &location) const
 					location._extPath[".sh"] = tmp_path;		
 			}
 		}
-		if (location.getCgiPath().size() != location.getExtensionPath().size())
-			return (1);
+
 	}
 	return (0);
+
 }
 
 const Location* Location::selectLocation(const std::string& requestURI,
@@ -493,19 +478,19 @@ bool Location::startsWith(const std::string& str, const std::string& prefix)
 std::string Location::printMethods() const
 {
 	std::string res;
-	if (_methods[2])
+	if (_methods[DELETE_METHOD])
 	{
 		if (!res.empty())
 			res.insert(0, ", ");
 		res.insert(0, "DELETE");
 	}
-	if (_methods[1])
+	if (_methods[POST_METHOD])
 	{
 		if (!res.empty())
 			res.insert(0, ", ");
 		res.insert(0, "POST");
 	}
-	if (_methods[0])
+	if (_methods[GET_METHOD])
 	{
 		if (!res.empty())
 			res.insert(0, ", ");

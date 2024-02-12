@@ -16,31 +16,31 @@
 
 int main(int argc, char **argv) 
 {
-	if (argc == 1 || argc == 2)
-	{
-		ConfigParser	cluster;
-		try 
-		{
-			std::string		config;
-			
-			// Configuration file as argument or default path
-			config = (argc == 1 ? "config/default.conf" : argv[1]);
-			cluster.initParser(config);
-			//cluster.printConfig();
-		}
-		catch (std::exception &e)
-		{
-			std::cerr << e.what() << std::endl;
-			return (1);
-		}
-		Server myServer(cluster.getServers());
-		myServer.run(cluster.getServers());
-    }
-    else 
+	//Check the number of arguments
+	if (argc != 1 && argc != 2)
 	{
 		std::cout << "Error: wrong arguments" << std::endl;
 		return (1);
 	}
-	
-    return (0);
+		
+	ConfigParser	cluster;
+	try 
+	{
+		std::string		config;
+		// Configuration file as argument or default path
+		config = (argc == 1 ? "./config/default.conf" : argv[1]);
+		cluster.initParser(config);
+		//Print the configuration file parsed
+		//cluster.printConfig();
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+		return (1);
+	}
+	//Initialize the servers
+	Server myServer(cluster.getServers());
+	//Run the servers
+	myServer.run(cluster.getServers());
+	return (0);
 }

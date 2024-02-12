@@ -104,7 +104,7 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 	}
 	else if (n == 0)
 	{
-		std::cout << "Conexion cerrada" << std::endl;
+		std::cout << "Connection closed" << std::endl;
 		return 0;
 	}
 	return (n <= 0) ? -1 : n;
