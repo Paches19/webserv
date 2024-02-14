@@ -77,7 +77,7 @@ class Location
 			const std::vector<Location>& locations);
 		const Location* findLongestPrefixMatch(const std::string& requestURI,
 			const std::vector<Location>& locations);
-		bool 			startsWith(const std::string& str, const std::string& prefix);
+		static bool 			startsWith(const std::string& str, const std::string& prefix);
 		static void 	checkToken(std::string &parametr);
 		static int 		ft_stoi(std::string str);
 		int				checkLocation(Location &location) const;
