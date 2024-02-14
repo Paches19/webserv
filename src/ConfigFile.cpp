@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:38:47 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:38:49 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/14 13:13:49 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,13 @@ std::string ConfigFile::prefixPath(std::string const path)
 	std::string name = path;
 	if (path[path.length() - 1] == '/')
 		name = path.substr(0, path.length() - 1);
-	if (path[0] == '/' || path[0] == '.' || path[0] == '~')
+	if (path[0] == '.')
 		return (name);
+	else if (path[0] == '/')
+	{
+		std::string newPath = '.' + path;
+		return (newPath);
+	}
 	return ("./" + name);
 }
 
@@ -71,23 +76,30 @@ std::string	ConfigFile::readFile(std::string path)
 
 	std::string expath = prefixPath(path);
 	std::ifstream config_file(expath.c_str());
-
 	if (!config_file || !config_file.is_open())
 		return (NULL);
 	
 	std::stringstream stream_binding;
 	stream_binding << config_file.rdbuf();
+	std::cout << "leo: " << path << std::endl;
 	return (stream_binding.str());
 }
 
 // Check if file exists and is readable
 bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
 {
-	std::string exFilePath = prefixPath(filePath);
-	std::ifstream file(exFilePath.c_str());
-	bool existsAndReadable = file.good();
-	file.close();
-	return existsAndReadable;
+	struct stat buffer;
+	std::string path;
+	if (filePath[0] != '.')
+		path = "." + filePath;
+	else
+		path = filePath;
+	std::cout << "Path: " << path << std::endl;
+	std::string exFilePath = prefixPath(path);
+
+	if (stat(exFilePath.c_str(), &buffer) == 0)
+		return S_ISREG(buffer.st_mode) && (access(exFilePath.c_str(), R_OK) == 0);
+	return false;
 }
 
 // Adjust name to be used in the server
