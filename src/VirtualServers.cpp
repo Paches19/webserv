@@ -369,7 +369,6 @@ void VirtualServers::_checkServer(VirtualServers &server)
 		if (loc[i].getIndexLocation().empty() && loc[i].getReturn()[0].empty())
 		{
 			std::string defaultIndex = server.getIndex() + ";";
-			loc[i].setIndexLocation(defaultIndex);
 			if (loc[i].getAlias().empty())
 			{
 				std::string defaultRoot = server.getRoot() + ";";

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 13:05:27 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/14 16:57:11 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -906,27 +906,29 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 		fullPath += requestURL;
 	
 	std::cout << "    fullPath: " << fullPath << std::endl;
-	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
 	// Comprobar si la ruta completa apunta a un directorio
-	std::cout << "indexfile: " << indexFile << std::endl;
+	
 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
-		std::string indexPath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
-		if (indexFile[0] != '/')
-			 indexPath +=  "/";
-		if (indexPath[0] == '.')
-			indexPath = &indexPath[1];
-		indexPath += indexFile;
+		std::string indexFile;
+		if (location.getIndexLocation().empty())
+		{
+			indexFile = server.getIndex();
+			fullPath = server.getRoot() + indexFile;
+		}
+		else
+		{
+			indexFile = location.getIndexLocation();
+			fullPath += indexFile;
+		}
+		std::cout << "indexfile: " << indexFile << std::endl;
+		
 		// Construir la ruta al archivo índice dentro del directorio
 		// Verificar si el archivo índice existe y es legible
-		std::cout << "indexPath: " << indexPath << std::endl;
-		if (ConfigFile::fileExistsAndReadable(indexPath))
-			return indexPath;
-		else
+		std::cout << "fullPath: " << fullPath << std::endl;
+		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
 	}
-	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
-	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URL
 	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
