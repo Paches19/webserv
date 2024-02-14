@@ -67,8 +67,8 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	//Métodos implementados
 	_methods.reserve(3);
 	_methods.push_back(1); // GET
-	_methods.push_back(0); // POST
-	_methods.push_back(0); // DELETE
+	_methods.push_back(1); // POST
+	_methods.push_back(1); // DELETE
 
 	// Configuración de los parámetros de la localización
 	configureLocation(path, parametr);

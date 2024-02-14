@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 16:57:11 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/14 17:48:09 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -901,15 +901,18 @@ std::string Server::buildResourcePath(HttpRequest& request,
 std::string Server::adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
 										const Location& location, VirtualServers& server)
 {
+	if (ConfigFile::fileExistsAndReadable(requestURL))
+			return requestURL;
+
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
-	
-	std::cout << "    fullPath: " << fullPath << std::endl;
 	// Comprobar si la ruta completa apunta a un directorio
 	
 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
+		if (location.getAutoindex())
+			return fullPath;
 		std::string indexFile;
 		if (location.getIndexLocation().empty())
 		{
@@ -922,17 +925,16 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 			fullPath += indexFile;
 		}
 		std::cout << "indexfile: " << indexFile << std::endl;
-		
 		// Construir la ruta al archivo índice dentro del directorio
 		// Verificar si el archivo índice existe y es legible
 		std::cout << "fullPath: " << fullPath << std::endl;
 		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
 	}
-	else if (ConfigFile::fileExistsAndReadable(fullPath))
-		return fullPath;
+	// else if (ConfigFile::fileExistsAndReadable(fullPath))
+	// 	return fullPath;
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
-	return requestURL;
+	return fullPath;
 }
 
 std::string bodyReturn(const std::string cad, const std::string& url, int statusCode)
