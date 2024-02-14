@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 18:12:36 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/14 16:57:11 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -345,7 +345,6 @@ void Server::run(std::vector<VirtualServers> servers)
 	} // Fin del bucle while (always true)
 }
 
-
 std::string Server::createBodyErrorPage(short &errorCode)
 {
 	HttpResponse msg;
@@ -404,6 +403,8 @@ bool isCGIScript(const std::string& resourcePath)
     // Return true if it's a CGI script, false otherwise
 
     // Example: Check if the file extension is ".cgi"
+	if (resourcePath.empty())
+		return false;
     if (resourcePath.size() >= 4)
 	{
 		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
@@ -564,7 +565,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 		if (resourcePath.empty())
 			return ;
-		
+		std::cout << "devuelvo: " << resourcePath << std::endl;
 		// Check if the requested resource is a CGI script
     	if (isCGIScript(resourcePath))
     	{
@@ -572,8 +573,9 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
        		executeCGIScript(resourcePath, request, processResponse, server, socket);
         	return;
     	}
-
+		std::cout << "paso CGI: " << resourcePath << std::endl;
 		std::string buffer = ConfigFile::readFile(resourcePath);
+		std::cout << "paso buffer: " << resourcePath << std::endl;
 		if (buffer.empty())
 		{
 			//Error si el archivo está vacío o no se pudo abrir
@@ -770,7 +772,8 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	HttpResponse processResponse;
 	if (ConfigFile::checkPath(resourcePath) == IS_DIR)
 	{
-		//std::cout << " Es directorio " << std::endl;
+		// std::cout << " Es directorio " << std::endl;
+		
 		if (locationRequest->getAutoindex())
 		{
 			// Autoindex activado: generar y enviar página de índice
@@ -789,6 +792,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 			{
 				// Enviar archivo index
 				std::string buffer = ConfigFile::readFile(indexPath);
+				
 				processResponse.setStatusCode(200);
 				processResponse.setHeader("Content-Type:", getMimeType(indexPath));
 				processResponse.setBody(buffer);
@@ -888,6 +892,7 @@ std::string Server::buildResourcePath(HttpRequest& request,
 	// Ajustar la ruta del recurso para manejo de directorios
 	std::string resourcePath =
 		adjustPathForDirectory(requestURL, basePath, location, server);
+	std::cout << "adjustPath: " << resourcePath << std::endl;
 	if (!location.getAlias().empty())
 		resourcePath.replace(0, location.getPath().length(), location.getAlias());
 	return resourcePath;
@@ -899,27 +904,31 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
-	if (fullPath[0] != '.')
-		fullPath = "." + fullPath;
 	
-	//std::cout << "    fullPath: " << fullPath << std::endl;
-	std::string indexFile = location.getIndexLocation().empty() ? server.getIndex() : location.getIndexLocation();
+	std::cout << "    fullPath: " << fullPath << std::endl;
 	// Comprobar si la ruta completa apunta a un directorio
+	
 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
-		std::string indexPath = fullPath;
-		if (indexFile[0] != '/')
-			 indexPath +=  "/";
-		indexPath += indexFile;
+		std::string indexFile;
+		if (location.getIndexLocation().empty())
+		{
+			indexFile = server.getIndex();
+			fullPath = server.getRoot() + indexFile;
+		}
+		else
+		{
+			indexFile = location.getIndexLocation();
+			fullPath += indexFile;
+		}
+		std::cout << "indexfile: " << indexFile << std::endl;
+		
 		// Construir la ruta al archivo índice dentro del directorio
 		// Verificar si el archivo índice existe y es legible
-		if (ConfigFile::fileExistsAndReadable(indexPath))
-			return indexPath;
-		else
+		std::cout << "fullPath: " << fullPath << std::endl;
+		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
 	}
-	// Si ninguna de las anteriores, intentar como si fullPath fuera directamente el archivo solicitado
-	// Esto es útil en caso de que fullPath ya incluya el archivo índice en la URL
 	else if (ConfigFile::fileExistsAndReadable(fullPath))
 		return fullPath;
 	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
