@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:12:15 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/15 11:38:24 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ class Server
 			Socket* socket);
 		void executeCGIScript(std::string& scriptPath, HttpRequest& request,
 			HttpResponse& response, VirtualServers& server, Socket* socket);
+		bool checkOpenPorts(std::vector<Socket*> _serverSockets, VirtualServers server);
 	
 		class ErrorException : public std::exception
 		{

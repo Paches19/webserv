@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:38:47 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 16:41:26 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/15 11:25:41 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,11 +90,12 @@ bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
 {
 	struct stat buffer;
 	std::string path;
-	if (filePath[0] != '.')
+	std::cout << "Path1: " << path << std::endl;
+	if (filePath[0] != '.' && filePath[0] == '/')
 		path = "." + filePath;
 	else
 		path = filePath;
-	std::cout << "Path: " << path << std::endl;
+	std::cout << "Path2: " << path << std::endl;
 	std::string exFilePath = prefixPath(path);
 
 	if (stat(exFilePath.c_str(), &buffer) == 0)

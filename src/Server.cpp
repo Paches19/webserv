@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 17:48:09 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/15 17:18:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ Server& Server::operator=(const Server& other)
 	}
 	return *this;
 }
+
 Server::Server(std::vector<VirtualServers>	servers)
 {
 	std::cout << "\nInitializing server..." << std::endl;
@@ -45,20 +46,23 @@ Server::Server(std::vector<VirtualServers>	servers)
 	// Crear sockets
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		Socket* newSocket = new Socket();
-		if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
-			throw ErrorException("Error opening the socket");
-		_serverSockets.push_back(newSocket);
-		
-		struct pollfd serverPollFd;
+		if (checkOpenPorts(_serverSockets, servers[i]))
+		{
+			Socket* newSocket = new Socket();
+			if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
+				throw ErrorException("Error opening the socket");
+			_serverSockets.push_back(newSocket);
+			struct pollfd serverPollFd;
 
-		serverPollFd.fd = _serverSockets[i]->getSocketFd();
-		serverPollFd.events = POLLIN; // Establecer para leer
-		this->_pollFds.push_back(serverPollFd);
-		std::cout << "    Listening on port:  " <<
-		servers[i].getPort() << std::endl;
+			serverPollFd.fd = _serverSockets.back()->getSocketFd();
+			serverPollFd.events = POLLIN; // Establecer para leer
+			this->_pollFds.push_back(serverPollFd);
+			std::cout << "    Listening on port:  " <<
+				servers[i].getPort() << std::endl;
+		}
 	}
 }
+
 Server::~Server()
 {
 	for (size_t i = 0; i < _serverSockets.size(); ++i)
@@ -77,144 +81,185 @@ Server::~Server()
 //******************************************************************************
 // Getters
 //******************************************************************************
+
+std::vector<std::string> split(const std::string &s, char delimiter)
+{
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(s);
+	while (std::getline(tokenStream, token, delimiter))
+		tokens.push_back(token);
+	return tokens;
+}
+
+size_t calculateMatchScore(const std::string& serverName, const std::string& hostName)
+{
+	if (serverName == hostName) return std::string::npos; // Máxima coincidencia
+
+	// Descomponer los nombres en partes para comparar dominios/subdominios
+	std::vector<std::string> serverParts = split(serverName, '.');
+	std::vector<std::string> hostParts = split(hostName, '.');
+	size_t score = 0;
+	size_t minLength = std::min(serverParts.size(), hostParts.size());
+
+	for (size_t i = 0; i < minLength; ++i)
+	{
+		if (serverParts[serverParts.size() - i - 1] == hostParts[hostParts.size() - i - 1])
+			score++;
+		else
+			break;
+	}
+	return score;
+}
+
 VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers)
 {
-	//Busco qué cliente ha hecho la petición para saber qué server le corresponde
 	size_t j = 0;
 
 	while (j < _clientSockets.size() && _clientSockets[j]->getSocketFd() != _pollFds[i].fd)
+	{
 		j++;
+	}
+	
 	if (j == _clientSockets.size()) //No encuentra cliente
 	{
 		_errorCode = 500;
 		VirtualServers aServer;
 		return (aServer);
 	}
-	
+	std::cout << "clientPort: " << _clientSockets[j]->getListenPort() << std::endl;
 	int nbServer = 0; //Número de posibles servidores válidos
-	int candidates[servers.size()]; //Array de candidatos a server: 1 = candidato, 0 = no candidato
-	long unsigned firstCandidate = servers.size() - 1; //Posición del primer candidato, en el array de candidatos
-	
-	//Busco servers con IP:Port del socket cliente = IP:Port del server
+	std::vector<int> candidates(servers.size(), 0);
 	for (long unsigned k = 0; k < servers.size(); k++)
 	{
-		if (inet_ntoa(servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr))
+		if (inet_ntoa(servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr)
+			&& servers[k].getPort() == _clientSockets[j]->getListenPort() &&
+				(std::string) inet_ntoa(servers[k].getIpAddress()) != "0.0.0.0")
 		{
-			candidates[k] = 1;
 			nbServer++;
-			if (firstCandidate > k)
-				firstCandidate = k;
+			candidates[k] = 1;
+			std::cout << "candidate: " << k << std::endl;
 		}
-		else
-			candidates[k] = 0;
 	}
-	
-	// Si no encuentra servers --> ERROR 404
-	if (nbServer == 0)
+	std::cout << "nbServer: " << nbServer << std::endl;
+	if (nbServer == 1)
 	{
-		_errorCode = 404;
-		VirtualServers aServer;
-		return aServer;
-	}
-				
-	// Si hay varios candidatos......
-	if (nbServer > 1)
-	{
-		int possibleServers = nbServer;
-		// Se busca un server_name coincidente con Host del request
 		for (long unsigned k = 0; k < servers.size(); k++)
 		{
-			if (candidates[k] == 1 && servers[k].getServerName() != request.getHost())
-				possibleServers--;
-			if (candidates[k] == 1 && servers[k].getServerName() == request.getHost())
-			{
-				if (firstCandidate > k)
-					firstCandidate = k;
-			}
+			if (candidates[k] == 1)
+				return servers[k];
 		}
-		// Si no hay coincidencias, se busca un server_name que tenga
-		// coincidencia más larga desde el primer punto hasta el final
-		if (possibleServers == 0)
-		{	
-			possibleServers = nbServer;
-			std::string finalServerName;
-			std::string finalRequestHost;
-			size_t maxLength = 0;
-			for (long unsigned k = 0; k < servers.size(); k++)
+	}
+	if (nbServer > 1)
+	{
+		std::string requestHostName = request.getHost();
+		for (long unsigned k = 0; k < servers.size(); k++)
+		{
+			
+			if (candidates[k] == 1 && servers[k].getServerName() == requestHostName &&
+				(std::string) inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr) != "0.0.0.0")
 			{
-				finalServerName = servers[k].getServerName().substr(servers[k].getServerName().find_first_of(".") + 1);
-				finalRequestHost = request.getHost().substr(request.getHost().find_first_of(".") + 1);
-				if (candidates[k] == 1)
+				std::cout << "server elegido: " << k << std::endl;
+				return servers[k];
+			}
+				
+		}
+		std::cout << "request host name: " << requestHostName << std::endl;
+		for (long unsigned k = 0; k < servers.size(); k++)
+		{
+			std::cout << "server name: " << servers[k].getServerName() << std::endl;
+			if (candidates[k] == 1 && servers[k].getServerName() == requestHostName)
+				return servers[k];
+		}
+		
+		int bestMatchIndex = -1;
+		size_t bestMatchScore = 0;
+		for (size_t k = 0; k < servers.size(); k++)
+		{
+			if (candidates[k] == 1)
+			{
+				std::string serverName = servers[k].getServerName();
+				size_t score = calculateMatchScore(serverName, request.getHost());
+				if (score > bestMatchScore)
 				{
-					if (finalServerName != finalRequestHost)
-						possibleServers--;
-					else if (finalServerName.length() > maxLength)
-						firstCandidate = k;
+					bestMatchScore = score;
+					bestMatchIndex = k;
 				}
 			}
 		}
-		// Si no hay coincidencias, se busca un server_name que tenga
-		// coincidencia más larga desde el principio hasta el último punto
-		if (possibleServers == 0)
+		if (bestMatchIndex != -1)
+			return servers[bestMatchIndex];	
+	}
+	else
+	{
+		for (long unsigned k = 0; k < servers.size(); k++)
 		{
-			possibleServers = nbServer;
-			std::string inicioServerName;
-			std::string inicioRequestHost;
-			size_t maxLength = 0;
-			for (long unsigned k = 0; k < servers.size(); k++)
+			if (servers[k].getPort() == _clientSockets[j]->getListenPort())
 			{
-				inicioServerName = servers[k].getServerName().substr(0, servers[k].getServerName().find_last_of("."));
-				inicioRequestHost = request.getHost().substr(0, request.getHost().find_last_of("."));
-				if (candidates[k] == 1)
-				{
-					if (inicioServerName != inicioRequestHost)
-						possibleServers--;
-					else if (inicioServerName.length() > maxLength)
-						firstCandidate = k;
-				}
+				nbServer++;
+				candidates[k] = 1;
+				std::cout << "candidate: " << k << std::endl;
 			}
 		}
-		//**********************************************************
-		// Si no hay coincidencias, se busca un server_name definido 
-		// con expresiones regulares (~ antes del nombre) que coincida
-		// con el nombre del Host del request 
-		// ESTA PARTE NO SE IMPLEMENTA SEGÚN SUBJECT
-		//***********************************************************
-		// Si no hay coincidencias, se usa el predeterminado.
-		// Este server es el que tenga la directiva default_server (solo puede haber uno)
-		if (possibleServers == 0)
+		std::cout << "nbServer: " << nbServer << std::endl;
+		if (nbServer == 1)
 		{
-			possibleServers = nbServer;
 			for (long unsigned k = 0; k < servers.size(); k++)
 			{
 				if (candidates[k] == 1)
+					return servers[k];
+			}
+		}
+		if (nbServer > 1)
+		{
+			std::string requestHostName = request.getHost();
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				
+				if (candidates[k] == 1 && servers[k].getServerName() == requestHostName &&
+					(std::string) inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr) != "0.0.0.0")
 				{
-					if (!servers[k].getDefaultServer())
-						possibleServers--;
-					else
+					std::cout << "server elegido: " << k << std::endl;
+					return servers[k];
+				}
+					
+			}
+			std::cout << "request host name: " << requestHostName << std::endl;
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				std::cout << "server name: " << servers[k].getServerName() << std::endl;
+				if (candidates[k] == 1 && servers[k].getServerName() == requestHostName)
+					return servers[k];
+			}
+			
+			int bestMatchIndex = -1;
+			size_t bestMatchScore = 0;
+			for (size_t k = 0; k < servers.size(); k++)
+			{
+				if (candidates[k] == 1)
+				{
+					std::string serverName = servers[k].getServerName();
+					size_t score = calculateMatchScore(serverName, request.getHost());
+					if (score > bestMatchScore)
 					{
-						firstCandidate = k;
-						break ;
+						bestMatchScore = score;
+						bestMatchIndex = k;
 					}
 				}
 			}
-		}
-		// Y Si no está definido default_server, se usa el primer server de la lista
-		if (possibleServers == 0)
-		{
-			possibleServers = nbServer;
-			for (long unsigned k = 0; k < servers.size(); k++)
-			{
-				if (candidates[k] == 1)
-				{
-					firstCandidate = k;
-					break;
-				}
-			}
+			if (bestMatchIndex != -1)
+				return servers[bestMatchIndex];	
 		}
 	}
-	//std::cout << "Selected Server: " << firstCandidate << std::endl;
-	return servers[firstCandidate];
+	for (long unsigned k = 0; k < servers.size(); k++)
+	{
+		if (candidates[k] == 1)
+		{
+			if (servers[k].getDefaultServer())
+				return servers[k];
+		}
+	}
+	return servers[0];
 }
 
 std::string Server::getMimeType(const std::string& filePath)
@@ -298,6 +343,7 @@ void Server::run(std::vector<VirtualServers> servers)
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						bestServer = getBestServer(requestReceive, i, servers);
+						std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer, dataSocket);
 					}
 					else if (!requestReceive.getIsValidRequest()) // Bad Request
@@ -892,7 +938,6 @@ std::string Server::buildResourcePath(HttpRequest& request,
 	// Ajustar la ruta del recurso para manejo de directorios
 	std::string resourcePath =
 		adjustPathForDirectory(requestURL, basePath, location, server);
-	std::cout << "adjustPath: " << resourcePath << std::endl;
 	if (!location.getAlias().empty())
 		resourcePath.replace(0, location.getPath().length(), location.getAlias());
 	return resourcePath;
@@ -907,7 +952,6 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
-	// Comprobar si la ruta completa apunta a un directorio
 	
 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
@@ -924,16 +968,9 @@ std::string Server::adjustPathForDirectory(const std::string& requestURL, const 
 			indexFile = location.getIndexLocation();
 			fullPath += indexFile;
 		}
-		std::cout << "indexfile: " << indexFile << std::endl;
-		// Construir la ruta al archivo índice dentro del directorio
-		// Verificar si el archivo índice existe y es legible
-		std::cout << "fullPath: " << fullPath << std::endl;
 		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
 	}
-	// else if (ConfigFile::fileExistsAndReadable(fullPath))
-	// 	return fullPath;
-	// Si ninguna ruta es válida, devuelve la ruta original (el manejo del error se realizará más adelante)
 	return fullPath;
 }
 
@@ -996,8 +1033,9 @@ Socket* Server::handleNewConnection(int i)
 	if (i < (int) _serverSockets.size())
 	{
 		Socket* newSocket = new Socket();
-		if (_serverSockets[i]->accept(*newSocket))
+		if (_serverSockets[i]->accept(*newSocket, _serverSockets[i]->getListenPort()))
 		{
+			std::cout << "Accept " << i << " server port: " << _serverSockets[i]->getListenPort() << std::endl;
 			std::vector<Socket*>::iterator it;
 			for (it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
 			{
@@ -1035,4 +1073,16 @@ Socket* Server::handleNewConnection(int i)
 		}
 	}
 	return _serverSockets[0];
+}
+
+bool Server::checkOpenPorts(std::vector<Socket*> _serverSockets, VirtualServers server)
+{
+	if (_serverSockets.empty())
+		return true;
+	for (size_t i = 0; i < _serverSockets.size(); ++i)
+	{
+		if (htons(_serverSockets[i]->getSocketAddr().sin_port) == server.getPort())
+			return false;
+	}
+	return true;
 }
