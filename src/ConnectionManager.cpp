@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 17:22:44 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/16 12:33:38 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,8 +85,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
-	// std::cout << "Bytes Read: " << bytesRead << std::endl;
-	// std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
 
 	if (bytesRead > 0)
 	{
@@ -146,11 +144,7 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 	data.accumulatedBytes = responseStr.size();
 	data.writeBuffer = new char[data.accumulatedBytes];
 
-	//std::strcpy(data.writeBuffer, responseStr.c_str());  //********NO FUNCIONA CON IMAGENES********
-	
 	std::copy(responseStr.begin(), responseStr.end(), data.writeBuffer);
-	
-	//std::cout << "\nENTRO writeData" << std::endl;
 	
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
