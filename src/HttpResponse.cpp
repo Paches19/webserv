@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:27:01 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 18:07:49 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/16 11:48:25 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,8 +64,6 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Accepted";
 		case 204:
 			return "No Content";
-
-		//in case of redirection
 		case 301:
 			return "Moved Permanently";
 		case 302:
@@ -76,8 +74,6 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Temporary Redirect";
 		case 308:
 			return "Permanent Redirect";
-
-		//in case of client error
 		case 400:
 			return "Bad Request";
 		case 401:
@@ -92,8 +88,6 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 			return "Request Timeout";
 		case 413:
 			return "Payload Too Large";
-			
-		//in case of server error
 		case 415:
 			return "Unsupported Media Type";
 		case 500:

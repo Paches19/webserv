@@ -6,7 +6,7 @@
 #    By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/01/12 11:30:21 by adpachec          #+#    #+#              #
-#    Updated: 2024/01/22 12:58:35 by adpachec         ###   ########.fr        #
+#    Updated: 2024/02/16 12:01:44 by adpachec         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,6 +27,7 @@ SRC		=	ConfigFile.cpp \
 			Location.cpp \
 			main.cpp \
 			Server.cpp \
+			ServerUtils.cpp \
 			Socket.cpp \
 			VirtualServers.cpp
 
@@ -36,6 +37,7 @@ SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 HEADERS = 	$(INC_DIR)HttpRequest.hpp \
 			$(INC_DIR)HttpResponse.hpp \
 			$(INC_DIR)Server.hpp \
+			$(INC_DIR)ServerUtils.hpp \
 			$(INC_DIR)Socket.hpp \
 			$(INC_DIR)ConnectionManager.hpp \
 			$(INC_DIR)ConnectionData.hpp \

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/15 17:18:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/16 12:00:15 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,36 +82,6 @@ Server::~Server()
 // Getters
 //******************************************************************************
 
-std::vector<std::string> split(const std::string &s, char delimiter)
-{
-	std::vector<std::string> tokens;
-	std::string token;
-	std::istringstream tokenStream(s);
-	while (std::getline(tokenStream, token, delimiter))
-		tokens.push_back(token);
-	return tokens;
-}
-
-size_t calculateMatchScore(const std::string& serverName, const std::string& hostName)
-{
-	if (serverName == hostName) return std::string::npos; // Máxima coincidencia
-
-	// Descomponer los nombres en partes para comparar dominios/subdominios
-	std::vector<std::string> serverParts = split(serverName, '.');
-	std::vector<std::string> hostParts = split(hostName, '.');
-	size_t score = 0;
-	size_t minLength = std::min(serverParts.size(), hostParts.size());
-
-	for (size_t i = 0; i < minLength; ++i)
-	{
-		if (serverParts[serverParts.size() - i - 1] == hostParts[hostParts.size() - i - 1])
-			score++;
-		else
-			break;
-	}
-	return score;
-}
-
 VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers)
 {
 	size_t j = 0;
@@ -127,21 +97,17 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 		VirtualServers aServer;
 		return (aServer);
 	}
-	std::cout << "clientPort: " << _clientSockets[j]->getListenPort() << std::endl;
 	int nbServer = 0; //Número de posibles servidores válidos
 	std::vector<int> candidates(servers.size(), 0);
 	for (long unsigned k = 0; k < servers.size(); k++)
 	{
 		if (inet_ntoa(servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr)
-			&& servers[k].getPort() == _clientSockets[j]->getListenPort() &&
-				(std::string) inet_ntoa(servers[k].getIpAddress()) != "0.0.0.0")
+			&& servers[k].getPort() == _clientSockets[j]->getListenPort())
 		{
 			nbServer++;
 			candidates[k] = 1;
-			std::cout << "candidate: " << k << std::endl;
 		}
 	}
-	std::cout << "nbServer: " << nbServer << std::endl;
 	if (nbServer == 1)
 	{
 		for (long unsigned k = 0; k < servers.size(); k++)
@@ -152,56 +118,14 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 	}
 	if (nbServer > 1)
 	{
-		std::string requestHostName = request.getHost();
 		for (long unsigned k = 0; k < servers.size(); k++)
 		{
-			
-			if (candidates[k] == 1 && servers[k].getServerName() == requestHostName &&
-				(std::string) inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr) != "0.0.0.0")
-			{
-				std::cout << "server elegido: " << k << std::endl;
-				return servers[k];
-			}
-				
-		}
-		std::cout << "request host name: " << requestHostName << std::endl;
-		for (long unsigned k = 0; k < servers.size(); k++)
-		{
-			std::cout << "server name: " << servers[k].getServerName() << std::endl;
-			if (candidates[k] == 1 && servers[k].getServerName() == requestHostName)
-				return servers[k];
-		}
-		
-		int bestMatchIndex = -1;
-		size_t bestMatchScore = 0;
-		for (size_t k = 0; k < servers.size(); k++)
-		{
-			if (candidates[k] == 1)
-			{
-				std::string serverName = servers[k].getServerName();
-				size_t score = calculateMatchScore(serverName, request.getHost());
-				if (score > bestMatchScore)
-				{
-					bestMatchScore = score;
-					bestMatchIndex = k;
-				}
-			}
-		}
-		if (bestMatchIndex != -1)
-			return servers[bestMatchIndex];	
-	}
-	else
-	{
-		for (long unsigned k = 0; k < servers.size(); k++)
-		{
-			if (servers[k].getPort() == _clientSockets[j]->getListenPort())
+			if (servers[k].getPort() == _clientSockets[j]->getListenPort() && candidates[k] != 1)
 			{
 				nbServer++;
 				candidates[k] = 1;
-				std::cout << "candidate: " << k << std::endl;
 			}
 		}
-		std::cout << "nbServer: " << nbServer << std::endl;
 		if (nbServer == 1)
 		{
 			for (long unsigned k = 0; k < servers.size(); k++)
@@ -213,42 +137,25 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 		if (nbServer > 1)
 		{
 			std::string requestHostName = request.getHost();
+			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\n'), requestHostName.end());
+			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\r'), requestHostName.end());
 			for (long unsigned k = 0; k < servers.size(); k++)
 			{
-				
-				if (candidates[k] == 1 && servers[k].getServerName() == requestHostName &&
-					(std::string) inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr) != "0.0.0.0")
-				{
-					std::cout << "server elegido: " << k << std::endl;
+				std::string serverName = servers[k].getServerName();
+				if (candidates[k] == 1 && serverName == requestHostName)
 					return servers[k];
-				}
-					
 			}
-			std::cout << "request host name: " << requestHostName << std::endl;
 			for (long unsigned k = 0; k < servers.size(); k++)
 			{
-				std::cout << "server name: " << servers[k].getServerName() << std::endl;
-				if (candidates[k] == 1 && servers[k].getServerName() == requestHostName)
+				std::string serverName = servers[k].getServerName();
+				if (candidates[k] == 1 && serverName == requestHostName)
 					return servers[k];
 			}
-			
-			int bestMatchIndex = -1;
-			size_t bestMatchScore = 0;
-			for (size_t k = 0; k < servers.size(); k++)
+			for (long unsigned k = 0; k < servers.size(); k++)
 			{
 				if (candidates[k] == 1)
-				{
-					std::string serverName = servers[k].getServerName();
-					size_t score = calculateMatchScore(serverName, request.getHost());
-					if (score > bestMatchScore)
-					{
-						bestMatchScore = score;
-						bestMatchIndex = k;
-					}
-				}
+						return servers[k];
 			}
-			if (bestMatchIndex != -1)
-				return servers[bestMatchIndex];	
 		}
 	}
 	for (long unsigned k = 0; k < servers.size(); k++)
@@ -262,47 +169,47 @@ VirtualServers Server::getBestServer(HttpRequest &request, size_t i, std::vector
 	return servers[0];
 }
 
-std::string Server::getMimeType(const std::string& filePath)
-{
-	size_t dotPos = filePath.rfind('.');
-	std::map<std::string, std::string> mimeTypes;
+// std::string Server::getMimeType(const std::string& filePath)
+// {
+// 	size_t dotPos = filePath.rfind('.');
+// 	std::map<std::string, std::string> mimeTypes;
 
-	mimeTypes[".html"] = "text/html";
-	mimeTypes[".css"]  = "text/css";
-	mimeTypes[".txt"]  = "text/plain";
-	mimeTypes[".csv"]  = "text/csv";
-	mimeTypes[".htm"]  = "text/html";
+// 	mimeTypes[".html"] = "text/html";
+// 	mimeTypes[".css"]  = "text/css";
+// 	mimeTypes[".txt"]  = "text/plain";
+// 	mimeTypes[".csv"]  = "text/csv";
+// 	mimeTypes[".htm"]  = "text/html";
 	
-	mimeTypes[".jpg"]  = "image/jpeg";
-	mimeTypes[".jpeg"] = "image/jpeg";
-	mimeTypes[".png"]  = "image/png";
-	mimeTypes[".gif"]  = "image/gif";
-	mimeTypes[".svg"]  = "image/svg+xml";
-	mimeTypes[".ico"]  = "image/x-icon";
+// 	mimeTypes[".jpg"]  = "image/jpeg";
+// 	mimeTypes[".jpeg"] = "image/jpeg";
+// 	mimeTypes[".png"]  = "image/png";
+// 	mimeTypes[".gif"]  = "image/gif";
+// 	mimeTypes[".svg"]  = "image/svg+xml";
+// 	mimeTypes[".ico"]  = "image/x-icon";
 
-	mimeTypes[".pdf"]  = "application/pdf";
-	mimeTypes[".zip"]  = "application/zip";
-	mimeTypes[".tar"]  = "application/x-tar";
-	mimeTypes[".gz"]   = "application/gzip";
-	mimeTypes[".js"]   = "application/javascript";
-	mimeTypes[".json"] = "application/json";
-	mimeTypes[".xml"]  = "application/xml";
-	mimeTypes[".doc"]  = "application/msword";
+// 	mimeTypes[".pdf"]  = "application/pdf";
+// 	mimeTypes[".zip"]  = "application/zip";
+// 	mimeTypes[".tar"]  = "application/x-tar";
+// 	mimeTypes[".gz"]   = "application/gzip";
+// 	mimeTypes[".js"]   = "application/javascript";
+// 	mimeTypes[".json"] = "application/json";
+// 	mimeTypes[".xml"]  = "application/xml";
+// 	mimeTypes[".doc"]  = "application/msword";
 
-	mimeTypes[".mp3"]  = "audio/mpeg";
-	mimeTypes[".mp4"]  = "video/mp4";
-	mimeTypes[".avi"]  = "video/x-msvideo";
-	mimeTypes[".mpeg"] = "video/mpeg";
-	mimeTypes[".webm"] = "video/webm";
+// 	mimeTypes[".mp3"]  = "audio/mpeg";
+// 	mimeTypes[".mp4"]  = "video/mp4";
+// 	mimeTypes[".avi"]  = "video/x-msvideo";
+// 	mimeTypes[".mpeg"] = "video/mpeg";
+// 	mimeTypes[".webm"] = "video/webm";
 
-	if (dotPos != std::string::npos)
-	{
-		std::string ext = filePath.substr(dotPos);
-		if (mimeTypes.count(ext))
-			return mimeTypes[ext];
-	}
-	return "text/plain"; // Tipo MIME por defecto si no se reconoce la extensión
-}
+// 	if (dotPos != std::string::npos)
+// 	{
+// 		std::string ext = filePath.substr(dotPos);
+// 		if (mimeTypes.count(ext))
+// 			return mimeTypes[ext];
+// 	}
+// 	return "text/plain"; // Tipo MIME por defecto si no se reconoce la extensión
+// }
 
 //******************************************************************************
 // Métodos de la clase
@@ -360,13 +267,8 @@ void Server::run(std::vector<VirtualServers> servers)
 				{
 					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
 					{
-						// std::cout << "\nENTRO POLLOUT por fd igual" << std::endl;
-						// std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
-						// std::cout << "dataResponseSent preWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), i, _responsesToSend[_pollFds[i].fd],
 							_pollFds);
-						//std::cout << "dataResponseSent postWriteData: " << _connectionManager.connections[_pollFds[i].fd].responseSent << std::endl;
-						//std::cout << "Response a enviar en fd: " << _pollFds[i].fd << std::endl;
 						break ;
 					}
 				}
@@ -425,43 +327,40 @@ void Server::createErrorPage(short errorCode, HttpResponse &response, VirtualSer
 	_responsesToSend[socket->getSocketFd()] = response;
 }
 
-bool isValidPath(const std::string& basePath, const std::string& path)
-{
-	// Prevenir Path Traversal verificando la presencia de ".."
-	if (path.find("..") != std::string::npos)
-		return false;
+// bool isValidPath(const std::string& basePath, const std::string& path)
+// {
+// 	// Prevenir Path Traversal verificando la presencia de ".."
+// 	if (path.find("..") != std::string::npos)
+// 		return false;
 
-	std::string fullPath = path;
-	// Verificar si la ruta completa es un directorio permitido
-	if (ConfigFile::checkPath(fullPath) != 2)
-		return false; // No es un directorio o no es accesible
+// 	std::string fullPath = path;
 
-	// Asegurarse de que el path no salga del directorio base
-	if (fullPath.find(basePath) != 0)
-		return false; // El path resultante no está dentro del basePath
+// 	// Asegurarse de que el path no salga del directorio base
+// 	if (fullPath.find(basePath) != 0)
+// 		return false; // El path resultante no está dentro del basePath
 
-	return true; // La ruta es válida y está permitida
-}
-bool isCGIScript(const std::string& resourcePath)
-{
-    // Determine if the resource is a CGI script based on some criteria
-    // For example, check the file extension or any other condition
-    // Return true if it's a CGI script, false otherwise
+// 	return true; // La ruta es válida y está permitida
+// }
+// bool isCGIScript(const std::string& resourcePath)
+// {
+//     // Determine if the resource is a CGI script based on some criteria
+//     // For example, check the file extension or any other condition
+//     // Return true if it's a CGI script, false otherwise
 
-    // Example: Check if the file extension is ".cgi"
-	if (resourcePath.empty())
-		return false;
-    if (resourcePath.size() >= 4)
-	{
-		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
-			(resourcePath.substr(resourcePath.size() - 3) == ".sh"))
-			{
-				std::cout << "    CGI script detected" << std::endl;
-				return true;
-			}
-	}
-	return false;
-}
+//     // Example: Check if the file extension is ".cgi"
+// 	if (resourcePath.empty())
+// 		return false;
+//     if (resourcePath.size() >= 4)
+// 	{
+// 		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
+// 			(resourcePath.substr(resourcePath.size() - 3) == ".sh"))
+// 			{
+// 				std::cout << "    CGI script detected" << std::endl;
+// 				return true;
+// 			}
+// 	}
+// 	return false;
+// }
 
 void Server::executeCGIScript(std::string& scriptPath, HttpRequest& request, 
 	HttpResponse& response, VirtualServers& server, Socket* socket)
@@ -619,9 +518,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
        		executeCGIScript(resourcePath, request, processResponse, server, socket);
         	return;
     	}
-		std::cout << "paso CGI: " << resourcePath << std::endl;
 		std::string buffer = ConfigFile::readFile(resourcePath);
-		std::cout << "paso buffer: " << resourcePath << std::endl;
 		if (buffer.empty())
 		{
 			//Error si el archivo está vacío o no se pudo abrir
@@ -677,6 +574,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
 		// Error si la ruta es inválida o no se puede escribir
 		std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
+		std::cout << "ResourcePath: " << resourcePath << std::endl;
 		if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
 			: locationRequest->getRootLocation(), resourcePath))
 		{
@@ -737,6 +635,9 @@ bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServ
 	Socket* socket)
 {
 	HttpResponse processResponse;
+
+	if (resourcePath[0] == '.')
+		resourcePath = resourcePath.substr(2);
 	std::ofstream outputFile(resourcePath.c_str(), std::ios::out | std::ios::binary);
 	if (!outputFile.is_open())
 	{
@@ -748,69 +649,30 @@ bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServ
 	return true;
 }
 
-std::string Server::getFilename(HttpRequest request, std::string resourcePath)
-{
-	std::string filename;
-	std::string contentDispositionHeader = request.getHeader("Content-Disposition");
-	//std::cout << "contentDispositionHeader: " << contentDispositionHeader << std::endl;
-	size_t filenamePos = contentDispositionHeader.find("filename=");
+// std::string Server::getFilename(HttpRequest request, std::string resourcePath)
+// {
+// 	std::string filename;
+// 	size_t lastSlashPos = request.getURL().find_last_of('/');
+	
+// 	if (lastSlashPos != std::string::npos)
+// 		filename = request.getURL().substr(lastSlashPos + 1);
+// 	if (!filename.empty() )
+// 	{
+// 		if (resourcePath.size() < filename.size() ||
+// 			resourcePath.substr(resourcePath.size() - filename.size()) != filename)
+// 				resourcePath += "/" + filename;
+// 	}
 
-	if (filenamePos != std::string::npos)
-	{
-		// Extraer el nombre del archivo
-		size_t filenameStart = filenamePos + strlen("filename=");
-		// Buscar la primera comilla doble después del "filename="
-		size_t quotePos = contentDispositionHeader.find("\"", filenameStart);
-		if (quotePos != std::string::npos)
-		{
-			// La posición de inicio del nombre del archivo es después de la primera comilla doble
-			size_t filenameStartPos = quotePos + 1;
-			// Buscar la siguiente comilla doble para determinar el final del nombre del archivo
-			size_t filenameEndPos = contentDispositionHeader.find("\"", filenameStartPos);
-			if (filenameEndPos != std::string::npos)
-			{
-				// Extraer el nombre del archivo entre las comillas dobles
-				filename = contentDispositionHeader.substr(filenameStartPos, filenameEndPos - filenameStartPos);
-				//std::cout << "filename: " << filename << std::endl;
-			}
-		}
-		else
-		{
-			size_t spacePos = contentDispositionHeader.find(" ", filenameStart);
-			if (spacePos != std::string::npos)
-			{
-				// Extraer el nombre del archivo entre "filename=" y el primer espacio en blanco
-				filename = contentDispositionHeader.substr(filenameStart, spacePos - filenameStart);
-				//std::cout << "filename: " << filename << std::endl;
-			}
-			else
-			{
-				size_t filenameStart = filenamePos + strlen("filename=");
-				size_t filenameEnd = contentDispositionHeader.length();
-				// Extraer el nombre del archivo desde filenameStart hasta el final de la cadena
-				filename = contentDispositionHeader.substr(filenameStart, filenameEnd - filenameStart);
-				//std::cout << "filename: " << filename << std::endl;
-			}
-		}
-	}
-	else
-	{
-		size_t lastSlashPos = request.getURL().find_last_of('/');
-		if (lastSlashPos != std::string::npos)
-			filename = request.getURL().substr(lastSlashPos + 1);
-	}
-	if (!filename.empty())
-		resourcePath += "/" + filename;
-	if (resourcePath.size() >= 2 && resourcePath[0] == '/')
-		resourcePath = &resourcePath[1];
-	return resourcePath;
+// 	if (resourcePath.size() >= 2 && resourcePath[0] == '/')
+// 		resourcePath = resourcePath.substr(1);
+// 	return resourcePath;
 
-	// Concatenar el nombre del archivo al resourcePath
-	//std::string resourcePath = resourcePath + "/" + filename;
-	//if (resourcePath.size() >= 2)
-	//	resourcePath = &resourcePath[1];
-	//return resourcePath;
-}
+// 	// Concatenar el nombre del archivo al resourcePath
+// 	//std::string resourcePath = resourcePath + "/" + filename;
+// 	//if (resourcePath.size() >= 2)
+// 	//	resourcePath = &resourcePath[1];
+// 	//return resourcePath;
+// }
 
 std::string Server::checkGetPath(std::string resourcePath, const Location* locationRequest,
 		Socket* socket, VirtualServers server)
@@ -863,133 +725,133 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	return resourcePath;
 }
 
-std::string Server::generateDirectoryIndex(const std::string& directoryPath)
-{
-	std::stringstream html;
-	html << "<html>\n<head>\n<title>Index of " << directoryPath << "</title>\n</head>\n";
-	html << "<body>\n<h1>Index of " << directoryPath << "</h1>\n";
-	html << "<ul>\n";
+// std::string Server::generateDirectoryIndex(const std::string& directoryPath)
+// {
+// 	std::stringstream html;
+// 	html << "<html>\n<head>\n<title>Index of " << directoryPath << "</title>\n</head>\n";
+// 	html << "<body>\n<h1>Index of " << directoryPath << "</h1>\n";
+// 	html << "<ul>\n";
 
-	DIR* dir = opendir(directoryPath.c_str());
-	if (dir != NULL)
-	{
-		struct dirent* entry;
-		while ((entry = readdir(dir)) != NULL)
-		{
-			// Filtra "." y ".."
-			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-				continue;
-			// Construye el enlace al archivo/directorio
-			html << "<li><a href=\"" << directoryPath + "/"+entry->d_name << "\">" << entry->d_name << "</a></li>\n";
-		}
-		closedir(dir);
-	}
-	else
-		html << "<p>Error opening directory.</p>\n";
+// 	DIR* dir = opendir(directoryPath.c_str());
+// 	if (dir != NULL)
+// 	{
+// 		struct dirent* entry;
+// 		while ((entry = readdir(dir)) != NULL)
+// 		{
+// 			// Filtra "." y ".."
+// 			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+// 				continue;
+// 			// Construye el enlace al archivo/directorio
+// 			html << "<li><a href=\"" << directoryPath + "/"+entry->d_name << "\">" << entry->d_name << "</a></li>\n";
+// 		}
+// 		closedir(dir);
+// 	}
+// 	else
+// 		html << "<p>Error opening directory.</p>\n";
 
-	html << "</ul>\n</body>\n</html>";
-	return html.str();
-}
+// 	html << "</ul>\n</body>\n</html>";
+// 	return html.str();
+// }
 
-std::string Server::buildResourcePathForPost(HttpRequest& request,
-	const Location& location, VirtualServers& server)
-{
-	std::string requestURL = request.getURL();
+// std::string Server::buildResourcePathForPost(HttpRequest& request,
+// 	const Location& location, VirtualServers& server)
+// {
+// 	std::string requestURL = request.getURL();
 
-	// Eliminar parámetros de consulta
-	size_t queryPos = requestURL.find('?');
-	if (queryPos != std::string::npos)
-		requestURL = requestURL.substr(0, queryPos);
+// 	// Eliminar parámetros de consulta
+// 	size_t queryPos = requestURL.find('?');
+// 	if (queryPos != std::string::npos)
+// 		requestURL = requestURL.substr(0, queryPos);
 
-	// Prevenir Path Transversal
-	if (requestURL.find("..") != std::string::npos)
-		return "";
+// 	// Prevenir Path Transversal
+// 	if (requestURL.find("..") != std::string::npos)
+// 		return "";
 
-	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
+// 	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
 
-	if (basePath != "/" && !basePath.empty() && basePath[basePath.length() - 1] == '/')
-        basePath.erase(basePath.length() - 1);
+// 	if (basePath != "/" && !basePath.empty() && basePath[basePath.length() - 1] == '/')
+//         basePath.erase(basePath.length() - 1);
 
-	if (!requestURL.empty() && requestURL[0] != '/' && basePath != "/")
-        requestURL = "/" + requestURL;
+// 	if (!requestURL.empty() && requestURL[0] != '/' && basePath != "/")
+//         requestURL = "/" + requestURL;
 	
-	std::string resourcePath = basePath + requestURL;
+// 	std::string resourcePath = basePath + requestURL;
 
-	// Prevenir la creación de archivos fuera del directorio raíz
-	if (!request.startsWith(resourcePath, basePath))
-		return "";
+// 	// Prevenir la creación de archivos fuera del directorio raíz
+// 	if (!request.startsWith(resourcePath, basePath))
+// 		return "";
 
-	return resourcePath;
-}
+// 	return resourcePath;
+// }
 
-std::string Server::buildResourcePath(HttpRequest& request,
-	const Location& location, VirtualServers& server)
-{
-	// Extraer la URL de la solicitud
-	std::string requestURL = request.getURL();
+// std::string Server::buildResourcePath(HttpRequest& request,
+// 	const Location& location, VirtualServers& server)
+// {
+// 	// Extraer la URL de la solicitud
+// 	std::string requestURL = request.getURL();
 
-	// Eliminar cualquier parámetro de consulta de la URL
-	size_t queryPos = requestURL.find('?');
-	if (queryPos != std::string::npos)
-		requestURL = requestURL.substr(0, queryPos);
+// 	// Eliminar cualquier parámetro de consulta de la URL
+// 	size_t queryPos = requestURL.find('?');
+// 	if (queryPos != std::string::npos)
+// 		requestURL = requestURL.substr(0, queryPos);
 
-	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
+// 	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
 
-	// Ajustar la ruta del recurso para manejo de directorios
-	std::string resourcePath =
-		adjustPathForDirectory(requestURL, basePath, location, server);
-	if (!location.getAlias().empty())
-		resourcePath.replace(0, location.getPath().length(), location.getAlias());
-	return resourcePath;
-}
+// 	// Ajustar la ruta del recurso para manejo de directorios
+// 	std::string resourcePath =
+// 		adjustPathForDirectory(requestURL, basePath, location, server);
+// 	if (!location.getAlias().empty())
+// 		resourcePath.replace(0, location.getPath().length(), location.getAlias());
+// 	return resourcePath;
+// }
 
-std::string Server::adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
-										const Location& location, VirtualServers& server)
-{
-	if (ConfigFile::fileExistsAndReadable(requestURL))
-			return requestURL;
+// std::string Server::adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
+// 										const Location& location, VirtualServers& server)
+// {
+// 	if (ConfigFile::fileExistsAndReadable(requestURL))
+// 			return requestURL;
 
-	std::string fullPath = basePath;
-	if (requestURL != "/")
-		fullPath += requestURL;
+// 	std::string fullPath = basePath;
+// 	if (requestURL != "/")
+// 		fullPath += requestURL;
 	
-	if (ConfigFile::checkPath(fullPath) == IS_DIR)
-	{
-		if (location.getAutoindex())
-			return fullPath;
-		std::string indexFile;
-		if (location.getIndexLocation().empty())
-		{
-			indexFile = server.getIndex();
-			fullPath = server.getRoot() + indexFile;
-		}
-		else
-		{
-			indexFile = location.getIndexLocation();
-			fullPath += indexFile;
-		}
-		if (ConfigFile::fileExistsAndReadable(fullPath))
-			return fullPath;
-	}
-	return fullPath;
-}
+// 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
+// 	{
+// 		if (location.getAutoindex())
+// 			return fullPath;
+// 		std::string indexFile;
+// 		if (location.getIndexLocation().empty())
+// 		{
+// 			indexFile = server.getIndex();
+// 			fullPath = server.getRoot() + indexFile;
+// 		}
+// 		else
+// 		{
+// 			indexFile = location.getIndexLocation();
+// 			fullPath += indexFile;
+// 		}
+// 		if (ConfigFile::fileExistsAndReadable(fullPath))
+// 			return fullPath;
+// 	}
+// 	return fullPath;
+// }
 
-std::string bodyReturn(const std::string cad, const std::string& url, int statusCode)
-{
-	HttpResponse r;
-	std::stringstream ss;
-	ss << statusCode;
+// std::string bodyReturn(const std::string cad, const std::string& url, int statusCode)
+// {
+// 	HttpResponse r;
+// 	std::stringstream ss;
+// 	ss << statusCode;
 
-	std::string body = "<html>\n<head>\n<title>";
-	body += ss.str() + " " +r.getStatusMessage(statusCode) + "</title>\n</head>\n";
-	body += "<body>\n<h1>" + ss.str() + " " + r.getStatusMessage(statusCode) + "</h1>\n";
-	if (url != "")
-		body += "<p><h2><font color=\"green\">Redirecting to <a href=\"" + url + "\">" + url + "</a></font></h2></p>\n";
-	else
-		body += "<p><h2><font color=\"red\">" + cad + "</font></h2></p>\n";
-	body += "</body>\n</html>";
-	return body;
-}
+// 	std::string body = "<html>\n<head>\n<title>";
+// 	body += ss.str() + " " +r.getStatusMessage(statusCode) + "</title>\n</head>\n";
+// 	body += "<body>\n<h1>" + ss.str() + " " + r.getStatusMessage(statusCode) + "</h1>\n";
+// 	if (url != "")
+// 		body += "<p><h2><font color=\"green\">Redirecting to <a href=\"" + url + "\">" + url + "</a></font></h2></p>\n";
+// 	else
+// 		body += "<p><h2><font color=\"red\">" + cad + "</font></h2></p>\n";
+// 	body += "</body>\n</html>";
+// 	return body;
+// }
 
 void Server::processReturnDirective(const Location& locationRequest,
 	HttpResponse& processResponse)
@@ -1075,14 +937,14 @@ Socket* Server::handleNewConnection(int i)
 	return _serverSockets[0];
 }
 
-bool Server::checkOpenPorts(std::vector<Socket*> _serverSockets, VirtualServers server)
-{
-	if (_serverSockets.empty())
-		return true;
-	for (size_t i = 0; i < _serverSockets.size(); ++i)
-	{
-		if (htons(_serverSockets[i]->getSocketAddr().sin_port) == server.getPort())
-			return false;
-	}
-	return true;
-}
+// bool Server::checkOpenPorts(std::vector<Socket*> _serverSockets, VirtualServers server)
+// {
+// 	if (_serverSockets.empty())
+// 		return true;
+// 	for (size_t i = 0; i < _serverSockets.size(); ++i)
+// 	{
+// 		if (htons(_serverSockets[i]->getSocketAddr().sin_port) == server.getPort())
+// 			return false;
+// 	}
+// 	return true;
+// }
