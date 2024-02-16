@@ -18,7 +18,7 @@
 # include "ConnectionManager.hpp"
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
-//# include "HttpResponse.hpp"
+# include "CgiHandler.hpp"
 
 class Server
 {

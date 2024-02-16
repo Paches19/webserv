@@ -14,7 +14,6 @@
 # define HTTPREQUEST_HPP
 
 # include "WebServer.hpp"
-# include "HttpRequest.hpp"
 
 class HttpRequest
 {

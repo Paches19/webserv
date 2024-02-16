@@ -29,7 +29,6 @@ class UserDataBase:
 
 
 def printAccPage(session):
-    print("Content-type: text/html\r\n")
     print("<html>")
     print("<head>")
     print("<title>Account Page</title>")
@@ -38,11 +37,10 @@ def printAccPage(session):
     print("<h1>Welcome Again", session.name, "!</h1>")
     print("<p>Your Session ID is: ", session.getSid(), "</p>")
     print("</body>")
-    print("<a href=\"/index.html\"> Click here to go back to homepage </a>")
+    print("<a href=\"/fusion_web/index.html\"> Click here to go back to homepage </a>")
     print("</html>")
 
 def printUserMsg(msg):
-    print("Content-type: text/html\r\n")
     print("<html>")
     print("<head>")
     print("<title>USER MSG</title>")
@@ -50,27 +48,26 @@ def printUserMsg(msg):
     print("<body>")
     print("<h1>", msg ,"</h1>")
     print("</body>")
-    print("<a href=\"/login.html\"> Click here to go back to login page </a>")
+    print("<a href=\"/fusion_web/login.html\"> Click here to go back to login page </a>")
     print("</html>")
 
 def printLogin():
-    print("Content-Type: text/html\r\n")
     print("<html> ")
     print("<head>")
     print("<meta charset=\"UTF-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
-    print("<link rel=\"stylesheet\" href=\"/assets/css/accstyle.css\">")
+    print("<link rel=\"stylesheet\" href=\"/fusion_web/assets/css/accstyle.css\">")
     print("<title> Login Page </title>")
     print("</head>")
     print("<body>  ")
     print("<center> <h1> Amanix Login Form </h1> </center> ")
-    print("<form action = \"../cgi-bin/acc.py\" method = \"get\">")
+    print("<form action = \"/cgi-bin/acc.py\" method = \"get\">")
     print("<div class=\"container\"> ")
     print("<label>Username : </label> ")
     print("<input type=\"text\" placeholder=\"Enter Username\" name=\"username\" required>")
     print("<label>Password : </label> ")
     print("<input type=\"password\" placeholder=\"Enter Password\" name=\"password\" required>")
     print("<button type=\"submit\">Login</button> ")
-    print("No Account?<a href=\"/register.html\"> Register Here </a> ")
+    print("No Account?<a href=\"/fusion_web/register.html\"> Register Here </a> ")
     print("</div> ")
     print("</form>   ")
     print("</body>   ")

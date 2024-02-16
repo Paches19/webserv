@@ -14,7 +14,6 @@
 # define CONNECTIONDATA_HPP
 
 # include "WebServer.hpp"
-# include "ConnectionData.hpp"
 
 class ConnectionData
 {
