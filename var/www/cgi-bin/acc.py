@@ -102,8 +102,7 @@ def handleLogin():
             print("Correct Crenditales :D",file=sys.stderr)
             cookies.clear()
             cookies["SID"] = session.getSid()
-            cookies["SID"]["expires"] = 120 # Session Expires after 2 mins
-            print("HTTP/1.1 301 OK")
+            cookies["SID"]["expires"] = 120 # Session Expires after 2 minutes
             print(cookies.output())
             print("location: acc.py")
             print("\r\n")
