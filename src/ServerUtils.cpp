@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/16 11:49:23 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:00:05 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/16 12:24:57 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -253,4 +253,109 @@ bool checkOpenPorts(std::vector<Socket*> _serverSockets, VirtualServers server)
 			return false;
 	}
 	return true;
+}
+
+std::string createBodyErrorPage(short &errorCode)
+{
+	HttpResponse msg;
+	std::ostringstream errorCodeS;
+	errorCodeS << errorCode;
+	std::string errorPage = "<html>\n<head>\n<title>Error " + errorCodeS.str() + "</title>\n</head>\n";
+		errorPage += "<body>\n<h1>Error " + errorCodeS.str() + "</h1>\n";
+		errorPage += "<p>" + errorCodeS.str() + " " + msg.getStatusMessage(errorCode) + "</p>\n";
+		errorPage += "</body>\n</html>";
+	return errorPage;
+}
+
+bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)
+{
+	return (addr1.sin_addr.s_addr == addr2.sin_addr.s_addr) &&
+		(addr1.sin_port == addr2.sin_port);
+}
+
+VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers
+	, std::vector<Socket*> _clientSockets, std::vector<struct pollfd> _pollFds)
+{
+	size_t j = 0;
+
+	while (j < _clientSockets.size() && _clientSockets[j]->getSocketFd() != _pollFds[i].fd)
+	{
+		j++;
+	}
+	
+	if (j == _clientSockets.size()) //No encuentra cliente
+	{
+		VirtualServers aServer;
+		return (aServer);
+	}
+	int nbServer = 0; //Número de posibles servidores válidos
+	std::vector<int> candidates(servers.size(), 0);
+	for (long unsigned k = 0; k < servers.size(); k++)
+	{
+		if (inet_ntoa(servers[k].getIpAddress()) == inet_ntoa(_clientSockets[j]->getSocketAddr().sin_addr)
+			&& servers[k].getPort() == _clientSockets[j]->getListenPort())
+		{
+			nbServer++;
+			candidates[k] = 1;
+		}
+	}
+	if (nbServer == 1)
+	{
+		for (long unsigned k = 0; k < servers.size(); k++)
+		{
+			if (candidates[k] == 1)
+				return servers[k];
+		}
+	}
+	if (nbServer > 1)
+	{
+		for (long unsigned k = 0; k < servers.size(); k++)
+		{
+			if (servers[k].getPort() == _clientSockets[j]->getListenPort() && candidates[k] != 1)
+			{
+				nbServer++;
+				candidates[k] = 1;
+			}
+		}
+		if (nbServer == 1)
+		{
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				if (candidates[k] == 1)
+					return servers[k];
+			}
+		}
+		if (nbServer > 1)
+		{
+			std::string requestHostName = request.getHost();
+			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\n'), requestHostName.end());
+			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\r'), requestHostName.end());
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				std::string serverName = servers[k].getServerName();
+				if (candidates[k] == 1 && serverName == requestHostName)
+					return servers[k];
+			}
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				std::string serverName = servers[k].getServerName();
+				if (candidates[k] == 1 && serverName == requestHostName)
+					return servers[k];
+			}
+			for (long unsigned k = 0; k < servers.size(); k++)
+			{
+				if (candidates[k] == 1)
+						return servers[k];
+			}
+		}
+	}
+	for (long unsigned k = 0; k < servers.size(); k++)
+	{
+		if (candidates[k] == 1)
+		{
+			if (servers[k].getDefaultServer())
+				return servers[k];
+		}
+	}
+	return servers[0];
 }
