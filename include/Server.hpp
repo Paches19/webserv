@@ -63,8 +63,6 @@ class Server
 		std::string getFilename(HttpRequest request, std::string resourcePath);
 		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
 			Socket* socket);
-		void executeCGIScript(std::string& scriptPath, HttpRequest& request,
-			HttpResponse& response, VirtualServers& server, Socket* socket);
 	
 		class ErrorException : public std::exception
 		{

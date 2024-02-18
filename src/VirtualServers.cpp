@@ -218,6 +218,7 @@ void VirtualServers::setLocation(std::vector<std::string> &parametrs, long unsig
 	
 	i++;
 	std::vector<std::string> codes;
+	
 	while (i < parametrs.size() && parametrs[i] != "}")
 		codes.push_back(parametrs[i++]);
 	if (i < parametrs.size() && parametrs[i] != "}")
@@ -231,6 +232,7 @@ void VirtualServers::setLocation(std::vector<std::string> &parametrs, long unsig
 		it++;
 	}
 	_locations.push_back(new_location);
+	
 }
 
 //*******************************************************************
@@ -255,13 +257,14 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	bool	flag_autoindex = false;
 	bool	flag_max_body_size = false;
 
-	std::cout << "1. Creating server  ";
+	std::cout << "\n1. Creating server  ";
 	parametrs = _splitParametrs(config);
 	if (parametrs.size() < 3)
 		throw  ErrorException("Failed server validation");
 	size_t i = 0;
 	if (parametrs[i] != "{" && parametrs[parametrs.size() - 1] != "}")
 		throw  ErrorException("Wrong character in server scope{}");
+
 	while (i < parametrs.size() - 2)
 	{
 		i++;
@@ -332,12 +335,12 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 		else
 			throw  ErrorException("Unsupported directive: " + parametrs[i]);
 	}
-	std::cout << GREEN << " OM ! " << RESET << std::endl;
+	std::cout << GREEN << " OK ! " << RESET << std::endl;
 }
 
 void VirtualServers::_checkServer(VirtualServers &server)
 {
-	std::cout << "2. Checking server" << std::endl;
+	std::cout << "\n2. Checking server" << std::endl;
 	if (server.getPort() == 0)
 		server.setPort("80;");
 	if (server.getIpAddress().s_addr == 0)
@@ -355,28 +358,29 @@ void VirtualServers::_checkServer(VirtualServers &server)
 	if (!ConfigFile::fileExistsAndReadable(indexPath))
 		throw ErrorException("Index from config file not found or unreadable");
 
-	std::cout << "        * Server name = " << server.getServerName() << std::endl;
-	std::cout << "        * Listening = " << inet_ntoa(server.getIpAddress());
-	std::cout << ": " << server.getPort() << std::endl;
-	std::cout << "        * Root = " << server.getRoot() << std::endl;
-	std::cout << "        * Index = " << server.getIndex() << std::endl;
+	std::cout << "        * Server name = " << server.getServerName();
+	std::cout << "\n        * Listening = " << inet_ntoa(server.getIpAddress());
+	std::cout << ": " << server.getPort();
+	std::cout << "\n        * Root = " << server.getRoot();
+	std::cout << "\n        * Index = " << server.getIndex() << std::endl;
+	std::map<short, std::string>::const_iterator it = server.getErrorPages().begin();
+	while (it != server.getErrorPages().end())
+	{
+		std::cout << "        * Error page " << it->first << " = " << it->second << std::endl;
+		it++;
+	}
 	std::cout << GREEN << "        OK !" << RESET << std::endl;
 	int error = 0;
-	std::cout << "3. Checking locations" << std::endl;
+
+	std::cout << "\n3. Checking locations" << std::endl;
+	
 	std::vector<Location> loc = server.getLocations();
+	std::string defaultIndex = server.getIndex() + ";";
+	std::string defaultRoot = server.getRoot() + ";";
+	
 	for (size_t i = 0; i < loc.size(); i++)
-	{
-		if (loc[i].getIndexLocation().empty() && loc[i].getReturn()[0].empty())
-		{
-			std::string defaultIndex = server.getIndex() + ";";
-			if (loc[i].getAlias().empty())
-			{
-				std::string defaultRoot = server.getRoot() + ";";
-				loc[i].setRootLocation(defaultRoot);
-			}
-		}
-		
-		error = loc[i].checkLocation(loc[i]);
+	{	
+		error = loc[i].checkLocation(loc[i], server.getRoot(), server.getIndex());
 		switch (error)
 		{
 			case 1:
@@ -385,8 +389,6 @@ void VirtualServers::_checkServer(VirtualServers &server)
 				throw ErrorException("Failed path in location validation");
 			case 3:
 				throw ErrorException("Failed redirection file in location validation");
-			case 4:
-				throw ErrorException("Failed alias file in location validation");
 			default:
 				std::cout << GREEN << "          OK !" << RESET << std::endl;
 		}

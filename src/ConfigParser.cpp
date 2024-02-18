@@ -135,19 +135,24 @@ void ConfigParser::splitServers(std::string &content)
 }
 
 // The main function
-int ConfigParser::initParser(const std::string &configFile)
+std::string ConfigParser::loadFile(const std::string &configFile)
 {
-	std::string		content;
-	ConfigFile		file(configFile);
-	
+	std::string content;
+	ConfigFile	file(configFile);
+
 	// Checking and read config file
 	if (file.checkPath(file.getPath()) == -1)
 		throw ErrorException("File is invalid");
 	if (!file.fileExistsAndReadable(file.getPath()))
 		throw ErrorException("File is not accessible");
-	content = file.readFile(configFile);
+	content =  file.readFile(configFile);
 	if (content.empty())
 		throw ErrorException("File is empty");
+	return (content);
+}
+
+int ConfigParser::initParser(std::string &content)
+{
 	//Splitting servers to strings
 	splitServers(content);
 

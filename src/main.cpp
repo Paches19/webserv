@@ -14,6 +14,22 @@
 #include "ConfigParser.hpp"
 #include "WebServer.hpp"
 
+std::string buildDefault()
+{
+   std::ostringstream configStream;
+
+    configStream << 
+        "# Default Server Configuration File\n"
+        "server {\n"
+        "listen 127.0.0.1:9000;\n"
+        "root docs/www;\n"
+		"location / {\n"
+		"autoindex off;\n"
+		"}\n"
+		"}";
+    return configStream.str();
+}
+
 int main(int argc, char **argv) 
 {
 	//Check the number of arguments
@@ -28,7 +44,7 @@ int main(int argc, char **argv)
 	{
 		std::string		config;
 		// Configuration file as argument or default path
-		config = (argc == 1 ? "./config/default.conf" : argv[1]);
+		config = (argc == 1 ? buildDefault() : cluster.loadFile(argv[1]));
 		cluster.initParser(config);
 		//Print the configuration file parsed
 		//cluster.printConfig();

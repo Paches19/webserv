@@ -534,8 +534,9 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 
 		// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
 		std::string contentTypeHeader = request.getHeader("Content-Type");
-		if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
-			contentTypeHeader.find("chunked") != std::string::npos)
+//		if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
+//			contentTypeHeader.find("chunked") != std::string::npos)
+		if (contentTypeHeader.find("chunked") != std::string::npos)
 		{
 			createErrorPage(501, processResponse, server, socket);
 			return ;
@@ -544,6 +545,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
 		// Error si la ruta es inválida o no se puede escribir
 		std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
+		std::cout << "    Resource path for POST: " << resourcePath << std::endl;
 		if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
 			: locationRequest->getRootLocation(), resourcePath))
 		{
@@ -806,8 +808,7 @@ std::string Server::buildResourcePath(HttpRequest& request,
 	std::string resourcePath =
 		adjustPathForDirectory(requestURL, basePath, location, server);
 	std::cout << "adjustPath: " << resourcePath << std::endl;
-	if (!location.getAlias().empty())
-		resourcePath.replace(0, location.getPath().length(), location.getAlias());
+	
 	return resourcePath;
 }
 

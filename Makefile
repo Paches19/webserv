@@ -18,6 +18,15 @@ SRC_DIR			= 	src/
 INC_DIR			= 	include/
 OBJ_DIR			= 	obj/
 
+# DEFINES = -D OUT=0# -D TIME=1
+
+ifeq ($(shell uname -s),Darwin)
+OS = mac
+else
+OS = linux
+endif
+PWD = $(shell pwd)
+
 # Sources 
 SRC				=	ConfigFile.cpp \
 					ConfigParser.cpp \
@@ -56,25 +65,66 @@ CXXFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
 all				: 	create_dir $(NAME)
 
 $(NAME)			: 	$(OBJS) $(HEADERS)
-					echo "Linking $@"
+					printf "\n\033[0;32mLinking ...\033[0m $@"
 					$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+					printf " \033[0;32mOK!\033[0m\n"
 
 create_dir		:
 					mkdir -p $(OBJ_DIR)
 
 $(OBJ_DIR)%.o	:	$(SRC_DIR)%.cpp
-					echo "Compiling $<"
+					printf "\033[0;33mGenerating objects ... \033[0m$@"
 					$(CXX) $(CXXFLAGS) -I$(INC_DIR) -o $@ -c $<
+					printf " \033[0;32mOK!\033[0m\n"
 
 clean			:
-					echo "Cleaning objects..."
+					printf "\n\033[0;31mDeleting objects\033[0m"
 					rm -rf $(OBJ_DIR)
+					printf " \033[0;32mOK!\033[0m\n"
 
 fclean			: 	clean
-					echo "Cleaning $(NAME)..."
+					printf "\033[0;31mDeleting \033[0m $(NAME)"
 					rm -rf $(NAME)
+					printf " \033[0;32mOK!\033[0m\n"
 
 re				: 	fclean all
+
+##################################################
+# TESTING
+##################################################
+
+test: test_$(OS)
+
+test_setup: all
+	@rm -rf docs/test_us/root
+	@mkdir -p docs/test_us/root
+	@cp docs/test_us/index/* docs/test_us/root/
+	@cp docs/test_us/root/index.html docs/test_us/root/index_permission.html
+	@chmod 000 docs/test_us/root/index_permission.html
+	@c++ -o client docs/test_us/client.cpp
+
+test_mac: test_setup
+	@osascript -e 'tell application "Terminal" to do script "cd $(PWD) && clear && ./docs/client"'
+	@osascript -e 'tell application "Terminal" to activate'
+	./webserv docs/test_us/conf/webserv.conf
+
+test_linux: test_setup
+	@x-terminal-emulator --working-directory=$$(pwd) -x "./docs/client"
+	./webserv docs/test_us/conf/webserv.conf
+
+bocal: bocal_$(OS)
+
+bocal_mac: all
+	@mkdir -p docs/YoupiBanane/put_here
+	@osascript -e 'tell application "Terminal" to do script "cd $(PWD) && clear && time ./test_mac/macos_tester http://localhost:8000"'
+	@osascript -e 'tell application "Terminal" to activate'
+	./webserv docs/test_mac/mac.conf
+
+bocal_linux: all
+	@mkdir -p docs/YoupiBanane/put_here
+	@x-terminal-emulator --working-directory=$$(pwd) -x "time ./docs/test_linux/ubuntu_tester http://localhost:8000"
+	./webserv docs/test_linux/linux.conf
+	
 
 .PHONY			: 	all re clean fclean create_dir
 

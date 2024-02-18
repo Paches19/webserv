@@ -25,7 +25,6 @@ Location::Location(const Location &other)
 	_cgiPath = other._cgiPath;
 	_cgiExt = other._cgiExt;
 	_return = other._return;
-	_alias = other._alias;
     _methods = other._methods;
 	_extPath = other._extPath;
 	_modifier = other._modifier;
@@ -42,7 +41,6 @@ Location &Location::operator=(const Location &rhs)
 		_cgiPath = rhs._cgiPath;
 		_cgiExt = rhs._cgiExt;
 		_return = rhs._return;
-		_alias = rhs._alias;
 		_methods = rhs._methods;
 		_extPath = rhs._extPath;
 		_modifier = rhs._modifier;
@@ -60,7 +58,6 @@ Location::Location(std::string &path, std::string &modifier, std::vector<std::st
 	_return.reserve(2);
 	_return.push_back("");
 	_return.push_back("");
-	_alias = "";
 	_modifier = modifier;
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 
@@ -94,8 +91,6 @@ const std::vector<std::string> &Location::getCgiExtension() const { return (_cgi
 const bool &Location::getAutoindex() const { return (_autoindex); }
 
 const std::vector<std::string> &Location::getReturn() const { return (_return); }
-
-const std::string &Location::getAlias() const { return (_alias); }
 
 const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_extPath); }
 
@@ -156,6 +151,7 @@ void Location::setIndexLocation(std::string parametr)
 
 void Location::setReturn(std::string parametr1, std::string parametr2)
 {
+
 	if (!parametr2.empty())
 		checkToken(parametr2);
 	else
@@ -167,12 +163,6 @@ void Location::setReturn(std::string parametr1, std::string parametr2)
 	}
 	_return[0] = parametr1; // Código de redirección	
 	_return[1] = parametr2; // Ruta de redirección
-}
-
-void Location::setAlias(std::string parametr)
-{
-	checkToken(parametr);
-	_alias = ConfigFile::prefixPath(parametr);
 }
 
 void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
@@ -269,14 +259,6 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 				setReturn(codeString, parametr[++i]);
 			break;
 		}
-		else if (parametr[i] == "alias" && (i + 1) < parametr.size())
-		{
-			if (path == "/cgi-bin")
-				throw ErrorException("Parametr alias not allow for CGI");
-			if (!getAlias().empty())
-				throw ErrorException("Alias of location is duplicated");
-			setAlias(parametr[i]);
-		}
 		else if (parametr[i] == "cgi_ext" && (i + 1) < parametr.size())
 		{
 			std::vector<std::string> extension;
@@ -319,6 +301,8 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			}
 			setCgiPath(path);
 		}
+		else
+			throw ErrorException("Invalid location directive --> " + parametr[i]);
 	}
 }
 
@@ -345,83 +329,81 @@ int Location::ft_stoi(std::string str)
     return (res);
 }
 
-int Location::checkLocation(Location &location) const
+int Location::checkLocation(Location &location, std::string serverRoot, std::string serverIndex) const
 {
 	std::string path = location.getPath();
 	std::cout << "location " << path << std::endl;
 	
 	if (path == "/")
 		path = "";
-	std::string root = location.getRootLocation();
-
+	
+	if (location.getRootLocation().empty())
+		location.setRootLocation(serverRoot + ";");
+	std::string root =  location.getRootLocation();
 	if (path != "/cgi-bin")
 	{
-		if (!location.getReturn()[1].empty())
+		if (!location.getReturn()[0].empty())
 		{
-			std::string newpath = location.getReturn()[1];	
-			if (newpath[0] == '/')
-			{
-				std::cout << "         root      = from the " << newpath << std::endl;
-				std::cout << "         new path  = " << newpath << std::endl;
-			}	
+			std::cout << "         original path = " << location.getPath() << std::endl;
+			std::cout << "         return  path  = " << location.getReturn()[1];
+			std::cout << " with code " << location.getReturn()[0] << std::endl;
+			if (ConfigFile::checkPath(root + location.getReturn()[1]) != IS_DIR)
+				return (3);
 		}
-		else if (!location.getAlias().empty())
-		{
-			std::string fullpath = root + location.getAlias();
-			std::cout << "         root  = " << root << std::endl;
-			std::cout << "         index = " << fullpath << std::endl;
-			if (!ConfigFile::fileExistsAndReadable(fullpath))
-				return (4);
-		}
+		else if (location.getAutoindex())
+			std::cout << "          autoindex is on" << std::endl;
 		else
 		{
-			std::string fullpath = root + path + location.getIndexLocation();
+			if (location.getIndexLocation().empty())
+				location.setIndexLocation(serverIndex + ";");
 			std::cout << "         root  = " << root << std::endl;
-			std::cout << "         index = " << fullpath << std::endl;
-			if (!ConfigFile::fileExistsAndReadable(fullpath))
-				return (5);
+			std::cout << "         path = " << path << std::endl;
+			std::cout << "         index = " << location.getIndexLocation() << std::endl;
+			if (!ConfigFile::fileExistsAndReadable(root + path + location.getIndexLocation()))
+				return (2);
 		}
 	}
 	else
 	{
-		std::string fullpath = root + path + location.getIndexLocation();
-
-		if (location.getCgiPath().empty() || location.getCgiExtension().empty() || !ConfigFile::fileExistsAndReadable(fullpath))
+		if (location.getCgiPath().empty() || location.getCgiExtension().empty() ||
+			location.getCgiPath().size() != location.getCgiExtension().size())
 			return (1);
-
-		if (location.getCgiPath().size() != location.getCgiExtension().size())
-			return (1);
-
-		std::vector<std::string>::const_iterator it;
-		for (it = location.getCgiPath().begin(); it != location.getCgiPath().end(); ++it)
-		{
-			if (ConfigFile::checkPath(*it) < 0)
-				return (1);
-		}
-
-		std::cout << "         root  = " << root << std::endl;
-		std::cout << "         path  = " << path << std::endl;
-		std::cout << "         index = " << location.getIndexLocation() << std::endl;
-
+		//index is not neccessary for cgi-bin, so we don't check it
+		std::vector<std::string>::const_iterator it_ext;
 		std::vector<std::string>::const_iterator it_path;
-		for (it = location.getCgiExtension().begin(); it != location.getCgiExtension().end(); ++it)
+		for (it_ext = location.getCgiExtension().begin(); it_ext != location.getCgiExtension().end(); ++it_ext)
 		{
-			std::string tmp = *it;
-			if (tmp != ".py" && tmp != ".sh" && tmp != "*.py" && tmp != "*.sh")
-				return (1);
-			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
+			std::cout << " 	   cgi extension = " << *it_ext << std::endl;
+			if (*it_ext != "*.py" && *it_ext != "*.sh" && *it_ext != ".py" && *it_ext != ".sh")
 			{
-				std::string tmp_path = *it_path;
-				if ((tmp == ".py" || tmp == "*.py") && (tmp_path.find("python") != std::string::npos))
-					location._extPath.insert(std::make_pair(".py", tmp_path));
-				else if ((tmp == ".sh" || tmp == "*.sh") && tmp_path.find("bash") != std::string::npos)
-					location._extPath[".sh"] = tmp_path;		
+					std::cout << RED << " 	   extension not supported" << RESET << std::endl;
+					return (1);
+			}
+			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
+			{		
+				if ((*it_ext == ".py" || *it_ext == "*.py") && it_path->find("python3") != std::string::npos &&
+					ConfigFile::checkPath(*it_path) == IS_FILE)
+				{
+					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					//location._extPath.insert(std::make_pair(".py", *it_path));
+					break;
+				}
+				else if ((*it_ext == ".sh" || *it_ext == "*.sh") && it_path->find("bash") != std::string::npos &&
+					ConfigFile::checkPath(*it_path) == IS_FILE)
+				{
+					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					//location._extPath[".sh"] = *it_path;
+					break;
+				}
+			}
+			if (it_path == location.getCgiPath().end())
+			{
+				std::cout << RED << " 	   cgi path not found" << RESET << std::endl;
+				return (1);
 			}
 		}
-
 	}
 	return (0);
-
 }
 
 const Location* Location::selectLocation(const std::string& requestURI,
@@ -443,7 +425,7 @@ const Location* Location::findExactMatch(const std::string& requestURI,
 {
 	for (size_t i = 0; i < locations.size(); ++i)
 	{
-		if (locations[i].getModifier() == "=" && locations[i].getPath() == requestURI)
+		if ((locations[i].getModifier() == "=") && locations[i].getPath() == requestURI)
 			return &locations[i];
 	}
 	return NULL;
@@ -463,9 +445,10 @@ const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
 		{
 			longestMatch = &locations[i];
 			longestLength = locations[i].getPath().length();
-			if (!locations[i].getReturn()[1].empty())
+			if (!locations[i].getReturn()[0].empty())
 				return &locations[i];
 		}
+		std::cout << std::endl;	
 	}
 	return longestMatch;
 }

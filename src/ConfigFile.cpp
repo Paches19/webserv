@@ -89,14 +89,8 @@ std::string	ConfigFile::readFile(std::string path)
 bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
 {
 	struct stat buffer;
-	std::string path;
-	if (filePath[0] != '.')
-		path = "." + filePath;
-	else
-		path = filePath;
-	std::cout << "Path: " << path << std::endl;
-	std::string exFilePath = prefixPath(path);
 
+	std::string exFilePath = prefixPath(filePath);
 	if (stat(exFilePath.c_str(), &buffer) == 0)
 		return S_ISREG(buffer.st_mode) && (access(exFilePath.c_str(), R_OK) == 0);
 	return false;
