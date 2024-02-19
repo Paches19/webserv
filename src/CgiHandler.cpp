@@ -57,37 +57,50 @@ std::string to_string(int n)
 void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualServers &server)
 {
 	std::map<std::string, std::string>	headers = request.getHeaders();
-	if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
-		this->_env["AUTH_TYPE"] = headers["Authorization"];
+	// Extract user information from Authorization header
+	// Assuming it's a Basic Authentication header
+    // Extract user information from the Authorization header and set REMOTE_IDENT and REMOTE_USER
+    // You need to implement a function to extract user information based on the authentication scheme
+	if (headers.find("Authorization") != headers.end() && !headers["Authorization"].empty()) 
+    	this->_env["AUTH_TYPE"] = "Basic"; 
 
-	this->_env["REDIRECT_STATUS"] = "200"; //Security needed to execute php-cgi
-	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-	this->_env["SCRIPT_NAME"] = config.getPath();
-	this->_env["SCRIPT_FILENAME"] = config.getPath();
-	this->_env["REQUEST_METHOD"] = request.getMethod();
-	this->_env["CONTENT_LENGTH"] = to_string(this->_body.length());
-	this->_env["CONTENT_TYPE"] = headers["Content-Type"];
-	//might need some change, using config path/contentLocation
-	this->_env["PATH_INFO"] = config.getRootLocation() + config.getPath();
-
-	//might need some change, using config path/contentLocation
-	this->_env["PATH_TRANSLATED"] = config.getRootLocation() + config.getPath();
-
-	this->_env["QUERY_STRING"] = request.getURL();
-	this->_env["REMOTEaddr"] = to_string(server.getPort());
+	// Set the remote information
+	this->_env["REMOTE_ADDR"] =  inet_ntoa(server.getIpAddress());
+	this->_env["REMOTE_PORT"] = to_string(server.getPort());
 	this->_env["REMOTE_IDENT"] = headers["Authorization"];
 	this->_env["REMOTE_USER"] = headers["Authorization"];
-	this->_env["REQUEST_URI"] = config.getPath() + request.getURL();
-	if (headers.find("Hostname") != headers.end())
-		this->_env["SERVER_NAME"] = headers["Hostname"];
+
+	// Set the server information
+	if (headers.find("Host") != headers.end())
+		this->_env["SERVER_NAME"] = headers["Host"].substr(0, headers["Host"].find(":"));
 	else
-		this->_env["SERVER_NAME"] = this->_env["REMOTEaddr"];
+		this->_env["SERVER_NAME"] = this->_env["REMOTE_ADDR"];
 	this->_env["SERVER_PORT"] = to_string(server.getPort());
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["SERVER_SOFTWARE"] = "Webserver/1.0";
+	
+	std::string url = request.getURL();
+	// Set the request information
+	this->_env["SCRIPT_NAME"] =  url.substr(0, url.find("?"));
+	this->_env["SCRIPT_FILENAME"] =  url.substr(0, url.find("?"));
+	this->_env["REQUEST_METHOD"] = request.getMethod();
+	this->_env["REQUEST_URI"] = url;
+
+	// Set the content information
+	this->_env["CONTENT_LENGTH"] = to_string(request.getMethod() == "GET" ? 0 : this->_body.length());
+	this->_env["CONTENT_TYPE"] = headers["Content-Type"];
+
+	// Set the path information
+	//this->_env["PATH_INFO"] = config.getRootLocation() + config.getPath();
+	this->_env["PATH_INFO"] = url.substr(url.find("cgi-bin") + 7, url.find("?") - 8);
+	this->_env["PATH_TRANSLATED"] = url.substr(0, url.find("?"));
+
+	// Set the query information
+	this->_env["REDIRECT_STATUS"] = "200";
+	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+	this->_env["QUERY_STRING"] = url.substr(url.find("?") + 1);	
 
 	const std::vector<std::string>& cgiPathVector = config.getCgiPath();
-
 	for (std::vector<std::string>::const_iterator it = cgiPathVector.begin(); it != cgiPathVector.end(); ++it)
    		this->_env.insert(std::make_pair(*it, std::string()));
 }

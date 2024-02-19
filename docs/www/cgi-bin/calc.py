@@ -44,6 +44,7 @@ elif not arg3.isdigit():
 
 num1 = int(arg1)
 num2 = int(arg3)
+
 if (num1 > 10000 or num2 > 10000):
     print("Enter a lower number")
     exit(1)
@@ -58,6 +59,6 @@ elif oper == 'r': result = round(pow(num1, 1 / num2), 2)
 else: result = "not determined"
 
 try:
-    print("<b>  = %s</b> <br>" % str(result))
+    print("<b> <h1> %s %s %s = %s </h1></b> <br>" % (arg1, str(oper), arg3, str(result)))
 except:
     print("<b>%s</b>: <br>" %("Something went wrong"))

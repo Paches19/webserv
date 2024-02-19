@@ -1,16 +1,17 @@
 #!/usr/bin/python3
 
-import cgi
 import sys
 import os
+from urllib.parse import parse_qs
+
 # Create instance of FieldStorage
-form = cgi.FieldStorage()
+form = parse_qs(os.environ.get("QUERY_STRING", ""), keep_blank_values=True)
 
 # Get data from fields
-first_name = form.getvalue('first_name')
-last_name = form.getvalue('last_name')
-print(os.environ["QUERY_STRING"], file=sys.stderr)
-# print("HTTP/1.1 200 OK")
+first_name = form.get('first_name', [None])[0]
+last_name = form.get('last_name', [None])[0]
+
+# Debugging: print the raw query string and environment variables
 
 print("<html>")
 print("<head>")
