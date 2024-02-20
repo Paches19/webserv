@@ -41,16 +41,16 @@ class VirtualServers
 		~VirtualServers();
 		VirtualServers &operator=(const VirtualServers &copy);	
 
-		const uint16_t &getPort();
-		const std::string &getServerName();
-		const std::string &getRoot();
-		const std::string &getIndex();
-		const bool &getAutoindex();
-		std::vector<Location> &getLocations();
-		const std::string getErrorPage(short i);
-		const unsigned long &getClientMaxBodySize();
-		const in_addr &getIpAddress();
-		const bool &getDefaultServer();
+		const uint16_t 			&getPort();
+		const std::string 		&getServerName();
+		const std::string 		&getRoot();
+		const std::string 		&getIndex();
+		const bool 				&getAutoindex();
+		std::vector<Location>	&getLocations();
+		const std::string 		getErrorPage(short i);
+		const unsigned long 	&getClientMaxBodySize();
+		const in_addr 			&getIpAddress();
+		const bool 				&getDefaultServer();
 		const std::map<short, std::string> &getErrorPages();
 
 		void setPort(std::string parametr);

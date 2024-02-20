@@ -68,11 +68,11 @@ class Location
 	
 		void 			configureLocation(std::string &path, std::vector<std::string> &parametr);
 		const Location* selectLocation(const std::string& requestURL,
-			const std::vector<Location>& locations);
+						const std::vector<Location>& locations);
 		const Location* findExactMatch(const std::string& requestURL,
-			const std::vector<Location>& locations);
+						const std::vector<Location>& locations);
 		const Location* findLongestPrefixMatch(const std::string& requestURI,
-			const std::vector<Location>& locations);
+						const std::vector<Location>& locations);
 		static bool 	startsWith(const std::string& str, const std::string& prefix);
 		static void 	checkToken(std::string &parametr);
 		static int 		ft_stoi(std::string str);

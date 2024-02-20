@@ -165,5 +165,6 @@ void HttpRequest::printRequest()
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it)
 		std::cout << "    " << it->first << ": " << it->second << std::endl;
 	std::cout << "Body: [body content]" << std::endl;
+	std::cout << _body << std::endl;
 	std::cout << RESET << "********************" << std::endl;
 }

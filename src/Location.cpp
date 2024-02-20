@@ -448,7 +448,7 @@ const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
 			if (!locations[i].getReturn()[0].empty())
 				return &locations[i];
 		}
-		std::cout << std::endl;	
+		//std::cout << std::endl;	
 	}
 	return longestMatch;
 }

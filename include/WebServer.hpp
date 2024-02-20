@@ -50,14 +50,16 @@
 # define GREEN 			"\x1B[32m"
 
 // HTTP Methods
-# define GET_METHOD 0
-# define POST_METHOD 1
-# define DELETE_METHOD 2
-# define IS_DIR 2
-# define IS_FILE 1
+# define GET_METHOD 	0
+# define POST_METHOD 	1
+# define DELETE_METHOD 	2
+
+// Types
+# define IS_DIR 		2
+# define IS_FILE 		1
 
 // Macros
 # define MAX_CONTENT_LENGTH 1000000000
-# define CGI_BUFSIZE 1000000
+# define CGI_BUFSIZE 		1000000
 
 #endif // WEBSERVER_HPP

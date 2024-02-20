@@ -105,6 +105,8 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 
 std::string 	HttpResponse::getBody() { return _body; }
 
+int 			HttpResponse::getStatusCode() { return _statusCode; }
+
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
@@ -140,22 +142,7 @@ void HttpResponse::printResponse(std::string responseStr)
 {
 	std::cout << "\n***** RESPONSE *****" << std::endl;
 
-	std::stringstream resp(responseStr);
-	std::string line;
-	resp >> line;
-	std::cout << CYAN << line;
-	resp >> line;
-	std::cout << GREEN << " " << line;
-	resp >> line;
-	std::cout << GREEN << " " << line << std::endl;
-	resp >> line;
-	std::cout << CYAN << line;
-	resp >> line;
-	std::cout << GREEN << " " << line << std::endl;
-	resp >> line;
-	std::cout << CYAN << line;
-	resp >> line;
-	std::cout << GREEN << " " << line << std::endl;
-	std::cout << CYAN << "\n( body )" << RESET << std::endl;
+	std::cout << CYAN << responseStr << RESET << std::endl;
+
 	std::cout << "*******************" << std::endl;
 }

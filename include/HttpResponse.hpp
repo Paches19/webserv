@@ -31,8 +31,11 @@ class HttpResponse
 		void 		setStatusCode(int code);
 		void		setBody(const std::string& bodyContent);
 		void		setHeader(const std::string& key, const std::string& value);
+
 		std::string getBody();
+		int 		getStatusCode();
 		std::string getStatusMessage(int statusCode);
+
 		std::string	buildResponse();
 		void		printResponse(std::string responseStr);
 };

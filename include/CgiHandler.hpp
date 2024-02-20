@@ -37,21 +37,4 @@ class CgiHandler
 		std::string	executeCgi(std::string& scriptName);
 };
 
-/*
-Some CGI environment variables for Chrome browser:
-	HTTP_ACCEPT: Specifies the media types that the client can process, such as text/html or image/png.
-	HTTP_ACCEPT_LANGUAGE: Indicates the natural languages that the client can understand.
-	HTTP_USER_AGENT: Identifies the user agent (browser) making the request, including information about the browser type and version, as well as the operating system.
-	HTTP_REFERER: Contains the URL of the page that referred the user to the current page.
-	HTTP_COOKIE: Holds any cookies that have been sent by the server to the client.
-	HTTP_HOST: Provides the domain name of the server.
-	REMOTE_ADDR: Represents the IP address of the client.
-	REMOTE_PORT: Specifies the port number on the client.
-	REQUEST_METHOD: Indicates the HTTP request method, such as GET or POST.
-	QUERY_STRING: Holds the query string portion of the URL for a GET request.
-	CONTENT_LENGTH: Specifies the size of the message body for requests with a body, such as POST requests.
-	CONTENT_TYPE: Describes the type of data in the body of the request, particularly relevant for POST requests.
-	PATH_INFO: Contains the path information that follows the actual script name in the URL.
-*/
-
 #endif

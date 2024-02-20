@@ -10,13 +10,14 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+
 #include "ConnectionData.hpp"
 
 //*******************************************************************
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 ConnectionData::ConnectionData() : readBuffer(1024),
-	writeBuffer(NULL), headerReceived(false), accumulatedBytes(0), responseSent(false) {}
+	writeBuffer(NULL), headerReceived(false), accumulatedBytes(0) {}
 ConnectionData::~ConnectionData() { delete[] writeBuffer; }
 ConnectionData::ConnectionData(const ConnectionData& other)
 {
@@ -24,7 +25,6 @@ ConnectionData::ConnectionData(const ConnectionData& other)
 	writeBuffer = other.writeBuffer;
 	headerReceived = other.headerReceived;
 	accumulatedBytes = other.accumulatedBytes;
-	responseSent = other.responseSent;
 }
 ConnectionData& ConnectionData::operator=(const ConnectionData& other)
 {
@@ -34,7 +34,6 @@ ConnectionData& ConnectionData::operator=(const ConnectionData& other)
 		writeBuffer = other.writeBuffer;
 		headerReceived = other.headerReceived;
 		accumulatedBytes = other.accumulatedBytes;
-		responseSent = other.responseSent;
 	}
 	return *this;
 }

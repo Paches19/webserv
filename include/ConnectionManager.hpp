@@ -32,11 +32,10 @@ class ConnectionManager
 
 		void	addConnection(Socket& socket);
 		void	removeConnection(Socket& socket, int i,
-			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
+				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
 		HttpRequest	readData(Socket& socket, int i,
-			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
-		void	writeData(Socket& socket,  int i,
-			HttpResponse &response, std::vector<struct pollfd> &_pollFds);
+				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
+		void	writeData(Socket& socket, HttpResponse &response);
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
 		int		getContentLength(const std::string& header);
 		

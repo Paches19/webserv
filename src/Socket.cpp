@@ -40,6 +40,8 @@ int	Socket::getSocketFd() { return (this->_socketFd); }
 
 sockaddr_in Socket::getSocketAddr() { return (this->_address); }
 
+int	Socket::getListenPort() { return (this->_listenPort); };
+
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
@@ -58,8 +60,15 @@ bool Socket::open(int port, in_addr addr)
 		
 	memset(&_address, 0, sizeof(_address));
 	_address.sin_family = AF_INET;
-	_address.sin_addr.s_addr = addr.s_addr;
+	std::cout << "Server ip adress: " << addr.s_addr << std::endl;
+	if (addr.s_addr == 0)
+		_address.sin_addr.s_addr = INADDR_ANY;
+	else
+		_address.sin_addr.s_addr = addr.s_addr;
+	std::cout << "Server ip guardadp: " << _address.sin_addr.s_addr << std::endl;
 	_address.sin_port = htons(port);
+	_listenPort = ntohs(_address.sin_port);
+	std::cout << "OPEN puerto: " << ntohs(_address.sin_port) << std::endl;
 
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		return false;
@@ -70,7 +79,7 @@ bool Socket::open(int port, in_addr addr)
 	return true;
 }
 
-bool Socket::accept(Socket& newSocket) const
+bool Socket::accept(Socket& newSocket, int port) const
 {
 	socklen_t addressLen = sizeof(_address);
 
@@ -78,8 +87,11 @@ bool Socket::accept(Socket& newSocket) const
 	if (new_sockfd < 0)
 		return false;
 
+	std::cout << "nuevo puerto: " << port << std::endl;
 	newSocket._socketFd = new_sockfd;
-	
+	newSocket._address = _address;
+	newSocket._listenPort = port;
+
 	int flags = fcntl(this->_socketFd, F_GETFL, 0);
 	return fcntl(_socketFd, F_SETFL, flags | O_NONBLOCK) != -1;
 }

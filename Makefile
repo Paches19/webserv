@@ -30,7 +30,8 @@ SRC				=	ConfigFile.cpp \
 					Server.cpp \
 					Socket.cpp \
 					VirtualServers.cpp \
-					CgiHandler.cpp
+					CgiHandler.cpp \
+					ServerUtils.cpp
 
 SRCS 			= 	$(addprefix $(SRC_DIR), $(SRC))
 
@@ -42,7 +43,8 @@ HEADERS 		=	$(INC_DIR)HttpRequest.hpp \
 					$(INC_DIR)ConnectionManager.hpp \
 					$(INC_DIR)ConnectionData.hpp \
 					$(INC_DIR)WebServer.hpp \
-					$(INC_DIR)CgiHandler.hpp
+					$(INC_DIR)CgiHandler.hpp \
+					$(INC_DIR)ServerUtils.hpp
 
 # Objects
 OBJ				= 	$(SRC:.cpp=.o)

@@ -27,13 +27,13 @@ class ConfigFile
 		~ConfigFile();
 		ConfigFile &operator=(const ConfigFile &rhs);
 		
-		std::string	getPath();
+		std::string			getPath();
 
-		static int	checkPath(std::string path);
+		static int			checkPath(std::string path);
 		static std::string	readFile(std::string path);
-		static bool fileExistsAndReadable(const std::string& filePath);
-		static std::string prefixPath(std::string const path);
-		static std::string adjustName(std::string const name);
+		static bool 		fileExistsAndReadable(const std::string& filePath);
+		static std::string 	prefixPath(std::string const path);
+		static std::string 	adjustName(std::string const name);
 };
 
 #endif // CONFIGFILE_HPP

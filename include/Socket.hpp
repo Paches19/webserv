@@ -20,6 +20,7 @@ class Socket
 	private:
 		int 		_socketFd;
 		sockaddr_in _address;
+		int			_listenPort;
 
 	public:
 		Socket();
@@ -27,11 +28,12 @@ class Socket
 		Socket(Socket& other);
 		Socket& operator=(Socket& other);
 
-		int		getSocketFd();
+		int			getSocketFd();
 		sockaddr_in	getSocketAddr();
+		int			getListenPort();
 
 		bool	open(int port, in_addr addr);
-		bool	accept(Socket& newSocket) const;
+		bool	accept(Socket& newSocket, int port) const;
 		int		send(const char* buffer, int length) const;
 		int		receive(char* buffer, int maxLength, size_t startOffset) const;
 		void	close();

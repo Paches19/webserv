@@ -18,6 +18,7 @@
 # include "ConnectionManager.hpp"
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
+# include "ServerUtils.hpp"
 # include "CgiHandler.hpp"
 
 class Server
@@ -36,33 +37,27 @@ class Server
 		~Server();
 		Server(const Server& other);
 		Server& operator=(const Server& other);
-
-		void 			createErrorPage(short errorCode, HttpResponse &response,
-			VirtualServers &server, Socket* socket);
-		std::string 	getMimeType(const std::string& filePath);
-		VirtualServers 	getBestServer(HttpRequest &request, size_t i, 
-			std::vector<VirtualServers> servers);
 		
 		void 		run(std::vector<VirtualServers> servers);
-		bool 		areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
-		Socket* 	handleNewConnection(int i);
 		void 		processRequest(HttpRequest request, VirtualServers server, Socket* socket);
-		std::string	buildResourcePath(HttpRequest& request,
-			const Location& location, VirtualServers& server);
-		std::string buildResourcePathForPost(HttpRequest& request,
-			const Location& location, VirtualServers& server);
-		std::string	adjustPathForDirectory(const std::string& requestURL,
-			const std::string& basePath, const Location& location, VirtualServers& server);
 		void 		processReturnDirective(const Location& locationRequest,
-			HttpResponse& processResponse);
-		std::string generateDirectoryIndex(const std::string& directoryPath);
-		std::string createBodyErrorPage(short &errorCode);
-
-		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
-				Socket* socket, VirtualServers server);
-		std::string getFilename(HttpRequest request, std::string resourcePath);
+					HttpResponse& processResponse);
+		void 		processGet(std::string resourcePath, const Location* locationRequest,
+					Socket* socket, VirtualServers server);
+		void		processGetCGI(std::string resourcePath, const Location* locationRequest,
+					Socket* socket, VirtualServers server, HttpRequest request);
+		void		processPost(HttpRequest request, VirtualServers server, Socket* socket,
+					const Location* locationRequest);
+		void 		processPostCGI(HttpRequest request, VirtualServers server, Socket* socket,
+					const Location* locationRequest);
+		void 		processDelete(std::string resourcePath, VirtualServers server, Socket* socket);
 		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
-			Socket* socket);
+					Socket* socket);
+		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
+					Socket* socket, VirtualServers server);
+		Socket* 	handleNewConnection(int i);
+		void		createErrorPage(short errorCode, VirtualServers &server,
+					Socket* socket);
 	
 		class ErrorException : public std::exception
 		{
