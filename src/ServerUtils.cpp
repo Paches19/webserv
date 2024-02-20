@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/16 11:49:23 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:24:57 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/20 12:07:35 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -273,6 +273,14 @@ bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2)
 		(addr1.sin_port == addr2.sin_port);
 }
 
+std::string removePortFromHost(const std::string& hostName)
+{
+	size_t colonPosition = hostName.find(':');
+	if (colonPosition != std::string::npos)
+		return hostName.substr(0, colonPosition);
+	return hostName;
+}
+
 VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers
 	, std::vector<Socket*> _clientSockets, std::vector<struct pollfd> _pollFds)
 {
@@ -288,6 +296,7 @@ VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<Virtual
 		VirtualServers aServer;
 		return (aServer);
 	}
+	
 	int nbServer = 0; //Número de posibles servidores válidos
 	std::vector<int> candidates(servers.size(), 0);
 	for (long unsigned k = 0; k < servers.size(); k++)
@@ -327,7 +336,7 @@ VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<Virtual
 		}
 		if (nbServer > 1)
 		{
-			std::string requestHostName = request.getHost();
+			std::string requestHostName = removePortFromHost(request.getHost());
 			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\n'), requestHostName.end());
 			requestHostName.erase(std::remove(requestHostName.begin(), requestHostName.end(), '\r'), requestHostName.end());
 			for (long unsigned k = 0; k < servers.size(); k++)

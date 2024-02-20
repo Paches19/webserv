@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:28:17 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/20 13:30:04 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,11 @@ Server::Server(std::vector<VirtualServers>	servers)
 		{
 			Socket* newSocket = new Socket();
 			if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
+			{
+				delete newSocket;
 				throw ErrorException("Error opening the socket");
+			}
+				
 			_serverSockets.push_back(newSocket);
 			struct pollfd serverPollFd;
 
@@ -105,13 +109,14 @@ void Server::run(std::vector<VirtualServers> servers)
 		{
 			HttpRequest requestReceive;
 			VirtualServers bestServer;
+			int currentFd = _pollFds[i].fd;
 
 			if (ret >= 0 && _pollFds[i].revents & POLLIN)
 			{
 				// std::cout << "\nPOLLIN i: " << i << std::endl;
 				Socket* dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
-					_pollFds[i].fd == dataSocket->getSocketFd())
+					currentFd == dataSocket->getSocketFd())
 				{
 					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets);
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
@@ -131,10 +136,9 @@ void Server::run(std::vector<VirtualServers> servers)
 			{
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
-					if (_clientSockets[j]->getSocketFd() == _pollFds[i].fd)
+					if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
 					{
-						_connectionManager.writeData(*(_clientSockets[j]), i, _responsesToSend[_pollFds[i].fd],
-							_pollFds);
+						_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd]);
 						break ;
 					}
 				}
@@ -142,8 +146,7 @@ void Server::run(std::vector<VirtualServers> servers)
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
-				std::cout << "    Connection closed or error in socket FD: " << _pollFds[i].fd << std::endl;
-				int currentFd = _pollFds[i].fd;
+				std::cout << "    Connection closed or error in socket FD: " << currentFd << std::endl;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
 					if (_clientSockets[j]->getSocketFd() == currentFd)
@@ -158,7 +161,6 @@ void Server::run(std::vector<VirtualServers> servers)
 		}
 	}
 }
-
 
 void Server::processRequest(HttpRequest request, VirtualServers server, Socket* socket)
 {
@@ -248,7 +250,6 @@ void Server::processGet(std::string resourcePath, const Location* locationReques
 	resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 	if (resourcePath.empty())
 		return ;
-	std::cout << "devuelvo: " << resourcePath << std::endl;
 	// Check if the requested resource is a CGI script
 	if (isCGIScript(resourcePath))
 	{
@@ -268,7 +269,7 @@ void Server::processGet(std::string resourcePath, const Location* locationReques
 	{
 		// Error si el archivo es demasiado grande
 		createErrorPage(413,  server, socket);
-		return;
+		return ;
 	}
 
 	// Si se leyó con éxito, construir la respuesta
@@ -307,7 +308,7 @@ void Server::processPost(HttpRequest request, VirtualServers server, Socket* soc
 	// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
 	// Error si la ruta es inválida o no se puede escribir
 	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
-	std::cout << "ResourcePath: " << resourcePath << std::endl;
+	// std::cout << "ResourcePath: " << resourcePath << std::endl;
 	if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
 		: locationRequest->getRootLocation(), resourcePath))
 	{

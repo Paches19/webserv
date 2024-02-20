@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:33:38 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/20 13:16:15 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,8 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
 			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
-			_clientSockets.erase(_clientSockets.begin() + j);
+			// _clientSockets.erase(_clientSockets.begin() + j);
+			delete _clientSockets[j];
 		}
 	}
 	_pollFds.erase(_pollFds.begin() + i);
@@ -97,10 +98,8 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 
 			if (request.getIsValidRequest())
 			{
-				connections[socket.getSocketFd()].responseSent = false;
 				request.setValidRequest(true);
 				request.setCompleteRequest(true);
-				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
 				data->readBuffer.clear();
 				data->readBuffer.resize(1024);
 				data->accumulatedBytes = 0;
@@ -135,8 +134,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
-	std::vector<struct pollfd> &_pollFds) 
+void ConnectionManager::writeData(Socket& socket, HttpResponse &response) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
 
@@ -170,10 +168,9 @@ void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
 			if ( data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
+			response.setBody("");
 		}
 	}
-	connections[socket.getSocketFd()].responseSent = true;
-	_pollFds[i].events = POLLIN | POLLERR | POLLHUP;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)

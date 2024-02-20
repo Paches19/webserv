@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:27:01 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 11:48:25 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/20 13:27:14 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,20 +16,23 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 HttpResponse::HttpResponse(void) { _statusCode = 200; }
+
 HttpResponse::~HttpResponse() {}
+
 HttpResponse::HttpResponse(const HttpResponse& copy)
 {
 	_statusCode = copy._statusCode;
 	_headers = copy._headers;
 	_body = copy._body;
 }
-HttpResponse& HttpResponse::operator=(const HttpResponse& rhs)
+
+HttpResponse& HttpResponse::operator=(const HttpResponse& other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		_statusCode = rhs._statusCode;
-		_headers = rhs._headers;
-		_body = rhs._body;
+		_statusCode = other._statusCode;
+		_headers = other._headers;
+		_body = other._body;
 	}
 	return *this;
 }
@@ -98,6 +101,8 @@ std::string HttpResponse::getStatusMessage(int statusCode)
 }
 
 std::string 	HttpResponse::getBody() { return _body; }
+
+int 			HttpResponse::getStatusCode() { return _statusCode; }
 
 //*******************************************************************
 // Métodos de la clase

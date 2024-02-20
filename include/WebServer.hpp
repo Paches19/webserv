@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 17:26:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/20 12:11:29 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,6 @@
 # define IS_FILE 1
 
 // Macros
-# define MAX_CONTENT_LENGTH 1000000000
+# define MAX_CONTENT_LENGTH 100000
 
 #endif // WEBSERVER_HPP
