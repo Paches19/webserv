@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/15 17:36:11 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/21 11:47:50 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ bool Socket::open(int port, in_addr addr)
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		return false;
 
-	if (listen(_socketFd, 5) < 0)
+	if (listen(_socketFd, 50) < 0)
 		return false;
 
 	return true;
