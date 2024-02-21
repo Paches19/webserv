@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/21 11:08:52 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/21 13:11:46 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->accumulatedBytes = 0;
 				data->headerReceived = false;
 				request.setValidRequest(false);
+				request.setCompleteRequest(true);
 				return request;
 			}
 		}

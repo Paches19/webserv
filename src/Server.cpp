@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/20 13:30:04 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/21 13:38:44 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,10 +125,12 @@ void Server::run(std::vector<VirtualServers> servers)
 						std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer, dataSocket);
 					}
-					else if (!requestReceive.getIsValidRequest())
+					else if (!requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						if (_pollFds.size() > i - 1 && i > 0)
 							--i;
+						std::cout << "ENTRO EN INVALID REQUEST" << std::endl;
+						createErrorPage(400, bestServer, dataSocket);
 					}
 				}
 			}
@@ -138,6 +140,7 @@ void Server::run(std::vector<VirtualServers> servers)
 				{
 					if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
 					{
+						std::cout << "ESCRIBO RESPUESTA" << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd]);
 						break ;
 					}
@@ -236,10 +239,8 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	else
 	{
 		// Método no soportado
-		processResponse.setStatusCode(555);
-		processResponse.setHeader("Content-Type", "text/plain");
-		processResponse.setBody("Request Method not supported");
-		_responsesToSend[socket->getSocketFd()] = processResponse;
+		createErrorPage(405, server, socket);
+		return ;
 	}
 }
 
@@ -262,7 +263,7 @@ void Server::processGet(std::string resourcePath, const Location* locationReques
 	{
 		//Error si el archivo está vacío o no se pudo abrir
 		createErrorPage(500, server, socket);
-		return;
+		return ;
 	}
 
 	if (buffer.size() > locationRequest->getMaxBodySize())
@@ -591,6 +592,7 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 		{
 			// Autoindex desactivado: buscar archivo index por defecto
 			std::string indexPath = resourcePath;
+			std::cout << "IndexPath: " << indexPath << std::endl;
 			if (ConfigFile::fileExistsAndReadable(indexPath))
 			{
 				// Enviar archivo index

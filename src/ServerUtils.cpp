@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/16 11:49:23 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/20 12:07:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/21 13:54:41 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,13 +183,14 @@ std::string adjustPathForDirectory(const std::string& requestURL, const std::str
 	std::string fullPath = basePath;
 	if (requestURL != "/")
 		fullPath += requestURL;
-	
+	(Location) location = (Location) location;
+	server = server;
 	if (ConfigFile::checkPath(fullPath) == IS_DIR)
 	{
 		if (location.getAutoindex())
 			return fullPath;
 		std::string indexFile;
-		if (location.getIndexLocation().empty())
+		if (location.getIndexLocation().empty() && requestURL == "/")
 		{
 			indexFile = server.getIndex();
 			fullPath = server.getRoot() + indexFile;
@@ -201,6 +202,8 @@ std::string adjustPathForDirectory(const std::string& requestURL, const std::str
 		}
 		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
+		else
+			return requestURL;
 	}
 	return fullPath;
 }

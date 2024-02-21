@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:02:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/21 13:15:28 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,9 +119,6 @@ void HttpRequest::_parseFirstLine(const std::string& line)
 {
 	std::istringstream lineStream(line);
 	lineStream >> _method >> _url >> _httpVersion;
-	if (lineStream.fail() || (_method != "GET" && _method != "POST" && _method != "DELETE") ||
-		_url == "" || _httpVersion == "")
-		return invalidRequest();
 }
 
 void HttpRequest::_parseHeaders(const std::string& headersStr)
