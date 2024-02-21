@@ -44,8 +44,7 @@ CgiHandler&	CgiHandler::operator=(CgiHandler const	&src)
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************
-
-std::string to_string(int n)
+std::string ft_itoa(int n)
 {
 	std::string str;
 	std::stringstream ss;
@@ -66,7 +65,7 @@ void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualS
 
 	// Set the remote information
 	this->_env["REMOTE_ADDR"] =  inet_ntoa(server.getIpAddress());
-	this->_env["REMOTE_PORT"] = to_string(server.getPort());
+	this->_env["REMOTE_PORT"] = ft_itoa(server.getPort());
 	this->_env["REMOTE_IDENT"] = headers["Authorization"];
 	this->_env["REMOTE_USER"] = headers["Authorization"];
 
@@ -75,7 +74,7 @@ void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualS
 		this->_env["SERVER_NAME"] = headers["Host"].substr(0, headers["Host"].find(":"));
 	else
 		this->_env["SERVER_NAME"] = this->_env["REMOTE_ADDR"];
-	this->_env["SERVER_PORT"] = to_string(server.getPort());
+	this->_env["SERVER_PORT"] = ft_itoa(server.getPort());
 	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->_env["SERVER_SOFTWARE"] = "Webserver/1.0";
 	
@@ -87,7 +86,7 @@ void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualS
 	this->_env["REQUEST_URI"] = url;
 
 	// Set the content information
-	this->_env["CONTENT_LENGTH"] = to_string(request.getMethod() == "GET" ? 0 : this->_body.length());
+	this->_env["CONTENT_LENGTH"] = ft_itoa(request.getMethod() == "GET" ? 0 : this->_body.length());
 	this->_env["CONTENT_TYPE"] = headers["Content-Type"];
 
 	// Set the path information
@@ -153,46 +152,46 @@ std::string CgiHandler::executeCgi(std::string& scriptName)
 		std::cerr << RED << "Fork crashed." << RESET << std::endl;
 		return ("Status: 500\r\n\r\n");
 	}
-	else if (!pid)
+	else if (!pid) // Child process
 	{
 		char * const * nll = NULL;
 
 		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
 		execve(scriptName.c_str(), nll, env);
+		// If execve fails, it will return here and print an error message
 		std::cerr << RED << "Execve crashed." << RESET << std::endl;
 		write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
 	}
-	else
+	else // Parent process
 	{
 		char	buffer[CGI_BUFSIZE] = {0};
 
 		waitpid(-1, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET);
-
 		ret = 1;
 		while (ret > 0)
 		{
 			memset(buffer, 0, CGI_BUFSIZE);
 			ret = read(fdOut, buffer, CGI_BUFSIZE - 1);
-			std::cout << "buffer : " << buffer << std::endl;
+			//std::cout << "buffer : " << buffer << std::endl;
 			newBody += buffer;
 		}
 	}
 
+	// TURNING STDIN AND STDOUT BACK TO NORMAL
 	dup2(saveStdin, STDIN_FILENO);
 	dup2(saveStdout, STDOUT_FILENO);
+
 	fclose(fIn);
 	fclose(fOut);
 	close(fdIn);
 	close(fdOut);
 	close(saveStdin);
 	close(saveStdout);
-
 	for (size_t i = 0; env[i]; i++)
 		delete[] env[i];
 	delete[] env;
-
 	if (!pid)
 		exit(0);
 

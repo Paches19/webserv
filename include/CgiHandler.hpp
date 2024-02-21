@@ -22,9 +22,11 @@ class CgiHandler
 {
 	private:
 		std::map<std::string, std::string>	_env;
-		std::string	_body;
-		void		_initEnv(HttpRequest &request, const Location &config, VirtualServers &server);
-		char**		_getEnvAsCstrArray() const;
+		std::string							_body;
+		void								_initEnv( HttpRequest &request,
+												const Location &config, 
+													  VirtualServers &server);
+		char**								_getEnvAsCstrArray() const;
 
 	public:
 		CgiHandler(void);
@@ -33,6 +35,7 @@ class CgiHandler
 		CgiHandler(CgiHandler const &src);
 		virtual ~CgiHandler();
 		CgiHandler	&operator=(CgiHandler const &src);
+		
 		// executes cgi and returns body or error
 		std::string	executeCgi(std::string& scriptName);
 };

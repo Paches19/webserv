@@ -163,7 +163,6 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	std::cout << "\nProcessing REQUEST... " << std::endl;
 	std::cout << "    Method: " << request.getMethod() << std::endl;
 	std::cout << "    Requested URL: " << request.getURL() << std::endl;
-	std::cout << "*********" << std::endl;
 	if (server.getPort() == 0)
 	{
 		std::cout << "    Server not found" << std::endl;
@@ -182,7 +181,6 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		createErrorPage(404, server, socket);
 		return ;
 	}
-	std::cout << "*********************" << std::endl;
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
 	if (locationRequest->getReturn()[0] != "")
 	{
@@ -307,15 +305,12 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 		return;
 	}
 
-	// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
-	// Error si la ruta es inválida o no se puede escribir
 	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
-
 	std::cout << "    Resource path for POST: " << resourcePath << std::endl;
 	std::string root;
 	if (locationRequest->getRootLocation().empty())
 	{
-		root = server.getRoot();
+		root = server.getRoot() + "/uploads";
 		std::cout << "    Root from server: " << server.getRoot() << std::endl;
 	}
 	else
@@ -323,18 +318,77 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 		root = locationRequest->getRootLocation();
 		std::cout << "    Root from location: " << locationRequest->getRootLocation() << std::endl;
 	}
-	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta
-	// Error si no se puede abrir el archivo
 	std::string fullResourcePath = root + getFilenameCGI(request);
 	std::cout << "    Full resource path for POST: " << fullResourcePath << std::endl;
-	if (!postFile(fullResourcePath, request, server, socket))
+	if (!postFileCGI(request.getBody(), fullResourcePath, server, socket))
 		return ;
 
 	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta	
 	processResponse.setStatusCode(200);
-	processResponse.setHeader("Content-Type", "text/plain");
+	size_t contentTypeIni = request.getBody().find("Content-Type:");
+	if (contentTypeIni == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return;
+	}
+	size_t contentTypeEnd = request.getBody().find("\n", contentTypeIni);
+	if (contentTypeEnd == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return;
+	}
+	std::string contentType = request.getBody().substr(contentTypeIni,
+			contentTypeEnd - contentTypeIni + 1);
+
+	processResponse.setHeader("Content-Type", contentType);
 	processResponse.setBody("Content uploaded successfully.");
 	_responsesToSend[socket->getSocketFd()] = processResponse;
+}
+
+bool Server::postFileCGI(const std::string& httpBody, const std::string& filename, 
+		VirtualServers server, Socket* socket)
+{
+    // Find the position of "Content-Type: text/plain" in the HTTP body
+    size_t contentStartPos = httpBody.find("Content-Type:");
+    
+    // If "Content-Type:" is found
+	if (contentStartPos == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+    // Find the position of the newline character after "Content-Type: text/plain"
+    size_t newlinePos = httpBody.find("\n", contentStartPos);
+
+    // If the newline character is found
+	if (newlinePos == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+    // Extract the file content starting from the newline character
+    std::string fileContent = httpBody.substr(newlinePos + 1);
+
+    // Find the position of the boundary line
+    size_t boundaryPos = fileContent.find("------WebKitFormBoundary");
+
+	if (boundaryPos == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+    // Trim the file content to exclude the boundary line
+    fileContent = fileContent.substr(0, boundaryPos);
+    // Save the file content to a file with the provided filename
+    std::ofstream outputFile(filename.c_str());
+	if (!outputFile.is_open())
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+    outputFile << fileContent;
+    outputFile.close();
+	return true;
 }
 
 void Server::processPost(HttpRequest request, VirtualServers server, Socket* socket,

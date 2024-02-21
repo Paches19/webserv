@@ -115,16 +115,14 @@ std::string getFilenameCGI(HttpRequest request)
 	if (initFilename == std::string::npos)
 		return "";
 	
-	size_t sizeFilename = request.getBody().find("\r\n", initFilename) - initFilename;
-	if (endFilename == std::string::npos)
+	size_t sizeFilename = request.getBody().find("\r\n", initFilename);
+	if (sizeFilename == std::string::npos)
 		return "";
-	
-	std::string filename = request.getBody().substr(initFilename + 10, size - 10);
-	
-	if (!filename.empty())
-		filename = "/uploads/" + filename;
+		
+	std::string filename = request.getBody().substr(initFilename + 10,
+		sizeFilename - initFilename - 11);
 
-	return filename;
+	return ("/" + filename);
 }
 
 std::string generateDirectoryIndex(const std::string& directoryPath)

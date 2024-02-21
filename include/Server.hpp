@@ -51,6 +51,8 @@ class Server
 		void 		processPostCGI(HttpRequest request, VirtualServers server, Socket* socket,
 					const Location* locationRequest);
 		void 		processDelete(std::string resourcePath, VirtualServers server, Socket* socket);
+		bool 		postFileCGI(const std::string& httpBody, const std::string& filename, 
+					VirtualServers server, Socket* socket);
 		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
 					Socket* socket);
 		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
