@@ -26,7 +26,7 @@ bool 			isCGIScript(const std::string& resourcePath);
 std::string 	getFilename(HttpRequest request, std::string resourcePath);
 std::string 	getFilenameCGI(HttpRequest request);
 std::string 	generateDirectoryIndex(const std::string& directoryPath);
-std::string 	buildResourcePathForPost(HttpRequest& request,
+std::string 	buildResourcePathForPost(HttpRequest& request, 
 				const Location& location, VirtualServers& server);
 std::string 	adjustPathForDirectory(const std::string& requestURL, const std::string& basePath,
 				const Location& location, VirtualServers& server);

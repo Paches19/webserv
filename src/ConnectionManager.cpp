@@ -48,14 +48,15 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
+			 _clientSockets.erase(_clientSockets.begin() + j);
+			//delete _clientSockets[j];
 			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
-			// _clientSockets.erase(_clientSockets.begin() + j);
-			delete _clientSockets[j];
 		}
 	}
 	_pollFds.erase(_pollFds.begin() + i);
 						
     std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
+
     if (it != connections.end())
     {
         socket.close();

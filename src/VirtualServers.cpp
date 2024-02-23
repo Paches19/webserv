@@ -81,7 +81,7 @@ const std::string &VirtualServers::getIndex() { return (_index); }
 
 const bool &VirtualServers::getAutoindex() { return (_autoindex); }
 
-std::vector<Location> &VirtualServers::getLocations() { return (_locations); }
+const std::vector<Location> &VirtualServers::getLocations() { return (_locations); }
 
 const std::string VirtualServers::getErrorPage(short i)
 {
@@ -231,8 +231,8 @@ void VirtualServers::setLocation(std::vector<std::string> &parametrs, long unsig
 			new_location.setErrorPage(it->first, it->second);
 		it++;
 	}
+
 	_locations.push_back(new_location);
-	
 }
 
 //*******************************************************************

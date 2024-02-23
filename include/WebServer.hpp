@@ -62,4 +62,5 @@
 # define MAX_CONTENT_LENGTH 1000000000
 # define CGI_BUFSIZE 		1000000
 
+# define UPLOAD "/uploads"
 #endif // WEBSERVER_HPP

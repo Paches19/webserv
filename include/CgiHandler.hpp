@@ -37,7 +37,7 @@ class CgiHandler
 		CgiHandler	&operator=(CgiHandler const &src);
 		
 		// executes cgi and returns body or error
-		std::string	executeCgi(std::string& scriptName);
+		std::string	executeCgi(std::string const scriptName, std::string const pathCGI);
 };
 
 #endif

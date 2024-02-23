@@ -101,7 +101,7 @@ void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualS
 
 	const std::vector<std::string>& cgiPathVector = config.getCgiPath();
 	for (std::vector<std::string>::const_iterator it = cgiPathVector.begin(); it != cgiPathVector.end(); ++it)
-   		this->_env.insert(std::make_pair(*it, std::string()));
+   		this->_env.insert(std::make_pair(server.getRoot() + *it, std::string()));
 }
 
 char	**CgiHandler::_getEnvAsCstrArray() const {
@@ -117,7 +117,7 @@ char	**CgiHandler::_getEnvAsCstrArray() const {
 	return env;
 }
 
-std::string CgiHandler::executeCgi(std::string& scriptName)
+std::string CgiHandler::executeCgi(std::string const scriptName, std::string const pathCGI)
 {
 	pid_t		pid;
 	int			saveStdin;
@@ -154,11 +154,11 @@ std::string CgiHandler::executeCgi(std::string& scriptName)
 	}
 	else if (!pid) // Child process
 	{
-		char * const * nll = NULL;
-
 		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
-		execve(scriptName.c_str(), nll, env);
+
+		const char* argv[] = { pathCGI.c_str(), scriptName.c_str(), NULL };
+		execve(scriptName.c_str(), const_cast<char* const*>(argv), env);
 		// If execve fails, it will return here and print an error message
 		std::cerr << RED << "Execve crashed." << RESET << std::endl;
 		write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);

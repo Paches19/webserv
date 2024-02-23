@@ -94,6 +94,22 @@ const std::vector<std::string> &Location::getReturn() const { return (_return); 
 
 const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_extPath); }
 
+const std::string Location::getExtensionPath(std::string &ext) const 
+{
+	std::cout << "    Looking for " << ext << std::endl;
+	std::vector<std::string>::const_iterator it;
+
+	for (it = _cgiPath.begin(); it != _cgiPath.end(); ++it)
+	{
+		if ((ext == ".py" && it->find("python") != std::string::npos) ||
+			(ext == ".php" && it->find("php") != std::string::npos))
+			break;
+	}
+	if (it != _cgiPath.end())
+		return (*it);
+	return ("");
+}
+
 const unsigned long &Location::getMaxBodySize() const { return (_clientMaxBodySize); }
 
 const std::string Location::getErrorPage(short i) const
@@ -165,9 +181,9 @@ void Location::setReturn(std::string parametr1, std::string parametr2)
 	_return[1] = parametr2; // Ruta de redirección
 }
 
-void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
+void Location::setCgiPath(std::vector<std::string> &path) { _cgiPath = path; }
 
-void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
+void Location::setCgiExtension(std::vector<std::string> &extension) { _cgiExt = extension; }
 
 void Location::setMaxBodySize(std::string parametr) { _clientMaxBodySize = ft_stoi(parametr); }
 
@@ -177,8 +193,7 @@ void Location::setModifier(std::string parametr) { _modifier = parametr; }
 
 void Location::setErrorPage(short i, std::string parametr)
 {
-	std::string path = ConfigFile::prefixPath(parametr);
-	_errorPages[i] = path;
+	_errorPages[i] = ConfigFile::prefixPath(parametr);
 }
 
 //*******************************************************************
@@ -296,7 +311,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 					if (i + 1 >= parametr.size())
 						throw ErrorException("Token is invalid");
 				}
-				if (parametr[i].find("/python") == std::string::npos && parametr[i].find("/bash") == std::string::npos)
+				if (parametr[i].find("/python") == std::string::npos && parametr[i].find("/php") == std::string::npos)
 					throw ErrorException("cgi_path is invalid");
 			}
 			setCgiPath(path);
@@ -329,7 +344,7 @@ int Location::ft_stoi(std::string str)
     return (res);
 }
 
-int Location::checkLocation(Location &location, std::string serverRoot, std::string serverIndex) const
+int Location::checkLocation(Location &location, std::string serverRoot, std::string serverIndex)
 {
 	std::string path = location.getPath();
 	std::cout << "location " << path << std::endl;
@@ -374,25 +389,23 @@ int Location::checkLocation(Location &location, std::string serverRoot, std::str
 		for (it_ext = location.getCgiExtension().begin(); it_ext != location.getCgiExtension().end(); ++it_ext)
 		{
 			std::cout << " 	   cgi extension = " << *it_ext << std::endl;
-			if (*it_ext != "*.py" && *it_ext != "*.sh" && *it_ext != ".py" && *it_ext != ".sh")
+			if (*it_ext != ".py" && *it_ext != ".php")
 			{
 					std::cout << RED << " 	   extension not supported" << RESET << std::endl;
 					return (1);
 			}
 			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
 			{		
-				if ((*it_ext == ".py" || *it_ext == "*.py") && it_path->find("python3") != std::string::npos &&
+				if (*it_ext == ".py" && it_path->find("python") != std::string::npos &&
 					ConfigFile::checkPath(*it_path) == IS_FILE)
 				{
 					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
-					//location._extPath.insert(std::make_pair(".py", *it_path));
 					break;
 				}
-				else if ((*it_ext == ".sh" || *it_ext == "*.sh") && it_path->find("bash") != std::string::npos &&
+				else if (*it_ext == ".php" && it_path->find("php") != std::string::npos &&
 					ConfigFile::checkPath(*it_path) == IS_FILE)
 				{
 					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
-					//location._extPath[".sh"] = *it_path;
 					break;
 				}
 			}

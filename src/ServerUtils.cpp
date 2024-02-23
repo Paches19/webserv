@@ -101,7 +101,10 @@ std::string getFilename(HttpRequest request, std::string resourcePath)
 	{
 		if (resourcePath.size() < filename.size() ||
 			resourcePath.substr(resourcePath.size() - filename.size()) != filename)
-				resourcePath += "/uploads/" + filename;
+			{
+				resourcePath += UPLOAD;
+				resourcePath += "/" + filename;
+			}
 	}
 
 	if (resourcePath.size() >= 2 && resourcePath[0] == '/')
