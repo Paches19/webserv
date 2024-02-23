@@ -40,8 +40,8 @@ HEADERS 		=	$(INC_DIR)HttpRequest.hpp \
 					$(INC_DIR)HttpResponse.hpp \
 					$(INC_DIR)Server.hpp \
 					$(INC_DIR)Socket.hpp \
-					$(INC_DIR)ConnectionManager.hpp \
 					$(INC_DIR)ConnectionData.hpp \
+					$(INC_DIR)ConnectionManager.hpp \
 					$(INC_DIR)WebServer.hpp \
 					$(INC_DIR)CgiHandler.hpp \
 					$(INC_DIR)ServerUtils.hpp
