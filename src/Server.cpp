@@ -45,18 +45,24 @@ Server::Server(std::vector<VirtualServers>	servers)
 	// Crear sockets
 	for (size_t i = 0; i < servers.size(); ++i)
 	{
-		Socket* newSocket = new Socket();
-		if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
-			throw ErrorException("Error opening the socket");
-		_serverSockets.push_back(newSocket);
-		
-		struct pollfd serverPollFd;
+		if (checkOpenPorts(_serverSockets, servers[i]))
+		{
+			Socket* newSocket = new Socket();
+			if (newSocket->open((int) servers[i].getPort(), servers[i].getIpAddress()) == false)
+			{
+				delete newSocket;
+				throw ErrorException("Error opening the socket");
+			}
+				
+			_serverSockets.push_back(newSocket);
+			struct pollfd serverPollFd;
 
-		serverPollFd.fd = _serverSockets[i]->getSocketFd();
-		serverPollFd.events = POLLIN; // Establecer para leer
-		this->_pollFds.push_back(serverPollFd);
-		std::cout << "    Listening on port:  " <<
-		servers[i].getPort() << std::endl;
+			serverPollFd.fd = _serverSockets.back()->getSocketFd();
+			serverPollFd.events = POLLIN; // Establecer para leer
+			this->_pollFds.push_back(serverPollFd);
+			std::cout << "    Listening on port:  " <<
+				servers[i].getPort() << std::endl;
+		}
 	}
 }
 Server::~Server()
@@ -117,10 +123,11 @@ void Server::run(std::vector<VirtualServers> servers)
 						std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer, dataSocket);
 					}
-					else if (!requestReceive.getIsValidRequest()) // Bad Request
+					else if (!requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						if (_pollFds.size() > i - 1 && i > 0)
 							--i;
+						createErrorPage(400, bestServer, dataSocket);
 					}
 				}
 			}
@@ -215,6 +222,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(405, server, socket);
 			return ;
 		}
+		if (request.getBody().size() > (locationRequest->getMaxBodySize() > 0 ?
+			locationRequest->getMaxBodySize() : server.getClientMaxBodySize()))
+		{
+			createErrorPage(413, server, socket);
+			return ;
+		}
 		if (isCGIScript(resourcePath))
 			processPostCGI(request, server, socket, locationRequest);
 		else
@@ -235,10 +248,9 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	else
 	{
 		// Método no soportado
-		processResponse.setStatusCode(555);
-		processResponse.setHeader("Content-Type", "text/plain");
-		processResponse.setBody("Request Method not supported");
-		_responsesToSend[socket->getSocketFd()] = processResponse;
+		// Método no soportado
+		createErrorPage(405, server, socket);
+		return ;
 	}
 }
 
@@ -288,13 +300,6 @@ void Server::processGet(std::string resourcePath, const Location* locationReques
 		//Error si el archivo está vacío o no se pudo abrir
 		createErrorPage(500, server, socket);
 		return;
-	}
-
-	if (buffer.size() > locationRequest->getMaxBodySize())
-	{
-		// Error si el archivo es demasiado grande
-		createErrorPage(413,  server, socket);
-		return ;
 	}
 
 	// Si se leyó con éxito, construir la respuesta
@@ -362,6 +367,43 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 	_responsesToSend[socket->getSocketFd()] = processResponse;
 }
 
+void Server::processPost(HttpRequest request, VirtualServers server, Socket* socket,
+	const Location* locationRequest)
+{
+	HttpResponse processResponse;
+	
+	// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
+	std::string contentTypeHeader = request.getHeader("Content-Type");
+	if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
+		contentTypeHeader.find("chunked") != std::string::npos)
+	{
+		createErrorPage(501, server, socket);
+		return ;
+	}
+
+	// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
+	// Error si la ruta es inválida o no se puede escribir
+	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
+
+	if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
+		: locationRequest->getRootLocation(), resourcePath))
+	{
+		createErrorPage(400, server, socket);
+		return ;
+	}
+	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta
+	// Error si no se puede abrir el archivo
+	std::string	fullResourcePath = getFilename(request, resourcePath);
+	if (!postFile(fullResourcePath, request, server, socket))
+		return ;
+
+	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta	
+	processResponse.setStatusCode(200);
+	processResponse.setHeader("Content-Type", "text/plain");
+	processResponse.setBody("Content uploaded successfully.");
+	_responsesToSend[socket->getSocketFd()] = processResponse;
+}
+
 bool Server::postFileCGI(const std::string& httpBody, const std::string& filename, 
 		VirtualServers server, Socket* socket)
 {
@@ -401,55 +443,6 @@ bool Server::postFileCGI(const std::string& httpBody, const std::string& filenam
     outputFile << fileContent;
     outputFile.close();
 	return true;
-}
-
-void Server::processPost(HttpRequest request, VirtualServers server, Socket* socket,
-	const Location* locationRequest)
-{
-	HttpResponse processResponse;
-	
-	std::string contentLengthHeader = request.getHeader("Content-Length");
-	unsigned long contentLength;
-	if (contentLengthHeader.empty())
-		contentLength = 0;
-	else
-		contentLength = std::strtoul(contentLengthHeader.c_str(), NULL, 10);
-	if (contentLength > server.getClientMaxBodySize())
-	{
-		createErrorPage(413, server, socket);
-		return;
-	}
-
-	// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
-	std::string contentTypeHeader = request.getHeader("Content-Type");
-	if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
-		contentTypeHeader.find("chunked") != std::string::npos)
-	{
-		createErrorPage(501, server, socket);
-		return ;
-	}
-
-	// Determinar la ruta absoluta donde se guardará el contenido de la solicitud POST
-	// Error si la ruta es inválida o no se puede escribir
-	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
-
-	if (resourcePath.empty() || !isValidPath(locationRequest->getRootLocation().empty() ? server.getRoot()
-		: locationRequest->getRootLocation(), resourcePath))
-	{
-		createErrorPage(400, server, socket);
-		return ;
-	}
-	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta
-	// Error si no se puede abrir el archivo
-	std::string	fullResourcePath = getFilename(request, resourcePath);
-	if (!postFile(fullResourcePath, request, server, socket))
-		return ;
-
-	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta	
-	processResponse.setStatusCode(200);
-	processResponse.setHeader("Content-Type", "text/plain");
-	processResponse.setBody("Content uploaded successfully.");
-	_responsesToSend[socket->getSocketFd()] = processResponse;
 }
 
 void Server::processDelete(std::string resourcePath, VirtualServers server, Socket* socket)
@@ -579,6 +572,8 @@ bool Server::postFile(std::string resourcePath, HttpRequest request, VirtualServ
 	Socket* socket)
 {
 	HttpResponse processResponse;
+	if (resourcePath[0] == '.')
+		resourcePath = resourcePath.substr(2);
 	std::ofstream outputFile(resourcePath.c_str(), std::ios::out | std::ios::binary);
 	if (!outputFile.is_open())
 	{

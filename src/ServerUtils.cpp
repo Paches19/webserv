@@ -205,7 +205,7 @@ std::string adjustPathForDirectory(const std::string& requestURL, const std::str
 		if (location.getAutoindex())
 			return fullPath;
 		std::string indexFile;
-		if (location.getIndexLocation().empty())
+		if (location.getIndexLocation().empty() && requestURL == "/")
 		{
 			indexFile = server.getIndex();
 			fullPath = server.getRoot() + indexFile;
@@ -217,6 +217,8 @@ std::string adjustPathForDirectory(const std::string& requestURL, const std::str
 		}
 		if (ConfigFile::fileExistsAndReadable(fullPath))
 			return fullPath;
+		else
+			return requestURL;
 	}
 	return fullPath;
 }

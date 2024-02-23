@@ -86,8 +86,8 @@ void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualS
 	this->_env["REQUEST_URI"] = url;
 
 	// Set the content information
-	this->_env["CONTENT_LENGTH"] = ft_itoa(request.getMethod() == "GET" ? 0 : this->_body.length());
-	this->_env["CONTENT_TYPE"] = headers["Content-Type"];
+	//this->_env["CONTENT_LENGTH"] = ft_itoa(request.getMethod() == "GET" ? 0 : this->_body.length());
+	//this->_env["CONTENT_TYPE"] = headers["Content-Type"];
 
 	// Set the path information
 	//this->_env["PATH_INFO"] = config.getRootLocation() + config.getPath();
@@ -159,6 +159,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 
 		const char* argv[] = { pathCGI.c_str(), scriptName.c_str(), NULL };
 		execve(scriptName.c_str(), const_cast<char* const*>(argv), env);
+
 		// If execve fails, it will return here and print an error message
 		std::cerr << RED << "Execve crashed." << RESET << std::endl;
 		write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
@@ -174,7 +175,6 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 		{
 			memset(buffer, 0, CGI_BUFSIZE);
 			ret = read(fdOut, buffer, CGI_BUFSIZE - 1);
-			//std::cout << "buffer : " << buffer << std::endl;
 			newBody += buffer;
 		}
 	}

@@ -119,9 +119,6 @@ void HttpRequest::_parseFirstLine(const std::string& line)
 {
 	std::istringstream lineStream(line);
 	lineStream >> _method >> _url >> _httpVersion;
-	if (lineStream.fail() || (_method != "GET" && _method != "POST" && _method != "DELETE") ||
-		_url == "" || _httpVersion == "")
-		return invalidRequest();
 }
 
 void HttpRequest::_parseHeaders(const std::string& headersStr)

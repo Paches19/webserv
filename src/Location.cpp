@@ -351,10 +351,13 @@ int Location::checkLocation(Location &location, std::string serverRoot, std::str
 	
 	if (location.getRootLocation().empty())
 		location.setRootLocation(serverRoot + ";");
+
+	serverIndex = " ";
 	std::string root =  location.getRootLocation();
+	/* ESTO ES MIO****************************************
 	if (path != "/cgi-bin")
 	{
-		if (!location.getReturn()[0].empty())
+		if (!location.getReturn()[1].empty())
 		{
 			std::cout << "         original path = " << location.getPath() << std::endl;
 			std::cout << "         return  path  = " << location.getReturn()[1];
@@ -373,6 +376,27 @@ int Location::checkLocation(Location &location, std::string serverRoot, std::str
 			std::cout << "         index = " << location.getIndexLocation() << std::endl;
 			if (!ConfigFile::fileExistsAndReadable(root + path + location.getIndexLocation()))
 				return (2);
+		}
+	}
+	*/
+	if (path != "/cgi-bin")
+	{
+		if (!location.getReturn()[1].empty())
+		{
+			std::string newpath = location.getReturn()[1];	
+			if (newpath[0] == '/')
+			{
+				std::cout << "         root from the " << path << std::endl;
+				std::cout << "         new path  = " << newpath << std::endl;
+			}	
+		}
+		else
+		{
+			std::string fullpath = root + path + location.getIndexLocation();
+			std::cout << "         root  = " << root << std::endl;
+			std::cout << "         index = " << fullpath << std::endl;
+			if (!ConfigFile::fileExistsAndReadable(fullpath))
+				return (5);
 		}
 	}
 	else
@@ -470,8 +494,7 @@ const Location* Location::findLongestPrefixMatch(const std::string& requestURI,
 			longestLength = locations[i].getPath().length();
 			if (!locations[i].getReturn()[0].empty())
 				return &locations[i];
-		}
-		//std::cout << std::endl;	
+		}	
 	}
 	return longestMatch;
 }

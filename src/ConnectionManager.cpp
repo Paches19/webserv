@@ -49,7 +49,6 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
 			 _clientSockets.erase(_clientSockets.begin() + j);
-			//delete _clientSockets[j];
 			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
 		}
 	}
@@ -119,6 +118,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->accumulatedBytes = 0;
 				data->headerReceived = false;
 				request.setValidRequest(false);
+				request.setCompleteRequest(true);
 				return request;
 			}
 		}
