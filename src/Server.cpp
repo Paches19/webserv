@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/21 13:38:44 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:05:07 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -221,6 +221,12 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(405, server, socket);
 			return ;
 		}
+		if (request.getBody().size() > (locationRequest->getMaxBodySize() > 0 ?
+			locationRequest->getMaxBodySize() : server.getClientMaxBodySize()))
+		{
+			createErrorPage(413, server, socket);
+			return ;
+		}
 		// Verificar si el Content-Length excede el máximo permitido
 		processPost(request, server, socket, locationRequest);
 	}
@@ -266,13 +272,6 @@ void Server::processGet(std::string resourcePath, const Location* locationReques
 		return ;
 	}
 
-	if (buffer.size() > locationRequest->getMaxBodySize())
-	{
-		// Error si el archivo es demasiado grande
-		createErrorPage(413,  server, socket);
-		return ;
-	}
-
 	// Si se leyó con éxito, construir la respuesta
 	processResponse.setStatusCode(200);
 	processResponse.setHeader("Content-Type", getMimeType(resourcePath));
@@ -285,18 +284,6 @@ void Server::processPost(HttpRequest request, VirtualServers server, Socket* soc
 {
 	HttpResponse processResponse;
 	
-	std::string contentLengthHeader = request.getHeader("Content-Length");
-	unsigned long contentLength;
-	if (contentLengthHeader.empty())
-		contentLength = 0;
-	else
-		contentLength = std::strtoul(contentLengthHeader.c_str(), NULL, 10);
-	if (contentLength > server.getClientMaxBodySize())
-	{
-		createErrorPage(413, server, socket);
-		return;
-	}
-
 	// Verificar si el tipo de contenido es soportado (ejemplo: no se soporta multipart/form-data o chunked)
 	std::string contentTypeHeader = request.getHeader("Content-Type");
 	if (contentTypeHeader.find("multipart/form-data") != std::string::npos ||
