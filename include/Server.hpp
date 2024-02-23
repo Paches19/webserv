@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:26:15 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:10:40 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,6 @@
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
 # include "ServerUtils.hpp"
-//# include "HttpResponse.hpp"
 
 class Server
 {

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 11:31:40 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/20 11:19:29 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:10:53 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 # define CONNECTIONDATA_HPP
 
 # include "WebServer.hpp"
-# include "ConnectionData.hpp"
 
 class ConnectionData
 {

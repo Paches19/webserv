@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 12:52:45 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:10:59 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 # define CONFIGFILE_HPP
 
 # include "WebServer.hpp"
-# include "ConfigFile.hpp"
 
 class ConfigFile
 {

@@ -15,7 +15,6 @@
 
 # include "WebServer.hpp"
 # include "Location.hpp"
-# include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
 
 class VirtualServers

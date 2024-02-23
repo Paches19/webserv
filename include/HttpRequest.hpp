@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:44:37 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/15 13:04:37 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:10:47 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 # define HTTPREQUEST_HPP
 
 # include "WebServer.hpp"
-# include "HttpRequest.hpp"
 
 class HttpRequest
 {
