@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:10:40 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:20:34 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
 # include "ServerUtils.hpp"
+# include "CgiHandler.hpp"
 
 class Server
 {
@@ -42,10 +43,16 @@ class Server
 		void 		processRequest(HttpRequest request, VirtualServers server, Socket* socket);
 		void 		processReturnDirective(const Location& locationRequest,
 			HttpResponse& processResponse);
+		void	processGetCGI(std::string resourcePath, const Location* locationRequest,
+			Socket* socket, VirtualServers server, HttpRequest request);
 		void 		processGet(std::string resourcePath, const Location* locationRequest,
 			Socket* socket, VirtualServers server, HttpRequest request);
 		void		processPost(HttpRequest request, VirtualServers server, Socket* socket,
 				const Location* locationRequest);
+		void	processPostCGI(HttpRequest request, VirtualServers server, Socket* socket,
+				const Location* locationRequest);
+		bool	postFileCGI(const std::string& httpBody, const std::string& filename, 
+				VirtualServers server, Socket* socket);
 		void 		processDelete(std::string resourcePath, VirtualServers server, Socket* socket);
 
 		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 

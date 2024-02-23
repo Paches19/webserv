@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:05:07 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:35:48 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,7 +210,11 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(405, server, socket);
 			return ;
 		}
-		processGet(resourcePath, locationRequest, socket, server, request);
+		
+		if (isCGIScript(resourcePath))
+			processGetCGI(resourcePath, locationRequest, socket, server, request);
+		else
+			processGet(resourcePath, locationRequest, socket, server, request);
 	}
 	//****************************POST Method****************************
 	else if (request.getMethod() == "POST")
@@ -227,8 +231,11 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 			createErrorPage(413, server, socket);
 			return ;
 		}
-		// Verificar si el Content-Length excede el máximo permitido
-		processPost(request, server, socket, locationRequest);
+		
+		if (isCGIScript(resourcePath))
+			processPostCGI(request, server, socket, locationRequest);
+		else
+			processPost(request, server, socket, locationRequest);
 	}
 	//****************************DELETE Method****************************
 	else if (request.getMethod() == "DELETE")
@@ -247,6 +254,37 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		// Método no soportado
 		createErrorPage(405, server, socket);
 		return ;
+	}
+}
+
+void Server::processGetCGI(std::string resourcePath, const Location* locationRequest,
+	Socket* socket, VirtualServers server, HttpRequest request)
+{
+	HttpResponse processResponse;
+	CgiHandler cgi(request, *locationRequest, server);
+
+	std::cout << "    Resource path for CGI: " << resourcePath << std::endl;	
+	std::string extension = resourcePath.substr(resourcePath.find_last_of("."));
+	std::cout << "    Extension for CGI: " << extension << std::endl;
+	
+	std::string pathCGI = locationRequest->getExtensionCgiPath(extension);
+	
+	if (pathCGI.empty())
+	{
+		std::cout << "    Path does not exist ! " << std::endl;
+		createErrorPage(404, server, socket);
+		return ;
+	}
+	std::cout << "    Found path for CGI: " << pathCGI << std::endl;
+	std::string buffer = cgi.executeCgi(resourcePath, pathCGI);
+	if (buffer == "Status: 500\r\n\r\n")
+		createErrorPage(500, server, socket);
+	else
+	{
+		processResponse.setStatusCode(200);
+		processResponse.setHeader("Content-Type", "text/html");
+		processResponse.setBody(buffer);
+		_responsesToSend[socket->getSocketFd()] = processResponse;
 	}
 }
 
@@ -314,6 +352,106 @@ void Server::processPost(HttpRequest request, VirtualServers server, Socket* soc
 	processResponse.setHeader("Content-Type", "text/plain");
 	processResponse.setBody("Content uploaded successfully.");
 	_responsesToSend[socket->getSocketFd()] = processResponse;
+}
+
+
+void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* socket,
+	const Location* locationRequest)
+{
+	HttpResponse processResponse;
+	
+	std::string contentLengthHeader = request.getHeader("Content-Length");
+	unsigned long contentLength;
+	if (contentLengthHeader.empty())
+		contentLength = 0;
+	else
+		contentLength = std::strtoul(contentLengthHeader.c_str(), NULL, 10);
+	if (contentLength > server.getClientMaxBodySize())
+	{
+		createErrorPage(413, server, socket);
+		return;
+	}
+
+	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
+	std::cout << "    Resource path for POST: " << resourcePath << std::endl;
+	std::string root;
+	if (locationRequest->getRootLocation().empty())
+	{
+		root = server.getRoot() + UPLOAD;
+		std::cout << "    Root from server: " << server.getRoot() << std::endl;
+	}
+	else
+	{
+		root = locationRequest->getRootLocation();
+		std::cout << "    Root from location: " << locationRequest->getRootLocation() << std::endl;
+	}
+	std::string fullResourcePath = root + getFilenameCGI(request);
+	std::cout << "    Full resource path for POST: " << fullResourcePath << std::endl;
+	if (!postFileCGI(request.getBody(), fullResourcePath, server, socket))
+		return ;
+
+	// Guardar el cuerpo de la solicitud en el archivo especificado por la ruta	
+	processResponse.setStatusCode(200);
+	size_t contentTypeIni = request.getBody().find("Content-Type:");
+	if (contentTypeIni == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return;
+	}
+	size_t contentTypeEnd = request.getBody().find("\n", contentTypeIni);
+	if (contentTypeEnd == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return;
+	}
+	std::string contentType = request.getBody().substr(contentTypeIni + 14,
+			contentTypeEnd - contentTypeIni -14);
+
+	std::cout << "    Content-Type detected  = " << contentType << std::endl;
+	processResponse.setHeader("Content-Type", contentType);
+	processResponse.setBody("Content uploaded successfully.");
+	_responsesToSend[socket->getSocketFd()] = processResponse;
+}
+
+bool Server::postFileCGI(const std::string& httpBody, const std::string& filename, 
+		VirtualServers server, Socket* socket)
+{
+	// Find the position of "Content-Type: text/plain" in the HTTP body
+	size_t contentStartPos = httpBody.find("Content-Type:");
+	
+	// If "Content-Type:" is found
+	if (contentStartPos == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+	// Find the position of the newline character after "Content-Type: text/plain"
+	size_t newlinePos = httpBody.find("\n", contentStartPos);
+
+	// If the newline character is found
+	if (newlinePos == std::string::npos)
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+	// Extract the file content starting from the newline character
+	std::string fileContent = httpBody.substr(newlinePos + 1);
+
+	// Find the position of the boundary line
+	size_t boundaryPos = fileContent.find("------WebKitFormBoundary");
+	if (boundaryPos != std::string::npos)
+		fileContent = fileContent.substr(0, boundaryPos);
+	
+	// Save the file content to a file with the provided filename
+	std::ofstream outputFile(filename.c_str());
+	if (!outputFile.is_open())
+	{
+		createErrorPage(500, server, socket);
+		return false;
+	}
+	outputFile << fileContent;
+	outputFile.close();
+	return true;
 }
 
 void Server::processDelete(std::string resourcePath, VirtualServers server, Socket* socket)

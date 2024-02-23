@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:10:59 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:14:09 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,11 +29,11 @@ class ConfigFile
 		
 		std::string	getPath();
 
-		static int	checkPath(std::string path);
+		static int			checkPath(std::string path);
 		static std::string	readFile(std::string path);
-		static bool fileExistsAndReadable(const std::string& filePath);
-		static std::string prefixPath(std::string const path);
-		static std::string adjustName(std::string const name);
+		static bool 		fileExistsAndReadable(const std::string& filePath);
+		static std::string	prefixPath(std::string const path);
+		static std::string	adjustName(std::string const name);
 };
 
 #endif // CONFIGFILE_HPP

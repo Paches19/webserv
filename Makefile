@@ -6,7 +6,7 @@
 #    By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/01/12 11:30:21 by adpachec          #+#    #+#              #
-#    Updated: 2024/02/20 13:33:16 by adpachec         ###   ########.fr        #
+#    Updated: 2024/02/23 18:33:29 by adpachec         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,21 +20,23 @@ OBJ_DIR	= 	obj/
 #Sources 
 SRC		=	ConfigFile.cpp \
 			ConfigParser.cpp \
+			Socket.cpp \
+			CgiHandler.cpp \
 			ConnectionData.cpp \
 			ConnectionManager.cpp \
 			HttpRequest.cpp \
 			HttpResponse.cpp \
 			Location.cpp \
-			main.cpp \
-			Server.cpp \
 			ServerUtils.cpp \
-			Socket.cpp \
-			VirtualServers.cpp
+			Server.cpp \
+			VirtualServers.cpp \
+			main.cpp
 
 SRCS 	= 	$(addprefix $(SRC_DIR), $(SRC))
 
 #Headers
-HEADERS = 	$(INC_DIR)HttpRequest.hpp \
+HEADERS = 	$(INC_DIR)CgiHandler.hpp \
+			$(INC_DIR)HttpRequest.hpp \
 			$(INC_DIR)HttpResponse.hpp \
 			$(INC_DIR)Server.hpp \
 			$(INC_DIR)ServerUtils.hpp \
@@ -54,20 +56,31 @@ CXXFLAGS= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
 all		: 	create_dir $(NAME)
 
 $(NAME)	: 	$(OBJS) $(HEADERS)
+			printf "\n\033[0;32mLinking ...\033[0m $@"
 			$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+			printf " \033[0;32mOK!\033[0m\n"
+
 
 create_dir:
 			@mkdir -p $(OBJ_DIR)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
+			printf "\033[0;33mGenerating object ... \033[0m$@"
 			$(CXX) $(CXXFLAGS) -I$(INC_DIR) -o $@ -c $<
+			printf " \033[0;32mOK!\033[0m\n"
 
 clean	:
-			@rm -rf $(OBJ_DIR)
+			printf "\n\033[0;31mDeleting objects\033[0m"
+			rm -rf $(OBJ_DIR)
+			printf " \033[0;32mOK!\033[0m\n"
 
 fclean	: 	clean
-			@rm -rf $(NAME)
+			printf "\033[0;31mDeleting \033[0m $(NAME)"
+			rm -rf $(NAME)
+			printf " \033[0;32mOK!\033[0m\n"
 
 re		: 	fclean all
 
 .PHONY	: 	all re clean fclean create_dir
+
+.SILENT			: 	create_dir clean fclean re $(OBJS) $(NAME) $(OBJ_DIR)%.o

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/16 11:50:52 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/16 12:26:29 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:35:03 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,5 +37,6 @@ std::string createBodyErrorPage(short &errorCode);
 bool areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers
 	, std::vector<Socket*> _clientSockets, std::vector<struct pollfd> _pollFds);
+std::string getFilenameCGI(HttpRequest request);
 
 #endif // SERVER_UTILS_HPP

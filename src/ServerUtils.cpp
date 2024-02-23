@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/16 11:49:23 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/21 13:54:41 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:34:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,8 +224,6 @@ std::string buildResourcePath(HttpRequest& request,
 	// Ajustar la ruta del recurso para manejo de directorios
 	std::string resourcePath =
 		adjustPathForDirectory(requestURL, basePath, location, server);
-	if (!location.getAlias().empty())
-		resourcePath.replace(0, location.getPath().length(), location.getAlias());
 	return resourcePath;
 }
 
@@ -370,4 +368,20 @@ VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<Virtual
 		}
 	}
 	return servers[0];
+}
+
+std::string getFilenameCGI(HttpRequest request)
+{
+	size_t initFilename = request.getBody().find("filename=");
+	if (initFilename == std::string::npos)
+		return "";
+	
+	size_t sizeFilename = request.getBody().find("\r\n", initFilename);
+	if (sizeFilename == std::string::npos)
+		return "";
+		
+	std::string filename = request.getBody().substr(initFilename + 10,
+		sizeFilename - initFilename - 11);
+
+	return ("/" + filename);
 }

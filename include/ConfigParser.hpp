@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:57 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:10:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 18:46:36 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,9 @@ class ConfigParser
 
 		std::vector<VirtualServers> getServers();
 
-		int		initParser(const std::string &configFile);
-		void	splitServers(std::string &content);
+		int			initParser(std::string &content);
+		void		splitServers(std::string &content);
+		std::string loadFile(const std::string &configFile);
 		
 		class ErrorException : public std::exception
 		{

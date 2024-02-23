@@ -25,7 +25,6 @@ class Location
 		std::string					_index;
 		std::vector<short>			_methods; // GET, POST, DELETE
 		std::vector<std::string>	_return; 
-		std::string					_alias;
 		std::map<short, std::string>_errorPages;
 		std::vector<std::string>	_cgiPath;
 		std::vector<std::string>	_cgiExt;
@@ -46,10 +45,9 @@ class Location
 		const bool 						&getAutoindex() const;
 		const std::string 				&getIndexLocation() const;
 		const std::vector<std::string> 	&getReturn() const;
-		const std::string 				&getAlias() const;
 		const std::vector<std::string> 	&getCgiPath() const;
-		const std::vector<std::string> 	&getCgiExtension() const;
-		const std::map<std::string, std::string> &getExtensionPath() const;
+		const std::vector<std::string>	&getCgiExtension() const;
+		const std::string 				getExtensionCgiPath(std::string &ext) const;
 		const unsigned long 			&getMaxBodySize() const;
 		const std::string 				&getModifier() const;
 		const std::string 				getErrorPage(short i) const;
@@ -61,7 +59,6 @@ class Location
 		void setAutoindex(std::string parametr);
 		void setIndexLocation(std::string parametr);
 		void setReturn(std::string parametr1, std::string parametr2);
-		void setAlias(std::string parametr);
 		void setCgiPath(std::vector<std::string> path);
 		void setCgiExtension(std::vector<std::string> extension);
 		void setMaxBodySize(std::string parametr);
@@ -79,7 +76,7 @@ class Location
 		static bool 			startsWith(const std::string& str, const std::string& prefix);
 		static void 	checkToken(std::string &parametr);
 		static int 		ft_stoi(std::string str);
-		int				checkLocation(Location &location) const;
+		int 			checkLocation(Location &location, std::string serverRoot, std::string serverIndex);
 
 		std::string 	printMethods() const;
 		
