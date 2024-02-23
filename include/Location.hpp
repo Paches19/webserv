@@ -31,7 +31,6 @@ class Location
 		std::string					_modifier;
 		std::vector<std::string>	_cgiPath;
 		std::vector<std::string>	_cgiExt;
-		std::map<std::string, std::string> _extPath;
 
 	public:
 		Location();
@@ -48,8 +47,7 @@ class Location
 		const std::vector<std::string> 	&getReturn() const;
 		const std::vector<std::string> 	&getCgiPath() const;
 		const std::vector<std::string> 	&getCgiExtension() const;
-		const std::map<std::string, std::string> &getExtensionPath() const;
-		const std::string 				getExtensionPath(std::string &ext) const;
+		const std::string 				getExtensionCgiPath(std::string &ext) const;
 		const unsigned long 			&getMaxBodySize() const;
 		const std::string 				&getModifier() const;
 		const std::string 				getErrorPage(short i) const;

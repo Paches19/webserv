@@ -252,7 +252,7 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 	std::string extension = resourcePath.substr(resourcePath.find_last_of("."));
 	std::cout << "    Extension for CGI: " << extension << std::endl;
 	
-	std::string pathCGI = locationRequest->getExtensionPath(extension);
+	std::string pathCGI = locationRequest->getExtensionCgiPath(extension);
 	
 	if (pathCGI.empty())
 	{

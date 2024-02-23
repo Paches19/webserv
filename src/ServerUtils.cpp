@@ -81,7 +81,10 @@ bool isCGIScript(const std::string& resourcePath)
     if (resourcePath.size() >= 4)
 	{
 		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
-			(resourcePath.substr(resourcePath.size() - 3) == ".sh"))
+			(resourcePath.substr(resourcePath.size() - 3) == ".sh") ||
+			(resourcePath.substr(resourcePath.size() - 3) == ".php") ||
+			(resourcePath.substr(resourcePath.size() - 3) == ".pl") ||
+			(resourcePath.substr(resourcePath.size() - 3) == ".rb"))
 			{
 				std::cout << "    CGI script detected" << std::endl;
 				return true;

@@ -26,7 +26,6 @@ Location::Location(const Location &other)
 	_cgiExt = other._cgiExt;
 	_return = other._return;
     _methods = other._methods;
-	_extPath = other._extPath;
 	_modifier = other._modifier;
 	_clientMaxBodySize = other._clientMaxBodySize;
 }
@@ -42,7 +41,6 @@ Location &Location::operator=(const Location &rhs)
 		_cgiExt = rhs._cgiExt;
 		_return = rhs._return;
 		_methods = rhs._methods;
-		_extPath = rhs._extPath;
 		_modifier = rhs._modifier;
 		_clientMaxBodySize = rhs._clientMaxBodySize;
     }
@@ -92,9 +90,7 @@ const bool &Location::getAutoindex() const { return (_autoindex); }
 
 const std::vector<std::string> &Location::getReturn() const { return (_return); }
 
-const std::map<std::string, std::string> &Location::getExtensionPath() const { return (_extPath); }
-
-const std::string Location::getExtensionPath(std::string &ext) const 
+const std::string Location::getExtensionCgiPath(std::string &ext) const 
 {
 	std::cout << "    Looking for " << ext << std::endl;
 	std::vector<std::string>::const_iterator it;
@@ -102,7 +98,10 @@ const std::string Location::getExtensionPath(std::string &ext) const
 	for (it = _cgiPath.begin(); it != _cgiPath.end(); ++it)
 	{
 		if ((ext == ".py" && it->find("python") != std::string::npos) ||
-			(ext == ".php" && it->find("php") != std::string::npos))
+			(ext == ".php" && it->find("php") != std::string::npos)   ||
+			(ext == ".pl" && it->find("perl") != std::string::npos)   ||
+			(ext == ".rb" && it->find("ruby") != std::string::npos)   ||
+			(ext == ".sh" && it->find("bash") != std::string::npos) ) 
 			break;
 	}
 	if (it != _cgiPath.end())
@@ -311,8 +310,6 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 					if (i + 1 >= parametr.size())
 						throw ErrorException("Token is invalid");
 				}
-				if (parametr[i].find("/python") == std::string::npos && parametr[i].find("/php") == std::string::npos)
-					throw ErrorException("cgi_path is invalid");
 			}
 			setCgiPath(path);
 		}
@@ -385,33 +382,46 @@ int Location::checkLocation(Location &location, std::string serverRoot, std::str
 			return (1);
 		//index is not neccessary for cgi-bin, so we don't check it
 		std::vector<std::string>::const_iterator it_ext;
-		std::vector<std::string>::const_iterator it_path;
 		for (it_ext = location.getCgiExtension().begin(); it_ext != location.getCgiExtension().end(); ++it_ext)
 		{
-			std::cout << " 	   cgi extension = " << *it_ext << std::endl;
-			if (*it_ext != ".py" && *it_ext != ".php")
+			std::cout << " 	  cgi extension = " << *it_ext << " --> ";
+			if (*it_ext != ".py" && *it_ext != ".php" && *it_ext != ".sh" && *it_ext != ".rb" && *it_ext != ".pl")
 			{
-					std::cout << RED << " 	   extension not supported" << RESET << std::endl;
+					std::cout << RED << "extension not supported" << RESET << std::endl;
 					return (1);
 			}
+			std::vector<std::string>::const_iterator it_path;
 			for (it_path = location.getCgiPath().begin(); it_path != location.getCgiPath().end(); ++it_path)
 			{		
-				if (*it_ext == ".py" && it_path->find("python") != std::string::npos &&
-					ConfigFile::checkPath(*it_path) == IS_FILE)
+				if (it_path->find("python") != std::string::npos && *it_ext ==".py" && ConfigFile::checkPath(*it_path) == IS_FILE)
 				{
-					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					std::cout << "python path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
 					break;
 				}
-				else if (*it_ext == ".php" && it_path->find("php") != std::string::npos &&
-					ConfigFile::checkPath(*it_path) == IS_FILE)
+				else if (it_path->find("php") != std::string::npos && *it_ext == ".php" && ConfigFile::checkPath(*it_path) == IS_FILE)
 				{
-					std::cout << " 	   cgi path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					std::cout << "php path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					break;
+				}
+				else if (it_path->find("bash") != std::string::npos && *it_ext == ".sh" && ConfigFile::checkPath(*it_path) == IS_FILE)
+				{
+					std::cout << "bash path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					break;
+				}
+				else if (it_path->find("ruby") != std::string::npos && *it_ext == ".rb" && ConfigFile::checkPath(*it_path) == IS_FILE)
+				{
+					std::cout << "ruby path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
+					break;
+				}
+				else if (it_path->find("perl") != std::string::npos && *it_ext == ".pl" && ConfigFile::checkPath(*it_path) == IS_FILE)
+				{
+					std::cout << "perl path = " << *it_path << GREEN << " OK !" << RESET << std::endl;
 					break;
 				}
 			}
 			if (it_path == location.getCgiPath().end())
 			{
-				std::cout << RED << " 	   cgi path not found" << RESET << std::endl;
+				std::cout << RED << "path not found" << RESET << std::endl;
 				return (1);
 			}
 		}
