@@ -1,12 +1,11 @@
 // Client side C/C++ program to demonstrate Socket programming
-#include <stdio.h>
+#include <cstdio>
 #include <sys/socket.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 #include <arpa/inet.h>
-
 #include <iostream>
 #include <fstream>
 
@@ -135,7 +134,7 @@ int		main(void)
 	{
 		port = choose_port();
 
-		filename = "test_us/request/";
+		filename = "request/";
 
 		filename += choose_method();
 
