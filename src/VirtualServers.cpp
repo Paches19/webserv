@@ -268,7 +268,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 	while (i < parametrs.size() - 2)
 	{
 		i++;
-		if (parametrs[i] == "listen" && (i + 1) < parametrs.size() - 2)
+		if (parametrs[i] == "listen" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (parametrs[i + 1] == "default_server;")
@@ -283,25 +283,25 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			if (_defaultServer)
 				++i;
 		}
-		else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (server.getServerName().empty())
 				server.setServerName(parametrs[i]);
 		}
-		else if (parametrs[i] == "root" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "root" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (server.getRoot().empty())
 				server.setRoot(parametrs[i]);
 		}
-		else if (parametrs[i] == "index" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "index" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (server.getIndex().empty())
 				server.setIndex(parametrs[i]);
 		}
-		else if (parametrs[i] == "autoindex" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "autoindex" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (!flag_autoindex)
@@ -310,20 +310,20 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 				flag_autoindex = true;
 			}
 		}
-		else if (parametrs[i] == "location" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "location" && (i + 1) < parametrs.size() - 1)
 		{
 			setLocation(parametrs, ++i);
 			if (parametrs[i] != "}")
 				throw  ErrorException("Wrong character in server scope{}");
 		}	
-		else if (parametrs[i] == "error_page" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "error_page" && (i + 1) < parametrs.size() - 1)
 		{
 			errorCode = Location::ft_stoi(parametrs[++i]);
 			Location::checkToken(parametrs[++i]);	
 			errorCodePath = parametrs[i];
 			setErrorPage(errorCode, errorCodePath);	
 		}
-		else if (parametrs[i] == "client_max_body_size" && (i + 1) < parametrs.size() - 2)
+		else if (parametrs[i] == "client_max_body_size" && (i + 1) < parametrs.size() - 1)
 		{
 			++i;
 			if (!flag_max_body_size)
@@ -333,7 +333,7 @@ void VirtualServers::_createServer(std::string &config, VirtualServers &server)
 			}
 		}
 		else
-			throw  ErrorException("Unsupported directive: " + parametrs[i]);
+			throw  ErrorException("Unsupported directive: >>" + parametrs[i] + "<<");
 	}
 	std::cout << GREEN << " OK ! " << RESET << std::endl;
 }

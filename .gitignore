@@ -1,7 +1,7 @@
 .vscode
 obj
+testers
+config
+www
 webserv
 *.pdf
-*.md
-/testers
-/config

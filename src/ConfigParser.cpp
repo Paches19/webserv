@@ -119,7 +119,6 @@ void ConfigParser::splitServers(std::string &content)
 	size_t end = 1;
 
 	removeCommentsAndEmptyLines(content);
-	
 	if (content.find("server", 0) == std::string::npos)
 		throw ErrorException("Server did not find");
 	while (start != end && start < content.length())
