@@ -58,6 +58,7 @@ CXXFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
 all				: 	create_dir $(NAME)
 
 $(NAME)			: 	$(OBJS) $(HEADERS)
+					printf "\033[0;33mALL objects files created !\033[0m\n"
 					printf "\n\033[0;32mLinking ...\033[0m $@"
 					$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 					printf " \033[0;32mOK!\033[0m\n"
@@ -66,9 +67,9 @@ create_dir		:
 					mkdir -p $(OBJ_DIR)
 
 $(OBJ_DIR)%.o	:	$(SRC_DIR)%.cpp
-					printf "\033[0;33mGenerating object ... \033[0m$@"
+					printf "\033[0;33mGenerating objects ... \033[0m$@\r"
 					$(CXX) $(CXXFLAGS) -I$(INC_DIR) -o $@ -c $<
-					printf " \033[0;32mOK!\033[0m\n"
+					printf "                                               \r"
 
 clean			:
 					printf "\n\033[0;31mDeleting objects\033[0m"

@@ -55,53 +55,47 @@ std::string ft_itoa(int n)
 
 void	CgiHandler::_initEnv(HttpRequest &request, const Location &config, VirtualServers &server)
 {
+/*
+CONTENT_TYPE: 	The data type of the content, used when the client is sending attached content to the server. 
+				For example file upload etc.
+CONTENT_LENGTH: The length of the query information that is available only for POST requests.
+HTTP_USER_AGENT:The User-Agent request-header field contains information about the user agent originating the request. 
+				It is a name of the web browser.
+PATH_INFO: 		The path for the CGI script.
+QUERY_STRING: 	The URL-encoded information that is sent with GET method request.
+REMOTE_ADDR: 	The IP address of the remote host making the request. 
+				This can be useful for logging or for authentication purpose.
+REMOTE_HOST: 	The fully qualified name of the host making the request. 
+				If this information is not available then REMOTE_ADDR can be used to get IR address.
+REQUEST_METHOD:	The method used to make the request. The most common methods are GET and POST.
+SCRIPT_FILENAME:The full path to the CGI script.
+SCRIPT_NAME: 	The name of the CGI script.
+SERVER_NAME: 	The server's hostname or IP Address.
+SERVER_SOFTWARE:The name and version of the software the server is running.*/
 	std::map<std::string, std::string>	headers = request.getHeaders();
-	// Extract user information from Authorization header
-	// Assuming it's a Basic Authentication header
-    // Extract user information from the Authorization header and set REMOTE_IDENT and REMOTE_USER
-    // You need to implement a function to extract user information based on the authentication scheme
-	if (headers.find("Authorization") != headers.end() && !headers["Authorization"].empty()) 
-    	this->_env["AUTH_TYPE"] = "Basic"; 
-
-	// Set the remote information
-	this->_env["REMOTE_ADDR"] =  inet_ntoa(server.getIpAddress());
-	this->_env["REMOTE_PORT"] = ft_itoa(server.getPort());
-	this->_env["REMOTE_IDENT"] = headers["Authorization"];
-	this->_env["REMOTE_USER"] = headers["Authorization"];
-
-	// Set the server information
-	if (headers.find("Host") != headers.end())
-		this->_env["SERVER_NAME"] = headers["Host"].substr(0, headers["Host"].find(":"));
-	else
-		this->_env["SERVER_NAME"] = this->_env["REMOTE_ADDR"];
-	this->_env["SERVER_PORT"] = ft_itoa(server.getPort());
-	this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	this->_env["SERVER_SOFTWARE"] = "Webserver/1.0";
-	
 	std::string url = request.getURL();
-	// Set the request information
-	this->_env["SCRIPT_NAME"] =  url.substr(0, url.find("?"));
-	this->_env["SCRIPT_FILENAME"] =  url.substr(0, url.find("?"));
-	this->_env["REQUEST_METHOD"] = request.getMethod();
-	this->_env["REQUEST_URI"] = url;
+	std::string contentType = request.getBody();
 
-	// Set the content information
-	//this->_env["CONTENT_LENGTH"] = ft_itoa(request.getMethod() == "GET" ? 0 : this->_body.length());
-	//this->_env["CONTENT_TYPE"] = headers["Content-Type"];
-
-	// Set the path information
-	//this->_env["PATH_INFO"] = config.getRootLocation() + config.getPath();
-	this->_env["PATH_INFO"] = url.substr(url.find("cgi-bin") + 7, url.find("?") - 8);
-	this->_env["PATH_TRANSLATED"] = url.substr(0, url.find("?"));
-
-	// Set the query information
-	this->_env["REDIRECT_STATUS"] = "200";
-	this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
+	if (headers.find("Content-Type") != headers.end())
+		this->_env["CONTENT_TYPE"] = headers["Content-Type"];
+	else if (!contentType.empty())
+		this->_env["CONTENT_TYPE"] = contentType.substr(contentType.find("Content-Type") + 13);
+	else
+		this->_env["CONTENT_TYPE"] = "text/plain";
+	this->_env["CONTENT_LENGTH"] = ft_itoa(request.getMethod() == "GET" ? 0 : this->_body.length());
+	this->_env["HTTP_USER_AGENT"] = headers["User-Agent"]; 
+	this->_env["PATH_INFO"] = url.substr(0, url.find("cgi-bin") + 7);
 	this->_env["QUERY_STRING"] = url.substr(url.find("?") + 1);	
-
-	const std::vector<std::string>& cgiPathVector = config.getCgiPath();
-	for (std::vector<std::string>::const_iterator it = cgiPathVector.begin(); it != cgiPathVector.end(); ++it)
-   		this->_env.insert(std::make_pair(server.getRoot() + *it, std::string()));
+	this->_env["REMOTE_ADDR"] =  inet_ntoa(server.getIpAddress());
+	if (headers.find("Host") != headers.end())
+		this->_env["SERVER_HOST"] = headers["Host"].substr(0, headers["Host"].find(":"));
+	else
+		this->_env["SERVER_HOST"] = this->_env["REMOTE_ADDR"];
+	this->_env["REQUEST_METHOD"] = request.getMethod();
+	this->_env["SCRIPT_FILENAME"] =  config.getRootLocation() + config.getPath();
+	this->_env["SCRIPT_NAME"] =  url.substr(url.find("cgi-bin") + 7, url.find("?") - 8);
+	this->_env["SERVER_NAME"] = inet_ntoa(server.getIpAddress());
+	this->_env["SERVER_SOFTWARE"] = "Webserver/1.0";
 }
 
 char	**CgiHandler::_getEnvAsCstrArray() const {
@@ -157,8 +151,14 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
 
-		const char* argv[] = { pathCGI.c_str(), scriptName.c_str(), NULL };
-		execve(scriptName.c_str(), const_cast<char* const*>(argv), env);
+		const char* argv[] = { pathCGI.c_str(), scriptName.c_str()};
+		int err = access(pathCGI.c_str(), X_OK);
+		if (err < 0)
+		{
+			std::cerr << RED << pathCGI << " don't found" << RESET << std::endl;  
+			write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
+		}
+		execve(pathCGI.c_str(), const_cast<char* const*>(argv), env);
 
 		// If execve fails, it will return here and print an error message
 		std::cerr << RED << "Execve crashed." << RESET << std::endl;
