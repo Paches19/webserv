@@ -189,6 +189,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		createErrorPage(404, server, socket);
 		return ;
 	}
+
 	std::cout << "    Location found: " << locationRequest->getPath() << std::endl;
 	if (locationRequest->getReturn()[0] != "")
 	{

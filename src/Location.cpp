@@ -195,6 +195,8 @@ void Location::setErrorPage(short i, std::string parametr)
 	_errorPages[i] = ConfigFile::prefixPath(parametr);
 }
 
+void Location::setErrorPages(std::map<short, std::string> errorPages) { _errorPages = errorPages; }
+
 //*******************************************************************
 // Métodos de la clase
 //*******************************************************************

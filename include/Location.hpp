@@ -65,6 +65,7 @@ class Location
 		void setMaxBodySize(unsigned long parametr);
 		void setModifier(std::string parametr);
 		void setErrorPage(short i, std::string parametr);
+		void setErrorPages(std::map<short, std::string> errorPages);
 	
 		void 			configureLocation(std::string &path, std::vector<std::string> &parametr);
 		const Location* selectLocation(const std::string& requestURL,

@@ -65,6 +65,19 @@ VirtualServers::VirtualServers(std::string &config)
 	_errorPages[500] = "/error_pages/500.html";
 	
 	_createServer(config, *this);
+	// Si no hay ninguna ubicación, enviar configuración por defecto
+	if (this->getLocations().empty())
+	{
+		std::string defaultPath = "/";
+		std::string defaultModifier = "";
+		std::vector<std::string> codes;
+		codes.push_back("index");
+		codes.push_back(_index + ";");
+		codes.push_back("autoindex");
+		codes.push_back(_autoindex ? "on;" : "off;");
+		Location newLocation = Location(defaultPath, defaultModifier, codes);
+		this->_locations.push_back(newLocation);
+	}
 	_checkServer(*this);
 }
 
