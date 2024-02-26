@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 17:48:09 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/26 12:55:53 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -249,7 +249,6 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 	else
 	{
 		// Método no soportado
-		// Método no soportado
 		createErrorPage(405, server, socket);
 		return ;
 	}
@@ -453,17 +452,17 @@ void Server::processDelete(std::string resourcePath, VirtualServers server, Sock
 	if (!ConfigFile::fileExistsAndReadable(resourcePath))
 	{
 		createErrorPage(404, server, socket);
-		return;
+		return ;
 	}
 	// Eliminar el recurso
 	if (remove(resourcePath.c_str()) != 0)
 	{
 		createErrorPage(500, server, socket);
-		return;
+		return ;
 	}
 	// Construir la respuesta
 	processResponse.setStatusCode(204);
-	processResponse.setBody("");
+	processResponse.setBody("Delete successful");
 	_responsesToSend[socket->getSocketFd()] = processResponse;
 }
 

@@ -130,6 +130,7 @@ void Location::setRootLocation(std::string parametr)
 {
 	checkToken(parametr);
 	parametr = ConfigFile::prefixPath(parametr);
+
 	if (ConfigFile::checkPath(parametr + getPath()) != 2)
 		throw ErrorException("Root of location");
 	

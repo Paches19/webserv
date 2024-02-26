@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/20 13:16:15 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/26 12:43:27 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,7 +150,6 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
 		
 		response.printResponse(responseStr);
-
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;
@@ -163,7 +162,6 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 			data.writeBuffer = NULL;
 			std::cerr << "Error sending the response" << std::endl;
 		}
-		// Si todos los datos han sido enviados, puedes decidir vaciar completamente el buffer
 		if (data.accumulatedBytes == 0)
 		{
 			if ( data.writeBuffer)
