@@ -6,14 +6,14 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:49:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/26 12:07:25 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CGIHANDLER_HPP
 # define CGIHANDLER_HPP
 
-# include "Webserver.hpp"
+# include "WebServer.hpp"
 # include "VirtualServers.hpp"
 # include "HttpRequest.hpp"
 # include "HttpResponse.hpp"
