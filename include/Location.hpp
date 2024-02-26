@@ -59,8 +59,8 @@ class Location
 		void setAutoindex(std::string parametr);
 		void setIndexLocation(std::string parametr);
 		void setReturn(std::string parametr1, std::string parametr2);
-		void setCgiPath(std::vector<std::string> path);
-		void setCgiExtension(std::vector<std::string> extension);
+		void setCgiPath(std::vector<std::string> &path);
+		void setCgiExtension(std::vector<std::string> &extension);
 		void setMaxBodySize(std::string parametr);
 		void setMaxBodySize(unsigned long parametr);
 		void setModifier(std::string parametr);

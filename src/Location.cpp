@@ -181,9 +181,9 @@ void Location::setReturn(std::string parametr1, std::string parametr2)
 	_return[1] = parametr2; // Ruta de redirección
 }
 
-void Location::setCgiPath(std::vector<std::string> path) { _cgiPath = path; }
+void Location::setCgiPath(std::vector<std::string> &path) { _cgiPath = path; }
 
-void Location::setCgiExtension(std::vector<std::string> extension) { _cgiExt = extension; }
+void Location::setCgiExtension(std::vector<std::string> &extension) { _cgiExt = extension; }
 
 void Location::setMaxBodySize(std::string parametr) { _clientMaxBodySize = ft_stoi(parametr); }
 

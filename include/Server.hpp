@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:37:38 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:20:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 19:26:50 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ class Server
 		void	processGetCGI(std::string resourcePath, const Location* locationRequest,
 			Socket* socket, VirtualServers server, HttpRequest request);
 		void 		processGet(std::string resourcePath, const Location* locationRequest,
-			Socket* socket, VirtualServers server, HttpRequest request);
+			Socket* socket, VirtualServers server);
 		void		processPost(HttpRequest request, VirtualServers server, Socket* socket,
 				const Location* locationRequest);
 		void	processPostCGI(HttpRequest request, VirtualServers server, Socket* socket,
@@ -57,9 +57,6 @@ class Server
 
 		bool 		postFile(std::string resourcePath, HttpRequest request, VirtualServers server, 
 			Socket* socket);
-			
-		void executeCGIScript(std::string& scriptPath, HttpRequest& request,
-			HttpResponse& response, VirtualServers& server, Socket* socket);
 		
 		std::string checkGetPath(std::string resourcePath, const Location* locationRequest,
 			Socket* socket, VirtualServers server);

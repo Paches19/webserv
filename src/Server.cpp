@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/23 18:35:48 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/23 19:27:06 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -214,7 +214,7 @@ void Server::processRequest(HttpRequest request, VirtualServers server, Socket* 
 		if (isCGIScript(resourcePath))
 			processGetCGI(resourcePath, locationRequest, socket, server, request);
 		else
-			processGet(resourcePath, locationRequest, socket, server, request);
+			processGet(resourcePath, locationRequest, socket, server);
 	}
 	//****************************POST Method****************************
 	else if (request.getMethod() == "POST")
@@ -289,19 +289,13 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 }
 
 void Server::processGet(std::string resourcePath, const Location* locationRequest,
-	Socket* socket, VirtualServers server, HttpRequest request)
+	Socket* socket, VirtualServers server)
 {
 	HttpResponse processResponse;
 	resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
 	if (resourcePath.empty())
 		return ;
-	// Check if the requested resource is a CGI script
-	if (isCGIScript(resourcePath))
-	{
-	// Perform CGI processing
-		executeCGIScript(resourcePath, request, processResponse, server, socket);
-		return;
-	}
+
 	std::string buffer = ConfigFile::readFile(resourcePath);
 	if (buffer.empty())
 	{
@@ -497,106 +491,6 @@ void Server::createErrorPage(short errorCode, VirtualServers &server, Socket* so
 	else
 		response.setBody(createBodyErrorPage(errorCode));
 	_responsesToSend[socket->getSocketFd()] = response;
-}
-
-void Server::executeCGIScript(std::string& scriptPath, HttpRequest& request, 
-	HttpResponse& response, VirtualServers& server, Socket* socket)
-{
-    pid_t pid = fork();
-
-    if (pid == -1) // Error handling if fork fails
-        createErrorPage(500, server, socket);
-
-    else if (pid == 0)  // Child process
-    {
-        // Redirect stdout to a pipe
-        int pipefd[2];
-        if (pipe(pipefd) == -1)
-		{
-            perror("pipe");
-            exit(EXIT_FAILURE);
-        }
-
-        pid_t scriptPid = fork();// Fork a child process to execute the CGI script
-        if (scriptPid == -1)
-		{
-            perror("fork");
-            exit(EXIT_FAILURE);
-        }
-        else if (scriptPid == 0) // Child process (script execution)
-		{
-        	// Close read end of the pipe
-            close(pipefd[0]);
-
-            // Redirect stdout to the write end of the pipe
-            dup2(pipefd[1], STDOUT_FILENO);
-
-            // Set up arguments for execve
-            const char* scriptName = scriptPath.c_str();
-            char* const argv[] = { const_cast<char*>(scriptName), const_cast<char*>(request.getURL().c_str()), NULL };
-			// Prepare environment variables
-            std::vector<char*> envp;
-            // Add your custom environment variables
-			//envp.push_back(strdup("CUSTOM_VARIABLE=value"));
- 			envp.push_back(NULL); // Terminate the envp array
-			/*Some CGI environment variables for Chrome browser:
-				HTTP_ACCEPT: Specifies the media types that the client can process, such as text/html or image/png.
-				HTTP_ACCEPT_LANGUAGE: Indicates the natural languages that the client can understand.
-				HTTP_USER_AGENT: Identifies the user agent (browser) making the request, including information about the browser type and version, as well as the operating system.
-				HTTP_REFERER: Contains the URL of the page that referred the user to the current page.
-				HTTP_COOKIE: Holds any cookies that have been sent by the server to the client.
-				HTTP_HOST: Provides the domain name of the server.
-				REMOTE_ADDR: Represents the IP address of the client.
-				REMOTE_PORT: Specifies the port number on the client.
-				REQUEST_METHOD: Indicates the HTTP request method, such as GET or POST.
-				QUERY_STRING: Holds the query string portion of the URL for a GET request.
-				CONTENT_LENGTH: Specifies the size of the message body for requests with a body, such as POST requests.
-				CONTENT_TYPE: Describes the type of data in the body of the request, particularly relevant for POST requests.
-				PATH_INFO: Contains the path information that follows the actual script name in the URL.
-			*/		
-			char* const* envpArray = envp.data(); // Convert to char* array
-
-            execve(scriptName, argv, envpArray);// Execute the CGI script
-
-            // If execve() is successful, this code won't be reached
-            perror("execve");
-            exit(EXIT_FAILURE);
-        }
-        else // Parent process (script execution)
-		{
-			close(pipefd[1]);// Close write end of the pipe
-
-            // Read from the read end of the pipe and store in response body
-            char buffer[4096];
-            ssize_t bytesRead;
-			std::string body;
-
-            while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-				body.append(buffer, bytesRead);
-            response.setBody(body);
-
-            close(pipefd[0]);// Close the read end of the pipe
-
-            // Wait for the CGI script to complete
-            int scriptStatus;
-            waitpid(scriptPid, &scriptStatus, 0);
-
-            // Handle the child process completion status if needed
-
-            exit(EXIT_SUCCESS);// Exit the child process
-        }
-    }
-    else  // Parent process
-    {
-        // Wait for the child to complete
-        int status;
-        waitpid(pid, &status, 0);
-
-        // Set appropriate CGI-related response headers
-        response.setStatusCode(200);
-        response.setHeader("Content-Type", "text/html");
-        _responsesToSend[socket->getSocketFd()] = response;
-    }
 }
 
 void Server::processReturnDirective(const Location& locationRequest,
