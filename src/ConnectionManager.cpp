@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/26 12:43:27 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 11:03:24 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,8 +48,8 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
-			 _clientSockets.erase(_clientSockets.begin() + j);
 			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
+			_clientSockets.erase(_clientSockets.begin() + j);
 		}
 	}
 	_pollFds.erase(_pollFds.begin() + i);
