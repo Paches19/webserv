@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 13:45:27 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 16:03:16 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,12 +90,12 @@ void Server::run(std::vector<VirtualServers> servers)
 	fd_set readfds;
 	while (true)
 	{
-		FD_ZERO(&readfds);
-		for (size_t i = 0; i < _pollFds.size(); ++i)
-			FD_SET(_pollFds[i].fd, &readfds);
+		// FD_ZERO(&readfds);
+		// for (size_t i = 0; i < _pollFds.size(); ++i)
+		// 	FD_SET(_pollFds[i].fd, &readfds);
 
 		// Llamar a poll con la lista de file descriptors y un tiempo de espera
-		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
+		int ret = poll(reinterpret_cast<pollfd *>(&_pollFds[0]), static_cast<nfds_t>(_pollFds.size()), -1); // -1 para tiempo de espera indefinido
 		if (ret < 0)
 		{
 			std::cerr << "    Poll error !" << std::endl;
@@ -112,12 +112,15 @@ void Server::run(std::vector<VirtualServers> servers)
 			if (ret >= 0 && _pollFds[i].revents & POLLIN)
 			{
 				// std::cout << "\nPOLLIN i: " << i << std::endl;
-				std::cout << "pollFds: " << _pollFds.size() << std::endl;
+				std::cout << "pollFds: ";
+				for (size_t j = 1; j < _pollFds.size(); ++j)
+					std::cout << _pollFds[j].fd << " ";
+				std::cout << std::endl;
 				Socket* dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					currentFd == dataSocket->getSocketFd())
 				{
-					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets);
+					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						bestServer = getBestServer(requestReceive, i, servers, _clientSockets, _pollFds);
@@ -130,28 +133,31 @@ void Server::run(std::vector<VirtualServers> servers)
 							--i;
 						createErrorPage(400, bestServer, dataSocket);
 					}
-					// break ;
 				}
-				std::cout << "responsesToSendPre: " << _responsesToSend.size() << std::endl;
+				std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
+				std::cout << "responsesToSendPre: ";
+				it = _responsesToSend.begin();
+				for (; it != _responsesToSend.end(); ++it)
+					std::cout << it->first << " ";
+				std::cout << std::endl;
+				break ;
 			}
-			else if ((_pollFds[i].revents & POLLOUT))
+			else if (ret >= 0 && (_pollFds[i].revents & POLLOUT))
 			{
 				// std::cout << "\nPOLLOUT i: " << i << std::endl;
 				for (size_t j = 0; j < _clientSockets.size(); ++j)
 				{
-					if (_clientSockets[j]->getSocketFd() == currentFd)
-						std::cout << "\nPOLLOUT i: " << i << std::endl;
 					if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
 					{
-						std::cout << "\nPOLLOUT i sin body vacio: " << i << std::endl;
 						_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd]);
-						_responsesToSend.erase(currentFd);
-						std::cout << "responsesToSendPost: " << _responsesToSend.size() << std::endl;
+						std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
+						if (it != _responsesToSend.end())
+							_responsesToSend.erase(currentFd);
 						break ;
 					}
 				}
 			}
-			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+			else if (ret >= 0 && _pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
 				std::cout << "    Connection closed or error in socket FD: " << currentFd << std::endl;
@@ -160,7 +166,7 @@ void Server::run(std::vector<VirtualServers> servers)
 					if (_clientSockets[j]->getSocketFd() == currentFd)
 					{
 						std::cout << "Client socket deleted: " << _clientSockets[j]->getSocketFd() << std::endl;
-						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets);
+						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets, _responsesToSend);
 						--i;
 						break ;
 					}

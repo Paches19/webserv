@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:04 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:59:08 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 14:57:39 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,11 @@ class ConnectionManager
 
 		void	addConnection(Socket& socket);
 		void	removeConnection(Socket& socket, int i,
-				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
+				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets,
+					std::map<int, HttpResponse>& _responsesToSend);
 		HttpRequest	readData(Socket& socket, int i,
-				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets);
+				std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets,
+					std::map<int, HttpResponse>& _responsesToSend);
 		void	writeData(Socket& socket, HttpResponse &response);
 		bool	isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes);
 		int		getContentLength(const std::string& header);

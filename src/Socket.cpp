@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 13:13:24 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 15:55:58 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ bool Socket::open(int port, in_addr addr)
 		_address.sin_addr.s_addr = INADDR_ANY;
 	else
 		_address.sin_addr.s_addr = addr.s_addr;
-	std::cout << "Server ip guardadp: " << _address.sin_addr.s_addr << std::endl;
+	std::cout << "Server ip guardado: " << _address.sin_addr.s_addr << std::endl;
 	_address.sin_port = htons(port);
 	_listenPort = ntohs(_address.sin_port);
 	std::cout << "OPEN puerto: " << ntohs(_address.sin_port) << std::endl;
@@ -74,18 +74,9 @@ bool Socket::open(int port, in_addr addr)
 	fcntl(_socketFd, F_SETFL, O_NONBLOCK);
 
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
-	{
-		perror("Error al hacer bind");
-		std::cerr << "Error: " << strerror(errno) << std::endl;
 		return false;
-	}
-
-	if (listen(_socketFd, 50) < 0)
-	{
-		perror("Error al hacer listen");
-		std::cerr << "Error: " << strerror(errno) << std::endl;
+	if (listen(_socketFd, 100) < 0)
 		return false;
-	}
 
 	return true;
 }
@@ -98,7 +89,7 @@ bool Socket::accept(Socket& newSocket, int port) const
 	if (new_sockfd < 0)
 		return false;
 
-	// std::cout << "nuevo puerto: " << port << std::endl;
+	std::cout << "Nueva conexion: " << new_sockfd << std::endl;
 	newSocket._socketFd = new_sockfd;
 	newSocket._address = _address;
 	newSocket._listenPort = port;
@@ -129,7 +120,7 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 		std::cerr << "Error: receive" << std::endl;
 		return -1;
 	}
-	else if (n == 0)
+	if (n == 0)
 	{
 		// std::cout << "Connection closed" << std::endl;
 		return 0;
