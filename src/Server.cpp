@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/26 12:55:53 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 10:52:45 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -504,7 +504,7 @@ void Server::processReturnDirective(const Location& locationRequest,
 		// Si es un código de redirección, añadir la URL a la cabecera 'Location'
 		processResponse.setHeader("Location", urlOrText);
 		if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)
-			processResponse.setBody("");
+			processResponse.setBody("return successful");
 		else
 			processResponse.setBody(bodyReturn(locationRequest.getPath(), urlOrText, statusCode));
 	}
@@ -512,7 +512,7 @@ void Server::processReturnDirective(const Location& locationRequest,
 	{	// si no, se envía el texto de la redirección
 		processResponse.setHeader("Location", locationRequest.getPath());
 		if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)
-			processResponse.setBody("");
+			processResponse.setBody("return successful");
 		else
 			processResponse.setBody(bodyReturn(urlOrText, "", statusCode));
 	// Configurar la respuesta basada en el código de estado
