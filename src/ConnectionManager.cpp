@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/26 12:43:27 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 15:57:10 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,37 +37,43 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
+	// std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket, int i,
-			std::vector<struct pollfd>& _pollFds, std::vector<Socket *>& _clientSockets)
+			std::vector<struct pollfd>& _pollFds, std::vector<Socket *>& _clientSockets, std::map<int, HttpResponse>& _responsesToSend)
 {
-	int socketFd = _pollFds[i].fd;
+	int socketFd = socket.getSocketFd();
+
 	for (size_t j = 0; j < _clientSockets.size(); ++j)
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
-			 _clientSockets.erase(_clientSockets.begin() + j);
-			std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
+			// std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
+			_clientSockets.erase(_clientSockets.begin() + j);
 		}
 	}
 	_pollFds.erase(_pollFds.begin() + i);
-						
-    std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
+	
+	std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
+	if (it != connections.end())
+	{
+		connections.erase(it);
+		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+	}
+	else
+		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
+	
+	std::map<int, HttpResponse>::iterator it2 = _responsesToSend.find(socketFd);
+	if (it2 != _responsesToSend.end())
+		_responsesToSend.erase(socketFd);
 
-    if (it != connections.end())
-    {
-        socket.close();
-        connections.erase(it);
-        std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
-    }
-    else
-        std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
+	if (socketFd != -1)
+		socket.close();
 }
 
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
-			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets, std::map<int, HttpResponse>& _responsesToSend)
 {
 	ConnectionData* data(&connections[socket.getSocketFd()]);
 
@@ -106,7 +112,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->headerReceived = false;
 				connections[socket.getSocketFd()] = *data;
 
-				request.printRequest();
+				// request.printRequest();
 
 				return request;
 			}
@@ -126,7 +132,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	}
 	else
 	{
-		this->removeConnection(socket, i, _pollFds, _clientSockets);
+		this->removeConnection(socket, i, _pollFds, _clientSockets, _responsesToSend);
 		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
@@ -149,22 +155,27 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
 		
-		response.printResponse(responseStr);
+		// response.printResponse(responseStr);
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
+			std::cout << "write fd: " << socket.getSocketFd() << std::endl;
 		}
-		else if (bytesSent == -1)
+		else if (bytesSent < 0)
 		{
-			if ( data.writeBuffer)
+			if (data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
-			std::cerr << "Error sending the response" << std::endl;
+			std::cout << "Error sending the response" << std::endl;
+		}
+		else if (bytesSent == 0)
+		{
+			std::cout << "0 BytesSent response size: " << responseStr.size() << std::endl;
 		}
 		if (data.accumulatedBytes == 0)
 		{
-			if ( data.writeBuffer)
+			if (data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
 			response.setBody("");
