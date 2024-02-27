@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 16:59:48 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/27 13:13:24 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,17 +47,7 @@ int	Socket::getListenPort() { return (this->_listenPort); };
 //*******************************************************************
 bool Socket::open(int port, in_addr addr)
 {
-	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_socketFd == -1)
-		return false;
-	
-	int opt = 1;
-    if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    {
-        std::cerr << "Error configuring SO_REUSEADDR" << std::endl;
-        return false;
-    }
-		
+
 	memset(&_address, 0, sizeof(_address));
 	_address.sin_family = AF_INET;
 	std::cout << "Server ip adress: " << addr.s_addr << std::endl;
@@ -69,12 +59,33 @@ bool Socket::open(int port, in_addr addr)
 	_address.sin_port = htons(port);
 	_listenPort = ntohs(_address.sin_port);
 	std::cout << "OPEN puerto: " << ntohs(_address.sin_port) << std::endl;
+	
+	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_socketFd == -1)
+		return false;
+	
+	int opt = 1;
+	if (setsockopt(_socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	{
+		std::cerr << "Error configuring SO_REUSEADDR" << std::endl;
+		return false;
+	}
+	
+	fcntl(_socketFd, F_SETFL, O_NONBLOCK);
 
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
+	{
+		perror("Error al hacer bind");
+		std::cerr << "Error: " << strerror(errno) << std::endl;
 		return false;
+	}
 
-	if (listen(_socketFd, 5) < 0)
+	if (listen(_socketFd, 50) < 0)
+	{
+		perror("Error al hacer listen");
+		std::cerr << "Error: " << strerror(errno) << std::endl;
 		return false;
+	}
 
 	return true;
 }
@@ -87,13 +98,17 @@ bool Socket::accept(Socket& newSocket, int port) const
 	if (new_sockfd < 0)
 		return false;
 
-	std::cout << "nuevo puerto: " << port << std::endl;
+	// std::cout << "nuevo puerto: " << port << std::endl;
 	newSocket._socketFd = new_sockfd;
 	newSocket._address = _address;
 	newSocket._listenPort = port;
 
-	int flags = fcntl(this->_socketFd, F_GETFL, 0);
-	return fcntl(_socketFd, F_SETFL, flags | O_NONBLOCK) != -1;
+	int opt = 1;
+	setsockopt(newSocket._socketFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	
+	fcntl(newSocket._socketFd, F_SETFL, O_NONBLOCK);
+	
+	return true;
 }
 
 int Socket::send(const char* buffer, int length) const
@@ -116,7 +131,7 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 	}
 	else if (n == 0)
 	{
-		std::cout << "Connection closed" << std::endl;
+		// std::cout << "Connection closed" << std::endl;
 		return 0;
 	}
 	return (n <= 0) ? -1 : n;
@@ -124,7 +139,7 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 
 void Socket::close()
 {
-	std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
+	// std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);
