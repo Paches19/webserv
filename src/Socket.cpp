@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 15:55:58 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 17:17:25 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,8 @@ bool Socket::open(int port, in_addr addr)
 
 	if (bind(_socketFd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
 		return false;
-	if (listen(_socketFd, 100) < 0)
+
+	if (listen(_socketFd, 50) < 0)
 		return false;
 
 	return true;
@@ -89,7 +90,7 @@ bool Socket::accept(Socket& newSocket, int port) const
 	if (new_sockfd < 0)
 		return false;
 
-	std::cout << "Nueva conexion: " << new_sockfd << std::endl;
+	// std::cout << "Nueva conexion: " << new_sockfd << std::endl;
 	newSocket._socketFd = new_sockfd;
 	newSocket._address = _address;
 	newSocket._listenPort = port;

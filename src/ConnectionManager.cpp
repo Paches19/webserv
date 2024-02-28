@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 15:57:10 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 16:22:36 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	if (it != connections.end())
 	{
 		connections.erase(it);
-		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+		// std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
 	}
 	else
 		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
@@ -141,7 +141,8 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, HttpResponse &response) 
+void ConnectionManager::writeData(Socket& socket, HttpResponse &response, int i,
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets, std::map<int, HttpResponse>& _responsesToSend) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
 
@@ -160,7 +161,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-			std::cout << "write fd: " << socket.getSocketFd() << std::endl;
+			// std::cout << "write fd: " << socket.getSocketFd() << std::endl;
 		}
 		else if (bytesSent < 0)
 		{
@@ -180,6 +181,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 			data.writeBuffer = NULL;
 			response.setBody("");
 		}
+		this->removeConnection(socket, i, _pollFds, _clientSockets, _responsesToSend);
 	}
 }
 
