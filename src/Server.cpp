@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 17:33:33 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 18:51:07 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,7 @@ void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServer running..." << std::endl;
 
-	fd_set readfds;
+	// fd_set readfds;
 	while (true)
 	{
 		// FD_ZERO(&readfds);
@@ -108,6 +108,7 @@ void Server::run(std::vector<VirtualServers> servers)
 			HttpRequest requestReceive;
 			VirtualServers bestServer;
 			int currentFd = _pollFds[i].fd;
+			Socket* dataSocket = NULL;
 			
 			if (_pollFds[i].revents & POLLIN)
 			{
@@ -116,7 +117,7 @@ void Server::run(std::vector<VirtualServers> servers)
 				// for (size_t j = 1; j < _pollFds.size(); ++j)
 				// 	std::cout << _pollFds[j].fd << " ";
 				// std::cout << std::endl;
-				Socket* dataSocket = handleNewConnection(i);
+				dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					currentFd == dataSocket->getSocketFd())
 				{
@@ -126,8 +127,16 @@ void Server::run(std::vector<VirtualServers> servers)
 						bestServer = getBestServer(requestReceive, i, servers, _clientSockets, _pollFds);
 						// std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer, dataSocket);
+						// _connectionManager.writeData(*dataSocket, _responsesToSend[currentFd],
+						// 	i, _pollFds, _clientSockets, _responsesToSend);
+						// std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
+						// if (it != _responsesToSend.end())
+						// 	_responsesToSend.erase(currentFd);
 						_connectionManager.writeData(*dataSocket, _responsesToSend[currentFd],
 							i, _pollFds, _clientSockets, _responsesToSend);
+						if (!requestReceive.getIsKeepAlive() && dataSocket)
+							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
+					
 						std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
 						if (it != _responsesToSend.end())
 							_responsesToSend.erase(currentFd);
@@ -138,6 +147,7 @@ void Server::run(std::vector<VirtualServers> servers)
 							--i;
 						createErrorPage(400, bestServer, dataSocket);
 					}
+					
 					break ;
 				}
 			}
@@ -148,17 +158,15 @@ void Server::run(std::vector<VirtualServers> servers)
 			// 	{
 			// 		if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
 			// 		{
-			// 			auto start = std::chrono::system_clock::now();
+						
 			// 			_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd],
 			// 				i, _pollFds, _clientSockets, _responsesToSend);
-			// 			auto end = std::chrono::system_clock::now();
-			// 			std::chrono::duration<float,std::milli> duration = end - start;
-			// 			if (duration.count() > 1)
-			// 				std::cout << "writeData: " << duration.count() << "s " << std::endl;
+			// 			if (!requestReceive.getIsKeepAlive() && dataSocket)
+			// 				_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
 			// 			std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
 			// 			if (it != _responsesToSend.end())
 			// 				_responsesToSend.erase(currentFd);
-			// 			break ;
+			// 			// break ;
 			// 		}
 			// 	}
 			// }
@@ -173,7 +181,7 @@ void Server::run(std::vector<VirtualServers> servers)
 						std::cout << "Client socket deleted: " << _clientSockets[j]->getSocketFd() << std::endl;
 						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets, _responsesToSend);
 						--i;
-						// break ;
+						break ;
 					}
 				}
 			}

@@ -130,10 +130,6 @@ void Location::setRootLocation(std::string parametr)
 {
 	checkToken(parametr);
 	parametr = ConfigFile::prefixPath(parametr);
-
-	if (ConfigFile::checkPath(parametr + getPath()) != 2)
-		throw ErrorException("Root of location");
-	
 	_root = parametr;
 }
 
@@ -228,7 +224,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 		else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size())
 		{
 			if (flag_methods)
-				throw ErrorException("Allow_methods of location is duplicated");
+				std::cerr << "Allow_methods of location is duplicated" << std::endl;
 			std::vector<std::string> methods;
 			while (++i < parametr.size())
 			{
@@ -253,7 +249,7 @@ void Location::configureLocation(std::string &path, std::vector<std::string> &pa
 			if (path == "/cgi-bin")
 				throw ErrorException("Parametr autoindex not allow for CGI");
 			if (flag_autoindex)
-				throw ErrorException("Autoindex of location is duplicated");
+				std::cerr << "Autoindex of location is duplicated" << std::endl;
 			checkToken(parametr[++i]);
 			if (parametr[i] != "on" && parametr[i] != "off")
 				throw ErrorException("Index of location is invalid");

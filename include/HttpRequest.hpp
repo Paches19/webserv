@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:44:37 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/16 13:16:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 18:30:19 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class HttpRequest
 		std::string _errorMessage;
 		bool		_isValid;
 		bool		_isComplete;
+		bool		_isKeepAlive;
 		std::map<std::string, std::string> _headers;
 
 		void _parseRequest(const std::string& rawRequest);
@@ -47,6 +48,7 @@ class HttpRequest
 		std::string getHeader(const std::string& header_name) const;
 		bool		getIsValidRequest();
 		bool 		getIsCompleteRequest();
+		bool 		getIsKeepAlive();
 		std::string	getErrorMessage();
 
 		void		setValidRequest(bool validity);

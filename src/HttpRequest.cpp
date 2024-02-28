@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:02:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 18:50:54 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 {
 	this->_isValid = true;
 	this->_isComplete = false;
+	this->_isKeepAlive = false;
 	if (rawRequest.empty())
 		invalidRequest();
 	else
@@ -38,6 +39,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
 		this->_errorMessage = rhs._errorMessage;
 		this->_isValid = rhs._isValid;
 		this->_isComplete = rhs._isComplete;
+		this->_isKeepAlive = rhs._isKeepAlive;
 	}
 	return (*this);
 }
@@ -74,6 +76,8 @@ std::string HttpRequest::getHost()
 bool HttpRequest::getIsValidRequest() { return (this->_isValid); }
 
 bool HttpRequest::getIsCompleteRequest() { return (this->_isComplete); }
+
+bool HttpRequest::getIsKeepAlive() { return (this->_isKeepAlive); }
 
 std::string HttpRequest::getErrorMessage() { return (this->_errorMessage); }
 
@@ -134,6 +138,9 @@ void HttpRequest::_parseHeaders(const std::string& headersStr)
 			std::string headerValue = line.substr(colonPos + 2); // +2 para saltar el espacio después de los dos puntos
 			if (headerName == "" || headerValue == "")
 				return invalidRequest();
+			if (headerValue.find("keep-alive") != std::string::npos)
+				this->_isKeepAlive = true;
+				
 			_headers[headerName] = headerValue;
 		}
 		else
