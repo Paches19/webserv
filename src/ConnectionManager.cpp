@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 15:57:10 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 18:45:16 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,16 +53,17 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 			_clientSockets.erase(_clientSockets.begin() + j);
 		}
 	}
-	_pollFds.erase(_pollFds.begin() + i);
+	if (_pollFds[i].fd == socketFd)
+		_pollFds.erase(_pollFds.begin() + i);
 	
 	std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
 	if (it != connections.end())
 	{
 		connections.erase(it);
-		//std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
 	}
-	//else
-	//	std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
+	else
+		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
 	
 	std::map<int, HttpResponse>::iterator it2 = _responsesToSend.find(socketFd);
 	if (it2 != _responsesToSend.end())
@@ -112,7 +113,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->headerReceived = false;
 				connections[socket.getSocketFd()] = *data;
 
-				// request.printRequest();
+				request.printRequest();
 
 				return request;
 			}
@@ -133,6 +134,10 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	else
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets, _responsesToSend);
+		// 		_pollFds.back();
+		// _clientSockets.back();
+		// _responsesToSend.size();
+		// i = 0;
 		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
@@ -141,7 +146,8 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, HttpResponse &response) 
+void ConnectionManager::writeData(Socket& socket, HttpResponse &response, int i,
+			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets, std::map<int, HttpResponse>& _responsesToSend) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
 
@@ -160,7 +166,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-			//std::cout << "write fd: " << socket.getSocketFd() << std::endl;
+			// std::cout << "write fd: " << socket.getSocketFd() << std::endl;
 		}
 		else if (bytesSent < 0)
 		{
@@ -180,6 +186,11 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 			data.writeBuffer = NULL;
 			response.setBody("");
 		}
+		
+		_pollFds.back();
+		_clientSockets.back();
+		_responsesToSend.size();
+		i = 0;
 	}
 }
 

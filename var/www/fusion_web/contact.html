@@ -2,10 +2,10 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="assets/css/style.css">
-        <link rel="stylesheet" href="assets/css/password.css">
+        <link rel="stylesheet" href="./assets/css/style.css">
+        <link rel="stylesheet" href="./assets/css/password.css">
         <link href="https://fonts.googleapis.com/css?family=Tangerine" rel="stylesheet">
-        <script src="assets/js/password.js"></script>
+        <script src="./assets/js/password.js"></script>
 		<title>Fusion</title>
 	</head>
 
@@ -13,13 +13,12 @@
 		<header class="header">
 			<div class="container">
 				<div class ="header__inner">
-					<a class = "nav__link__dop" href="tours/tours.html">Tour</a>
+					<a class = "nav__link__dop" href="./tours/tours.html">Tour</a>
 					<nav class="nav">
-						<a class="nav__link__dop" href="index.html">Home</a>
+						<a class="nav__link__dop" href="home.html">Home</a>
 						<a class="nav__link__dop" href="services.html">Services</a>
 						<a class="nav__link__dop" href="about.html">About</a>
-						<a class="nav__link__dop" href="contact.html">Contact</a>
-                        <a class="nav__link__dop" href="cgi-bin/acc.py">Account</a>                          
+						<a class="nav__link__dop" href="contact.html">Contact</a>                         
 					</nav>
 				</div>
 			</div>
@@ -28,7 +27,7 @@
 
 		<div class="pass__block">
 		<h1> CGI: </h1> <br />
-    <form action = "cgi-bin/get_hello.py" method = "get">
+    <form action = "/fusion_web/cgi-bin/get_hello.py" method = "get">
         First Name: <input type = "text" name = "first_name">  <br />
         <br>
         Last Name: <input type = "text" name = "last_name" />
@@ -40,7 +39,7 @@
     <br />
     <br />
     <h2> Smart calculator: </h2> <br />
-    <form action = "cgi-bin/calc.py" method = "get">
+    <form action = "/fusion_web/cgi-bin/calc.py" method = "get">
         Number1: <input type = "text" name = "f_num">  <br />
         <br>
         Oparator : <input type = "text" name = "oper">  <br />

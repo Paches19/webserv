@@ -399,7 +399,7 @@ void VirtualServers::_checkServer(VirtualServers &server)
 			case 1:
 				throw ErrorException("Failed CGI validation");
 			case 2:
-				throw ErrorException("Failed path in location validation");
+				std::cerr << "Failed path in location validation" << std::endl;
 			case 3:
 				throw ErrorException("Failed redirection file in location validation");
 			default:
