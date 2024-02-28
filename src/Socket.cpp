@@ -89,7 +89,7 @@ bool Socket::accept(Socket& newSocket, int port) const
 	if (new_sockfd < 0)
 		return false;
 
-	std::cout << "Nueva conexion: " << new_sockfd << std::endl;
+	//std::cout << "Nueva conexion: " << new_sockfd << std::endl;
 	newSocket._socketFd = new_sockfd;
 	newSocket._address = _address;
 	newSocket._listenPort = port;

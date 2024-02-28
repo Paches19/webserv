@@ -87,20 +87,16 @@ void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServer running..." << std::endl;
 
-	fd_set readfds;
 	while (true)
 	{
-		// FD_ZERO(&readfds);
-		// for (size_t i = 0; i < _pollFds.size(); ++i)
-		// 	FD_SET(_pollFds[i].fd, &readfds);
-
 		// Llamar a poll con la lista de file descriptors y un tiempo de espera
-		int ret = poll(reinterpret_cast<pollfd *>(&_pollFds[0]), static_cast<nfds_t>(_pollFds.size()), -1); // -1 para tiempo de espera indefinido
+		// (-1) para tiempo de espera indefinido. YO HE PUESTO (2000)
+		int ret = poll(&_pollFds[0], static_cast<nfds_t>(_pollFds.size()), TIMEOUT);
 		if (ret < 0)
 		{
 			std::cerr << "    Poll error !" << std::endl;
 			createErrorPage(500, servers[0], _serverSockets[0]);
-			break;
+			continue;
 		}
 
 		for (size_t i = 0; i < _pollFds.size(); ++i)
@@ -108,17 +104,11 @@ void Server::run(std::vector<VirtualServers> servers)
 			HttpRequest requestReceive;
 			VirtualServers bestServer;
 			int currentFd = _pollFds[i].fd;
-			
-			if (ret >= 0 && _pollFds[i].revents & POLLIN)
+
+			if (_pollFds[i].revents & POLLIN)
 			{
-				// std::cout << "\nPOLLIN i: " << i << std::endl;
-				std::cout << "pollFds: ";
-				for (size_t j = 1; j < _pollFds.size(); ++j)
-					std::cout << _pollFds[j].fd << " ";
-				std::cout << std::endl;
 				Socket* dataSocket = handleNewConnection(i);
-				if (dataSocket && dataSocket->getSocketFd() != -1 &&
-					currentFd == dataSocket->getSocketFd())
+				if (dataSocket && dataSocket->getSocketFd() != -1 && currentFd == dataSocket->getSocketFd())
 				{
 					requestReceive = _connectionManager.readData(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
@@ -129,46 +119,36 @@ void Server::run(std::vector<VirtualServers> servers)
 					}
 					else if (!requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
-						if (_pollFds.size() > i - 1 && i > 0)
-							--i;
+						--i;
 						createErrorPage(400, bestServer, dataSocket);
 					}
+					continue;
 				}
-				std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
-				std::cout << "responsesToSendPre: ";
-				it = _responsesToSend.begin();
-				for (; it != _responsesToSend.end(); ++it)
-					std::cout << it->first << " ";
-				std::cout << std::endl;
-				break ;
 			}
-			else if (ret >= 0 && (_pollFds[i].revents & POLLOUT))
+			else if (_pollFds[i].revents & POLLOUT)
 			{
-				// std::cout << "\nPOLLOUT i: " << i << std::endl;
-				for (size_t j = 0; j < _clientSockets.size(); ++j)
+				for (std::vector<Socket*>::iterator itClientSocket = _clientSockets.begin(); itClientSocket != _clientSockets.end(); ++itClientSocket)
 				{
-					if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
+					if ((*itClientSocket)->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
 					{
-						_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd]);
-						std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
-						if (it != _responsesToSend.end())
+						_connectionManager.writeData(*(*itClientSocket), _responsesToSend[currentFd]);
+						std::map<int, HttpResponse>::iterator itResponse = _responsesToSend.find(currentFd);
+						if (itResponse != _responsesToSend.end())
 							_responsesToSend.erase(currentFd);
-						break ;
+						continue;
 					}
 				}
 			}
-			else if (ret >= 0 && _pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				// Manejar desconexiones o errores
-				std::cout << "    Connection closed or error in socket FD: " << currentFd << std::endl;
-				for (size_t j = 0; j < _clientSockets.size(); ++j)
+				for (std::vector<Socket*>::iterator itClientSocket = _clientSockets.begin(); itClientSocket != _clientSockets.end(); ++itClientSocket)
 				{
-					if (_clientSockets[j]->getSocketFd() == currentFd)
+					if ((*itClientSocket)->getSocketFd() == currentFd)
 					{
-						std::cout << "Client socket deleted: " << _clientSockets[j]->getSocketFd() << std::endl;
-						_connectionManager.removeConnection(*(_clientSockets[j]), i, _pollFds, _clientSockets, _responsesToSend);
+						_connectionManager.removeConnection(*(*itClientSocket), i, _pollFds, _clientSockets, _responsesToSend);
+						_pollFds.erase(_pollFds.begin() + i);
 						--i;
-						break ;
+						continue;
 					}
 				}
 			}
@@ -347,15 +327,15 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 	if (locationRequest->getRootLocation().empty())
 	{
 		root = server.getRoot() + UPLOAD;
-		std::cout << "    Root from server: " << server.getRoot() << std::endl;
+		//std::cout << "    Root from server: " << server.getRoot() << std::endl;
 	}
 	else
 	{
 		root = locationRequest->getRootLocation();
-		std::cout << "    Root from location: " << locationRequest->getRootLocation() << std::endl;
+		//std::cout << "    Root from location: " << locationRequest->getRootLocation() << std::endl;
 	}
 	std::string fullResourcePath = root + getFilenameCGI(request);
-	std::cout << "    Full resource path for POST: " << fullResourcePath << std::endl;
+	//std::cout << "    Full resource path for POST: " << fullResourcePath << std::endl;
 	if (!postFileCGI(request.getBody(), fullResourcePath, server, socket))
 		return ;
 
@@ -376,7 +356,7 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 	std::string contentType = request.getBody().substr(contentTypeIni + 14,
 			contentTypeEnd - contentTypeIni -14);
 
-	std::cout << "    Content-Type detected  = " << contentType << std::endl;
+	//std::cout << "    Content-Type detected  = " << contentType << std::endl;
 	processResponse.setHeader("Content-Type", contentType);
 	processResponse.setBody("Content uploaded successfully.");
 	_responsesToSend[socket->getSocketFd()] = processResponse;

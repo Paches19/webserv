@@ -52,7 +52,7 @@ OBJS			= 	$(addprefix $(OBJ_DIR), $(OBJ))
 
 # Flags
 CXX				= 	c++
-CXXFLAGS		= 	-Wall -Wextra -Werror -std=c++98 -fsanitize=address
+CXXFLAGS		= 	-O3 -Wall -Wextra -Werror -std=c++98 -fsanitize=address
 
 # Rules
 all				: 	create_dir $(NAME)

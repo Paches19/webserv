@@ -59,10 +59,10 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	if (it != connections.end())
 	{
 		connections.erase(it);
-		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+		//std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
 	}
-	else
-		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
+	//else
+	//	std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
 	
 	std::map<int, HttpResponse>::iterator it2 = _responsesToSend.find(socketFd);
 	if (it2 != _responsesToSend.end())
@@ -160,7 +160,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-			std::cout << "write fd: " << socket.getSocketFd() << std::endl;
+			//std::cout << "write fd: " << socket.getSocketFd() << std::endl;
 		}
 		else if (bytesSent < 0)
 		{

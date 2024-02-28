@@ -116,7 +116,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	pid_t		pid;
 	int			saveStdin;
 	int			saveStdout;
-	char		**env;
+	char		**env = NULL;
 	std::string	newBody;
 
 	try {
