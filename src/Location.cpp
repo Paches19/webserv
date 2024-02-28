@@ -97,7 +97,7 @@ const std::string Location::getExtensionCgiPath(std::string &ext) const
 
 	for (it = _cgiPath.begin(); it != _cgiPath.end(); ++it)
 	{
-		if ((ext == ".py" && it->find("python") != std::string::npos) ||
+		if ((ext.find(".py") != std::string::npos && it->find("python") != std::string::npos) ||
 			(ext == ".php" && it->find("php") != std::string::npos)   ||
 			(ext == ".pl" && it->find("perl") != std::string::npos)   ||
 			(ext == ".rb" && it->find("ruby") != std::string::npos)   ||

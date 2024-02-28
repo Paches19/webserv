@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 18:51:07 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/02/28 19:36:27 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -292,6 +292,7 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 	
 	if (pathCGI.empty())
 	{
+		std::cout << "pathCgi: " << pathCGI << std::endl;
 		std::cout << "    Path does not exist ! " << std::endl;
 		createErrorPage(404, server, socket);
 		return ;
