@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/04 12:08:12 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/04 13:03:30 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,13 +87,8 @@ void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServer running..." << std::endl;
 
-	// fd_set readfds;
 	while (true)
 	{
-		// FD_ZERO(&readfds);
-		// for (size_t i = 0; i < _pollFds.size(); ++i)
-		// 	FD_SET(_pollFds[i].fd, &readfds);
-
 		// Llamar a poll con la lista de file descriptors y un tiempo de espera
 		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
 		if (ret < 0)
@@ -112,11 +107,6 @@ void Server::run(std::vector<VirtualServers> servers)
 			
 			if (_pollFds[i].revents & POLLIN)
 			{
-				// std::cout << "\nPOLLIN i: " << i << std::endl;
-				// std::cout << "pollFds: ";
-				// for (size_t j = 1; j < _pollFds.size(); ++j)
-				// 	std::cout << _pollFds[j].fd << " ";
-				// std::cout << std::endl;
 				dataSocket = handleNewConnection(i);
 				if (dataSocket && dataSocket->getSocketFd() != -1 &&
 					currentFd == dataSocket->getSocketFd())
