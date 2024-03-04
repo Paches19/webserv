@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/01 12:18:37 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/04 12:08:12 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -609,7 +609,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 			std::string indexPath = resourcePath;
 			if (ConfigFile::fileExistsAndReadable(indexPath))
 			{
-				// Enviar archivo index
 				std::string buffer = ConfigFile::readFile(indexPath);
 				
 				processResponse.setStatusCode(200);
