@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:44:37 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 18:30:19 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:18:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ class HttpRequest
 		HttpRequest(const std::string& rawRequest);
 		~HttpRequest();
 		HttpRequest(const HttpRequest& copy);
-		HttpRequest& operator=(const HttpRequest& rhs);
+		HttpRequest& operator=(const HttpRequest& other);
 
 		std::string getMethod();
 		std::string getHost();

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 18:45:16 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:31:14 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,14 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 ConnectionManager::ConnectionManager() {}
+
 ConnectionManager::~ConnectionManager() {}
+
 ConnectionManager::ConnectionManager(const ConnectionManager& other)
 {
 	connections = other.connections;
 }
+
 ConnectionManager& ConnectionManager::operator=(const ConnectionManager& other)
 {
 	if (this != &other)
@@ -48,11 +51,9 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	for (size_t j = 0; j < _clientSockets.size(); ++j)
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
-		{
-			// std::cout << "Client socket deleted with FD: " << _clientSockets[j]->getSocketFd() << std::endl;
 			_clientSockets.erase(_clientSockets.begin() + j);
-		}
 	}
+	
 	if (_pollFds[i].fd == socketFd)
 		_pollFds.erase(_pollFds.begin() + i);
 	
@@ -60,7 +61,7 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	if (it != connections.end())
 	{
 		connections.erase(it);
-		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+		// std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
 	}
 	else
 		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
@@ -77,8 +78,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets, std::map<int, HttpResponse>& _responsesToSend)
 {
 	ConnectionData* data(&connections[socket.getSocketFd()]);
-
-	//std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
 
 	//Si no hay hueco en el buffer aumentamos tamaño
 	if (data->readBuffer.size() - data->accumulatedBytes == 0)
@@ -134,10 +133,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	else
 	{
 		this->removeConnection(socket, i, _pollFds, _clientSockets, _responsesToSend);
-		// 		_pollFds.back();
-		// _clientSockets.back();
-		// _responsesToSend.size();
-		// i = 0;
 		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
@@ -146,8 +141,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, HttpResponse &response, int i,
-			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets, std::map<int, HttpResponse>& _responsesToSend) 
+void ConnectionManager::writeData(Socket& socket, HttpResponse &response) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
 
@@ -166,7 +160,6 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response, int i,
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
-			// std::cout << "write fd: " << socket.getSocketFd() << std::endl;
 		}
 		else if (bytesSent < 0)
 		{
@@ -186,11 +179,6 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response, int i,
 			data.writeBuffer = NULL;
 			response.setBody("");
 		}
-		
-		_pollFds.back();
-		_clientSockets.back();
-		_responsesToSend.size();
-		i = 0;
 	}
 }
 

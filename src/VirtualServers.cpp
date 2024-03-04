@@ -13,39 +13,43 @@
 #include "VirtualServers.hpp"
 
 //*******************************************************************
-// Constructores y destructor de la clase canónica
+// Constructores y destructor
 //*******************************************************************
 VirtualServers::VirtualServers() { _port = 0; }
-VirtualServers::VirtualServers(const VirtualServers &rhs)
+
+VirtualServers::VirtualServers(const VirtualServers &other)
 {
-	_port = rhs._port;
-	_serverName = rhs._serverName;
-	_root = rhs._root;
-	_index = rhs._index;
-	_autoindex = rhs._autoindex;
-	_locations = rhs._locations;
-	_errorPages = rhs._errorPages;
-	_clientMaxBodySize = rhs._clientMaxBodySize;
-	_ipAddress = rhs._ipAddress;
-	_defaultServer = rhs._defaultServer;
+	_port = other._port;
+	_serverName = other._serverName;
+	_root = other._root;
+	_index = other._index;
+	_autoindex = other._autoindex;
+	_locations = other._locations;
+	_errorPages = other._errorPages;
+	_clientMaxBodySize = other._clientMaxBodySize;
+	_ipAddress = other._ipAddress;
+	_defaultServer = other._defaultServer;
 }
-VirtualServers &VirtualServers::operator=(const VirtualServers &rhs)
+
+VirtualServers &VirtualServers::operator=(const VirtualServers &other)
 {
-	if (this == &rhs)
+	if (this == &other)
 		return (*this);
-	_port = rhs._port;
-	_serverName = rhs._serverName;
-	_root = rhs._root;
-	_index = rhs._index;
-	_autoindex = rhs._autoindex;
-	_locations = rhs._locations;
-	_errorPages = rhs._errorPages;
-	_clientMaxBodySize = rhs._clientMaxBodySize;
-	_ipAddress = rhs._ipAddress;
-	_defaultServer = rhs._defaultServer;
+	_port = other._port;
+	_serverName = other._serverName;
+	_root = other._root;
+	_index = other._index;
+	_autoindex = other._autoindex;
+	_locations = other._locations;
+	_errorPages = other._errorPages;
+	_clientMaxBodySize = other._clientMaxBodySize;
+	_ipAddress = other._ipAddress;
+	_defaultServer = other._defaultServer;
 	return (*this);
 }
+
 VirtualServers::~VirtualServers() {}
+
 VirtualServers::VirtualServers(std::string &config)
 {
 	_port = 0;
@@ -56,7 +60,7 @@ VirtualServers::VirtualServers(std::string &config)
 	_clientMaxBodySize = MAX_CONTENT_LENGTH;
 	_ipAddress.s_addr = 0;
 	_defaultServer = false;
-	// Hay que crear todas las páginas de errores. Estas son una muestra
+
 	_errorPages[400] = "/error_pages/400.html";
 	_errorPages[403] = "/error_pages/403.html";
 	_errorPages[404] = "/error_pages/404.html";
@@ -65,6 +69,7 @@ VirtualServers::VirtualServers(std::string &config)
 	_errorPages[500] = "/error_pages/500.html";
 	
 	_createServer(config, *this);
+
 	// Si no hay ninguna ubicación, enviar configuración por defecto
 	if (this->getLocations().empty())
 	{
@@ -186,9 +191,6 @@ void VirtualServers::setAutoindex(std::string parametr)
 		_autoindex = true;
 }
 
-// Check if there is such a default error code. 
-//   If there is, it overwrites the path to the file
-//   Otherwise it creates a new pair: error code - path to the file
 void VirtualServers::setErrorPage(short i, std::string parametr)
 {
 	if (i < 100 || i > 599)
@@ -197,6 +199,7 @@ void VirtualServers::setErrorPage(short i, std::string parametr)
 	_errorPages[i] = path;
 
 }
+
 void VirtualServers::setClientMaxBodySize(std::string parametr)
 {
 	unsigned long size;

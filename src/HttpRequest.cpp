@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 18:50:54 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:18:59 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,24 +25,28 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 	else
 		_parseRequest(rawRequest);
 }
+
 HttpRequest::HttpRequest() { this->_isValid = false; this->_isComplete = false; }
+
 HttpRequest::HttpRequest(const HttpRequest& copy) {	*this = copy; }
-HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
+
+HttpRequest& HttpRequest::operator=(const HttpRequest& other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		this->_method = rhs._method;
-		this->_url = rhs._url;
-		this->_httpVersion = rhs._httpVersion;
-		this->_headers = rhs._headers;
-		this->_body = rhs._body;
-		this->_errorMessage = rhs._errorMessage;
-		this->_isValid = rhs._isValid;
-		this->_isComplete = rhs._isComplete;
-		this->_isKeepAlive = rhs._isKeepAlive;
+		this->_method = other._method;
+		this->_url = other._url;
+		this->_httpVersion = other._httpVersion;
+		this->_headers = other._headers;
+		this->_body = other._body;
+		this->_errorMessage = other._errorMessage;
+		this->_isValid = other._isValid;
+		this->_isComplete = other._isComplete;
+		this->_isKeepAlive = other._isKeepAlive;
 	}
 	return (*this);
 }
+
 HttpRequest::~HttpRequest() {};
 
 //*******************************************************************

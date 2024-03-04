@@ -29,24 +29,27 @@ Location::Location(const Location &other)
 	_modifier = other._modifier;
 	_clientMaxBodySize = other._clientMaxBodySize;
 }
-Location &Location::operator=(const Location &rhs)
+
+Location &Location::operator=(const Location &other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		_path = rhs._path;
-		_root = rhs._root;
-		_autoindex = rhs._autoindex;
-		_index = rhs._index;
-		_cgiPath = rhs._cgiPath;
-		_cgiExt = rhs._cgiExt;
-		_return = rhs._return;
-		_methods = rhs._methods;
-		_modifier = rhs._modifier;
-		_clientMaxBodySize = rhs._clientMaxBodySize;
+		_path = other._path;
+		_root = other._root;
+		_autoindex = other._autoindex;
+		_index = other._index;
+		_cgiPath = other._cgiPath;
+		_cgiExt = other._cgiExt;
+		_return = other._return;
+		_methods = other._methods;
+		_modifier = other._modifier;
+		_clientMaxBodySize = other._clientMaxBodySize;
     }
 	return (*this);
 }
+
 Location::~Location() { }
+
 Location::Location(std::string &path, std::string &modifier, std::vector<std::string> &parametr)
 {
 	_path = path;

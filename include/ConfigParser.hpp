@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:57 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:56:32 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:15:45 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ class ConfigParser
 		ConfigParser();
 		~ConfigParser();
 		ConfigParser(const ConfigParser &other);
-		ConfigParser &operator=(const ConfigParser &rhs);
+		ConfigParser &operator=(const ConfigParser &other);
 
 		std::vector<VirtualServers> getServers();
 		

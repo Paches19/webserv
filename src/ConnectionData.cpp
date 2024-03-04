@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 11:32:20 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:00:50 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:16:35 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,9 @@
 //*******************************************************************
 ConnectionData::ConnectionData() : readBuffer(1024),
 	writeBuffer(NULL), headerReceived(false), accumulatedBytes(0) {}
+
 ConnectionData::~ConnectionData() { delete[] writeBuffer; }
+
 ConnectionData::ConnectionData(const ConnectionData& other)
 {
 	readBuffer = other.readBuffer;
@@ -25,6 +27,7 @@ ConnectionData::ConnectionData(const ConnectionData& other)
 	headerReceived = other.headerReceived;
 	accumulatedBytes = other.accumulatedBytes;
 }
+
 ConnectionData& ConnectionData::operator=(const ConnectionData& other)
 {
 	if (this != &other)

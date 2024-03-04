@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:25:48 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 13:44:52 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:19:32 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ class HttpResponse
 		HttpResponse();
 		~HttpResponse();
 		HttpResponse(const HttpResponse& copy);
-		HttpResponse& operator=(const HttpResponse& rhs);
+		HttpResponse& operator=(const HttpResponse& other);
 
 		void 		setStatusCode(int code);
 		void		setBody(const std::string& bodyContent);

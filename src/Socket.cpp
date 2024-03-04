@@ -6,21 +6,24 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 17:17:25 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/04 12:04:37 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Socket.hpp"
 
 //*******************************************************************
-// Constructores y destructor de la clase canónica
+// Constructores y destructor
 //*******************************************************************
 Socket::Socket() : _socketFd(-1) {}
+
 Socket::~Socket() {}
+
 Socket::Socket(Socket& other) : _socketFd(other._socketFd)
 {
 	other._socketFd = -1;
 }
+
 Socket& Socket::operator=(Socket& other)
 {
 	if (this != &other)
@@ -55,7 +58,6 @@ bool Socket::open(int port, in_addr addr)
 		_address.sin_addr.s_addr = INADDR_ANY;
 	else
 		_address.sin_addr.s_addr = addr.s_addr;
-	std::cout << "Server ip guardado: " << _address.sin_addr.s_addr << std::endl;
 	_address.sin_port = htons(port);
 	_listenPort = ntohs(_address.sin_port);
 	std::cout << "OPEN puerto: " << ntohs(_address.sin_port) << std::endl;
@@ -122,10 +124,8 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 		return -1;
 	}
 	if (n == 0)
-	{
-		// std::cout << "Connection closed" << std::endl;
 		return 0;
-	}
+
 	return (n <= 0) ? -1 : n;
 }
 

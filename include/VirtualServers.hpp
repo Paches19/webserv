@@ -37,9 +37,10 @@ class VirtualServers
 	public:
 		VirtualServers();
 		VirtualServers(std::string &config);
-		VirtualServers(const VirtualServers &copy);
+		VirtualServers(const VirtualServers &other);
 		~VirtualServers();
-		VirtualServers &operator=(const VirtualServers &copy);	
+
+		VirtualServers &operator=(const VirtualServers &other);	
 
 		const uint16_t 			&getPort();
 		const std::string 		&getServerName();

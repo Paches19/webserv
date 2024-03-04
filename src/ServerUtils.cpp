@@ -15,35 +15,36 @@
 std::string getMimeType(const std::string& filePath)
 {
 	size_t dotPos = filePath.rfind('.');
-	std::map<std::string, std::string> mimeTypes;
+	static std::unordered_map<std::string, std::string> mimeTypes =
+	{
+		{".html", "text/html"},
+		{".css",  "text/css"},
+		{".txt",  "text/plain"},
+		{".csv",  "text/csv"},
+		{".htm",  "text/html"},
+		
+		{".jpg",  "image/jpeg"},
+		{".jpeg", "image/jpeg"},
+		{".png",  "image/png"},
+		{".gif",  "image/gif"},
+		{".svg",  "image/svg+xml"},
+		{".ico",  "image/x-icon"},
 
-	mimeTypes[".html"] = "text/html";
-	mimeTypes[".css"]  = "text/css";
-	mimeTypes[".txt"]  = "text/plain";
-	mimeTypes[".csv"]  = "text/csv";
-	mimeTypes[".htm"]  = "text/html";
-	
-	mimeTypes[".jpg"]  = "image/jpeg";
-	mimeTypes[".jpeg"] = "image/jpeg";
-	mimeTypes[".png"]  = "image/png";
-	mimeTypes[".gif"]  = "image/gif";
-	mimeTypes[".svg"]  = "image/svg+xml";
-	mimeTypes[".ico"]  = "image/x-icon";
+		{".pdf",  "application/pdf"},
+		{".zip",  "application/zip"},
+		{".tar",  "application/x-tar"},
+		{".gz",   "application/gzip"},
+		{".js",   "application/javascript"},
+		{".json", "application/json"},
+		{".xml",  "application/xml"},
+		{".doc",  "application/msword"},
 
-	mimeTypes[".pdf"]  = "application/pdf";
-	mimeTypes[".zip"]  = "application/zip";
-	mimeTypes[".tar"]  = "application/x-tar";
-	mimeTypes[".gz"]   = "application/gzip";
-	mimeTypes[".js"]   = "application/javascript";
-	mimeTypes[".json"] = "application/json";
-	mimeTypes[".xml"]  = "application/xml";
-	mimeTypes[".doc"]  = "application/msword";
-
-	mimeTypes[".mp3"]  = "audio/mpeg";
-	mimeTypes[".mp4"]  = "video/mp4";
-	mimeTypes[".avi"]  = "video/x-msvideo";
-	mimeTypes[".mpeg"] = "video/mpeg";
-	mimeTypes[".webm"] = "video/webm";
+		{".mp3",  "audio/mpeg"},
+		{".mp4",  "video/mp4"},
+		{".avi",  "video/x-msvideo"},
+		{".mpeg", "video/mpeg"},
+		{".webm", "video/webm"},
+	};
 
 	if (dotPos != std::string::npos)
 	{
@@ -56,17 +57,13 @@ std::string getMimeType(const std::string& filePath)
 
 bool isValidPath(const std::string& basePath, const std::string& path)
 {
-	// Prevenir Path Traversal verificando la presencia de ".."
-	if (path.find("..") != std::string::npos)
-		return false;
-
 	std::string fullPath = path;
 
 	// Asegurarse de que el path no salga del directorio base
 	if (fullPath.find(basePath) != 0)
-		return false; // El path resultante no está dentro del basePath
+		return false;
 
-	return true; // La ruta es válida y está permitida
+	return true;
 }
 
 bool isCGIScript(const std::string& resourcePath)
@@ -78,6 +75,7 @@ bool isCGIScript(const std::string& resourcePath)
     // Example: Check if the file extension is ".cgi"
 	if (resourcePath.empty())
 		return false;
+
     if (resourcePath.size() >= 4)
 	{
 		if ((resourcePath.substr(resourcePath.size() - 3) == ".py")  ||
@@ -100,6 +98,7 @@ std::string getFilename(HttpRequest request, std::string resourcePath)
 	
 	if (lastSlashPos != std::string::npos)
 		filename = request.getURL().substr(lastSlashPos + 1);
+
 	if (!filename.empty() )
 	{
 		if (resourcePath.size() < filename.size() ||
@@ -169,17 +168,13 @@ std::string buildResourcePathForPost(HttpRequest& request,
 	if (queryPos != std::string::npos)
 		requestURL = requestURL.substr(0, queryPos);
 
-	// Prevenir Path Transversal
-	if (requestURL.find("..") != std::string::npos)
-		return "";
-
 	std::string basePath = location.getRootLocation().empty() ? server.getRoot() : location.getRootLocation();
 
 	if (basePath != "/" && !basePath.empty() && basePath[basePath.length() - 1] == '/')
-        basePath.erase(basePath.length() - 1);
+		basePath.erase(basePath.length() - 1);
 
 	if (!requestURL.empty() && requestURL[0] != '/' && basePath != "/")
-        requestURL = "/" + requestURL;
+		requestURL = "/" + requestURL;
 	
 	std::string resourcePath = basePath + requestURL;
 
@@ -308,13 +303,13 @@ VirtualServers getBestServer(HttpRequest &request, size_t i, std::vector<Virtual
 		j++;
 	}
 	
-	if (j == _clientSockets.size()) //No encuentra cliente
+	if (j == _clientSockets.size())
 	{
 		VirtualServers aServer;
 		return (aServer);
 	}
 	
-	int nbServer = 0; //Número de posibles servidores válidos
+	int nbServer = 0;
 	std::vector<int> candidates(servers.size(), 0);
 	for (long unsigned k = 0; k < servers.size(); k++)
 	{

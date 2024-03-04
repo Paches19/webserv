@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/14 12:52:45 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:14:58 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ class ConfigFile
 		ConfigFile(std::string const path);
 		ConfigFile(const ConfigFile &other);
 		~ConfigFile();
-		ConfigFile &operator=(const ConfigFile &rhs);
+		ConfigFile &operator=(const ConfigFile &other);
 		
 		std::string			getPath();
 

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 19:36:27 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:18:37 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,13 +127,7 @@ void Server::run(std::vector<VirtualServers> servers)
 						bestServer = getBestServer(requestReceive, i, servers, _clientSockets, _pollFds);
 						// std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer, dataSocket);
-						// _connectionManager.writeData(*dataSocket, _responsesToSend[currentFd],
-						// 	i, _pollFds, _clientSockets, _responsesToSend);
-						// std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
-						// if (it != _responsesToSend.end())
-						// 	_responsesToSend.erase(currentFd);
-						_connectionManager.writeData(*dataSocket, _responsesToSend[currentFd],
-							i, _pollFds, _clientSockets, _responsesToSend);
+						_connectionManager.writeData(*dataSocket, _responsesToSend[currentFd]);
 						if (!requestReceive.getIsKeepAlive() && dataSocket)
 							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
 					
@@ -151,25 +145,6 @@ void Server::run(std::vector<VirtualServers> servers)
 					break ;
 				}
 			}
-			// else if (_pollFds[i].revents & POLLOUT)
-			// {
-			// 	// std::cout << "\nPOLLOUT i: " << i << std::endl;
-			// 	for (size_t j = 0; j < _clientSockets.size(); ++j)
-			// 	{
-			// 		if (_clientSockets[j]->getSocketFd() == currentFd && !_responsesToSend[currentFd].getBody().empty())
-			// 		{
-						
-			// 			_connectionManager.writeData(*(_clientSockets[j]), _responsesToSend[currentFd],
-			// 				i, _pollFds, _clientSockets, _responsesToSend);
-			// 			if (!requestReceive.getIsKeepAlive() && dataSocket)
-			// 				_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets, _responsesToSend);
-			// 			std::map<int, HttpResponse>::iterator it = _responsesToSend.find(currentFd);
-			// 			if (it != _responsesToSend.end())
-			// 				_responsesToSend.erase(currentFd);
-			// 			// break ;
-			// 		}
-			// 	}
-			// }
 			else if (_pollFds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				// Manejar desconexiones o errores
@@ -284,9 +259,7 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 	HttpResponse processResponse;
 	CgiHandler cgi(request, *locationRequest, server);
 
-	// std::cout << "    Resource path for CGI: " << resourcePath << std::endl;	
 	std::string extension = resourcePath.substr(resourcePath.find_last_of("."));
-	// std::cout << "    Extension for CGI: " << extension << std::endl;
 	
 	std::string pathCGI = locationRequest->getExtensionCgiPath(extension);
 	
@@ -297,7 +270,7 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 		createErrorPage(404, server, socket);
 		return ;
 	}
-	// std::cout << "    Found path for CGI: " << pathCGI << std::endl;
+
 	std::string buffer = cgi.executeCgi(resourcePath, pathCGI);
 	if (buffer == "Status: 500\r\n\r\n")
 		createErrorPage(500, server, socket);
@@ -313,7 +286,7 @@ void Server::processGetCGI(std::string resourcePath, const Location* locationReq
 void Server::processGet(std::string resourcePath, const Location* locationRequest,
 	Socket* socket, VirtualServers server)
 {
-	// std::cout << "    Resource path for GET: " << resourcePath << std::endl;
+
 	HttpResponse processResponse;
 
 	resourcePath = checkGetPath(resourcePath, locationRequest, socket, server);
@@ -355,7 +328,7 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 	}
 
 	std::string resourcePath = buildResourcePathForPost(request, *locationRequest, server);
-	// std::cout << "    Resource path for POST: " << resourcePath << std::endl;
+
 	std::string root;
 	if (locationRequest->getRootLocation().empty())
 	{
@@ -368,7 +341,7 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 		std::cout << "    Root from location: " << locationRequest->getRootLocation() << std::endl;
 	}
 	std::string fullResourcePath = root + getFilenameCGI(request);
-	std::cout << "    Full resource path for POST: " << fullResourcePath << std::endl;
+
 	if (!postFileCGI(request.getBody(), fullResourcePath, server, socket))
 		return ;
 
@@ -389,7 +362,6 @@ void Server::processPostCGI(HttpRequest request, VirtualServers server, Socket* 
 	std::string contentType = request.getBody().substr(contentTypeIni + 14,
 			contentTypeEnd - contentTypeIni -14);
 
-	std::cout << "    Content-Type detected  = " << contentType << std::endl;
 	processResponse.setHeader("Content-Type", contentType);
 	processResponse.setBody("Content uploaded successfully.");
 	_responsesToSend[socket->getSocketFd()] = processResponse;
@@ -539,13 +511,13 @@ void Server::processReturnDirective(const Location& locationRequest,
 			processResponse.setBody(bodyReturn(locationRequest.getPath(), urlOrText, statusCode));
 	}
 	else
-	{	// si no, se envía el texto de la redirección
+	{	
+		// si no, se envía el texto de la redirección
 		processResponse.setHeader("Location", locationRequest.getPath());
 		if (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)
 			processResponse.setBody("return successful");
 		else
 			processResponse.setBody(bodyReturn(urlOrText, "", statusCode));
-	// Configurar la respuesta basada en el código de estado
 	}
 	processResponse.setStatusCode(statusCode);
 }
@@ -558,19 +530,16 @@ Socket* Server::handleNewConnection(int i)
 		Socket* newSocket = new Socket();
 		if (_serverSockets[i]->accept(*newSocket, _serverSockets[i]->getListenPort()))
 		{
-			// std::cout << "Accept " << i << " server port: " << _serverSockets[i]->getListenPort() << std::endl;
 			std::vector<Socket*>::iterator it;
 			for (it = _clientSockets.begin(); it != _clientSockets.end(); ++it)
 			{
 				existingSocket = *it;
 				if (areAddressesEqual(newSocket->getSocketAddr(), existingSocket->getSocketAddr()))
 				{
-					//std::cout << "    Cliente existente" << std::endl;
 					delete newSocket;
 					return existingSocket;
 				}
 			}
-			//std::cout << "    Nueva conexión";
 			struct pollfd newPollFd;
 			newPollFd.fd = newSocket->getSocketFd();
 			newPollFd.events = POLLIN | POLLOUT;
@@ -621,8 +590,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 	HttpResponse processResponse;
 	if (ConfigFile::checkPath(resourcePath) == IS_DIR)
 	{
-		// std::cout << " Es directorio " << std::endl;
-		
 		if (locationRequest->getAutoindex())
 		{
 			// Autoindex activado: generar y enviar página de índice
@@ -668,6 +635,6 @@ std::string Server::checkGetPath(std::string resourcePath, const Location* locat
 		createErrorPage(404, server, socket);
 		return "";
 	}
-	//std::cout << "    File exists and is readable" << std::endl;
+
 	return resourcePath;
 }

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:38:47 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/20 12:28:19 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:15:23 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,15 +16,18 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 ConfigFile::ConfigFile() { }
+
 ConfigFile::ConfigFile(const ConfigFile &other) { _path = other._path; }
-ConfigFile &ConfigFile::operator=(const ConfigFile &rhs)
+
+ConfigFile &ConfigFile::operator=(const ConfigFile &other)
 {
-	if (this == &rhs)
+	if (this == &other)
 		return (*this);
-	_path = rhs._path;
+	_path = other._path;
 	return (*this);
 }
 ConfigFile::ConfigFile(std::string const path) : _path(path) { }
+
 ConfigFile::~ConfigFile() { }
 
 //*******************************************************************
@@ -81,7 +84,6 @@ std::string	ConfigFile::readFile(std::string path)
 	
 	std::stringstream stream_binding;
 	stream_binding << config_file.rdbuf();
-	// std::cout << "leo: " << path << std::endl;
 	return (stream_binding.str());
 }
 
@@ -90,12 +92,12 @@ bool ConfigFile::fileExistsAndReadable(const std::string& filePath)
 {
 	struct stat buffer;
 	std::string path;
-	// std::cout << "Path1: " << path << std::endl;
+
 	if (filePath[0] != '.' && filePath[0] == '/')
 		path = "." + filePath;
 	else
 		path = filePath;
-	// std::cout << "Path2: " << path << std::endl;
+
 	std::string exFilePath = prefixPath(path);
 
 	if (stat(exFilePath.c_str(), &buffer) == 0)

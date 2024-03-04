@@ -39,4 +39,6 @@ bool 			areAddressesEqual(const sockaddr_in& addr1, const sockaddr_in& addr2);
 VirtualServers 	getBestServer(HttpRequest &request, size_t i, std::vector<VirtualServers> servers,
 				std::vector<Socket*> _clientSockets, std::vector<struct pollfd> _pollFds);
 
+
+
 #endif // SERVER_UTILS_HPP

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:38:56 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/22 12:57:14 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:15:58 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,19 +16,22 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 ConfigParser::ConfigParser() { _nbServer = 0; }
+
 ConfigParser::ConfigParser(const ConfigParser &other)
 {
 	_nbServer = other._nbServer;
 	_serverConfig = other._serverConfig;
 }
-ConfigParser &ConfigParser::operator=(const ConfigParser &rhs)
+
+ConfigParser &ConfigParser::operator=(const ConfigParser &other)
 {
-	if (this == &rhs)
+	if (this == &other)
 		return (*this);
-	_nbServer = rhs._nbServer;
-	_serverConfig = rhs._serverConfig;
+	_nbServer = other._nbServer;
+	_serverConfig = other._serverConfig;
 	return (*this);
 }
+
 ConfigParser::~ConfigParser() { }
 
 //*******************************************************************

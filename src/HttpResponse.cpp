@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 13:27:01 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/27 13:06:37 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:20:54 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,20 +16,23 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 HttpResponse::HttpResponse(void) { _statusCode = 200; }
+
 HttpResponse::~HttpResponse() {}
+
 HttpResponse::HttpResponse(const HttpResponse& copy)
 {
 	_statusCode = copy._statusCode;
 	_headers = copy._headers;
 	_body = copy._body;
 }
-HttpResponse& HttpResponse::operator=(const HttpResponse& rhs)
+
+HttpResponse& HttpResponse::operator=(const HttpResponse& other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		_statusCode = rhs._statusCode;
-		_headers = rhs._headers;
-		_body = rhs._body;
+		_statusCode = other._statusCode;
+		_headers = other._headers;
+		_body = other._body;
 	}
 	return *this;
 }
@@ -114,25 +117,21 @@ std::string HttpResponse::buildResponse()
 {
 	std::stringstream response;
 
-	//std::cout << std::endl;
-	// std::cout << "build Response: " << std::endl;
 	// Obtiene el mensaje de estado correspondiente al código de estado
 	std::string statusMessage = getStatusMessage(_statusCode);
 
 	// Agrega la línea de estado (código de estado y mensaje)
 	response << "HTTP/1.1 " << _statusCode << " " << statusMessage << "\r\n";
-	// std::cout << "HTTP/1.1 " << _statusCode << " " << statusMessage << std::endl;
+	
 	// Agrega las cabeceras
 	for (std::map<std::string, std::string>::const_iterator it =	
 		_headers.begin(); it != _headers.end(); ++it)
-	{
 		response << it->first << ": " << it->second << "\r\n";
-		// std::cout << it->first << ": " << it->second << std::endl;
-	}
+
 	// Agrega la longitud del cuerpo y la línea en blanco que indica el final de las cabeceras
-	//response << "Content-Length: " << convert.str() << "\r\n";
-	// Agrega el cuerpo
 	response << "Content-Length: " << _body.size() << "\r\n";
+	
+	// Agrega el cuerpo
 	response << "\r\n" << _body;
 
 	return response.str();
@@ -140,10 +139,9 @@ std::string HttpResponse::buildResponse()
 
 void HttpResponse::printResponse(std::string responseStr)
 {
-	// std::cout << "\n***** RESPONSE *****" << std::endl;
+	std::cout << "\n***** RESPONSE *****" << std::endl;
 
-	// std::cout << CYAN << responseStr << RESET << std::endl;
+	std::cout << CYAN << responseStr << RESET << std::endl;
 
-	// std::cout << "*******************" << std::endl;
-	responseStr = "";
+	std::cout << "*******************" << std::endl;
 }

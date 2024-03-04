@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/28 19:44:52 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:14:06 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,8 @@ SERVER_SOFTWARE:The name and version of the software the server is running.*/
 	this->_env["SERVER_SOFTWARE"] = "Webserver/1.0";
 }
 
-char	**CgiHandler::_getEnvAsCstrArray() const {
+char	**CgiHandler::_getEnvAsCstrArray() const
+{
 	char	**env = new char*[this->_env.size() + 1];
 	int	j = 0;
 	for (std::map<std::string, std::string>::const_iterator i = this->_env.begin(); i != this->_env.end(); i++) {

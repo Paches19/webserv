@@ -37,7 +37,7 @@ class Location
 		Location(std::string &path, std::string &modifier, std::vector<std::string> &paramtr);
 		Location(const Location &other);
 		~Location();
-		Location &operator=(const Location &rhs);
+		Location &operator=(const Location &other);
 
 		const std::string 				&getPath() const;
 		const std::string 				&getRootLocation() const;
