@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/04 13:55:19 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/05 10:26:46 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,8 +125,11 @@ void Server::run(std::vector<VirtualServers> servers)
 					{
 						if (_pollFds.size() > i - 1)
 							--i;
+						delete dataSocket;
 						createErrorPage(400, bestServer);
 					}
+					else
+						delete dataSocket;
 					
 					break ;
 				}
