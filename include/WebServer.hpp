@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/04 13:28:02 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/12 12:35:32 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@
 
 // Macros
 # define MAX_CONTENT_LENGTH 1000000000
-# define CGI_BUFSIZE 		1000000
+# define CGI_BUFSIZE 		100000
 
 # define UPLOAD "/uploads"
 

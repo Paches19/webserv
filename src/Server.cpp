@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/05 10:26:46 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/12 12:42:40 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,21 +115,21 @@ void Server::run(std::vector<VirtualServers> servers)
 					if (requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						bestServer = getBestServer(requestReceive, i, servers, _clientSockets, _pollFds);
-						// std::cout << "Server: " << bestServer.getServerName() << std::endl;
+						std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer);
 						_connectionManager.writeData(*dataSocket, _responseToSend);
 						if (!requestReceive.getIsKeepAlive() && dataSocket)
-							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets);
+							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets);							
 					}
 					else if (!requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						if (_pollFds.size() > i - 1)
 							--i;
-						delete dataSocket;
+							// delete dataSocket;
 						createErrorPage(400, bestServer);
 					}
-					else
-						delete dataSocket;
+					// else
+					// 	delete dataSocket;
 					
 					break ;
 				}

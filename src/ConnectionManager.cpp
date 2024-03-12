@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/04 13:25:45 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/12 11:39:27 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	// std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
+	std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket, int i,
@@ -61,11 +61,12 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	if (it != connections.end())
 	{
 		connections.erase(it);
-		// std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
 	}
 	else
 		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
 
+	
 	if (socketFd != -1)
 		socket.close();
 }
@@ -74,7 +75,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
 {
 	ConnectionData* data(&connections[socket.getSocketFd()]);
-
 	//Si no hay hueco en el buffer aumentamos tamaño
 	if (data->readBuffer.size() - data->accumulatedBytes == 0)
 		data->readBuffer.resize(data->readBuffer.size() + 1024);
@@ -88,7 +88,6 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
-
 	if (bytesRead > 0)
 	{
 		data->accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
@@ -151,7 +150,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
 		
-		// response.printResponse(responseStr);
+		response.printResponse(responseStr);
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;

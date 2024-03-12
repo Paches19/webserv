@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/01 11:14:06 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/12 12:42:22 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,7 +126,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	catch (std::bad_alloc &e) {
 		std::cerr << RED << e.what() << RESET << std::endl;
 	}
-
+	
 	// SAVING STDIN AND STDOUT IN ORDER TO TURN THEM BACK TO NORMAL LATER
 	saveStdin = dup(STDIN_FILENO);
 	saveStdout = dup(STDOUT_FILENO);
@@ -136,10 +136,10 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	long	fdIn = fileno(fIn);
 	long	fdOut = fileno(fOut);
 	int		ret = 1;
-
+	
 	write(fdIn, _body.c_str(), _body.size());
 	lseek(fdIn, 0, SEEK_SET);
-
+	
 	pid = fork();
 
 	if (pid == -1)
@@ -168,7 +168,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	else // Parent process
 	{
 		char	buffer[CGI_BUFSIZE] = {0};
-
+		
 		waitpid(-1, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET);
 		ret = 1;

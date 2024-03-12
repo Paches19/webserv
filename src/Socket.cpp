@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/04 12:04:37 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/12 11:36:53 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,7 +92,7 @@ bool Socket::accept(Socket& newSocket, int port) const
 	if (new_sockfd < 0)
 		return false;
 
-	// std::cout << "Nueva conexion: " << new_sockfd << std::endl;
+	std::cout << "Nueva conexion: " << new_sockfd << std::endl;
 	newSocket._socketFd = new_sockfd;
 	newSocket._address = _address;
 	newSocket._listenPort = port;
@@ -131,7 +131,7 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 
 void Socket::close()
 {
-	// std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
+	std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

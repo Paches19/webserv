@@ -59,7 +59,7 @@ std::string getMimeType(const std::string& filePath)
 		if (it != mimeTypes.end())
 			return it->second;
 	}
-	return "application/octet-stream"; // Tipo MIME por defecto si no se reconoce la extensión
+	return "text/html"; // Tipo MIME por defecto si no se reconoce la extensión
 }
 
 bool isValidPath(const std::string& basePath, const std::string& path)
