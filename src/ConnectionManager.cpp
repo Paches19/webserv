@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/12 12:46:33 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:42:23 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,15 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 	for (size_t j = 0; j < _clientSockets.size(); ++j)
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
+		{
+			Socket* aux = _clientSockets[j];
+			_clientSockets[j]->close();
+			delete aux;
 			_clientSockets.erase(_clientSockets.begin() + j);
+		}
+			
 	}
+	_clientSockets[0]->getSocketFd();
 	
 	if (_pollFds[i].fd == socketFd)
 		_pollFds.erase(_pollFds.begin() + i);
@@ -67,8 +74,8 @@ void ConnectionManager::removeConnection(Socket& socket, int i,
 		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
 
 	
-	if (socketFd != -1)
-		socket.close();
+	// if (socketFd != -1)
+	// 	socket.close();
 }
 
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
@@ -127,7 +134,10 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	}
 	else
 	{
-		this->removeConnection(socket, i, _pollFds, _clientSockets);
+		// this->removeConnection(socket, i, _pollFds, _clientSockets);
+		i = 0;
+		_pollFds[i].fd = 0;
+		_clientSockets[i]->getSocketFd();
 		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/12 12:35:32 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 14:55:09 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@
 # include <sys/wait.h>
 # include <unistd.h>
 # include <vector>
+# include <csignal>
 
 // Colours
 # define RESET          "\x1B[0m"

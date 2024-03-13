@@ -6,7 +6,7 @@
 #    By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/01/12 11:30:21 by adpachec          #+#    #+#              #
-#    Updated: 2024/03/12 11:00:11 by adpachec         ###   ########.fr        #
+#    Updated: 2024/03/13 14:44:50 by adpachec         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -52,7 +52,7 @@ OBJS			= 	$(addprefix $(OBJ_DIR), $(OBJ))
 
 # Flags
 CXX				= 	c++
-CXXFLAGS		= 	-Wall -Werror -Wextra -std=c++98 -fsanitize=address
+CXXFLAGS		= 	-Wall -Werror -Wextra -std=c++98 -g
 
 # Rules
 all				: 	create_dir $(NAME)

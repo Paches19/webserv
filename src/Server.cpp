@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/12 12:42:40 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:44:34 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,12 +72,22 @@ Server::~Server()
 		_serverSockets[i]->close();
 		delete _serverSockets[i];
 	}
+	_serverSockets.clear();
 	
 	for (size_t i = 0; i < _clientSockets.size(); ++i)
 	{
 		_clientSockets[i]->close();
 		delete _clientSockets[i];
 	}
+	_clientSockets.clear();
+}
+
+bool running = true;
+
+void signalHandler(int sig)
+{
+	sig = 0;
+	running = false;
 }
 
 //******************************************************************************
@@ -86,8 +96,9 @@ Server::~Server()
 void Server::run(std::vector<VirtualServers> servers)
 {
 	std::cout << "\nServer running..." << std::endl;
-
-	while (true)
+	signal(SIGINT, signalHandler);
+	
+	while (running)
 	{
 		// Llamar a poll con la lista de file descriptors y un tiempo de espera
 		int ret = poll(&_pollFds[0], _pollFds.size(), -1); // -1 para tiempo de espera indefinido
@@ -100,6 +111,7 @@ void Server::run(std::vector<VirtualServers> servers)
 
 		for (size_t i = 0; i < _pollFds.size(); ++i)
 		{
+
 			HttpRequest requestReceive;
 			VirtualServers bestServer;
 			int currentFd = _pollFds[i].fd;
@@ -117,20 +129,20 @@ void Server::run(std::vector<VirtualServers> servers)
 						bestServer = getBestServer(requestReceive, i, servers, _clientSockets, _pollFds);
 						std::cout << "Server: " << bestServer.getServerName() << std::endl;
 						processRequest(requestReceive, bestServer);
-						_connectionManager.writeData(*dataSocket, _responseToSend);
+						if (dataSocket)
+							_connectionManager.writeData(*dataSocket, _responseToSend);
 						if (!requestReceive.getIsKeepAlive() && dataSocket)
-							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets);							
+						{
+							_connectionManager.removeConnection(*dataSocket, i, _pollFds, _clientSockets);
+							break;
+						}						
 					}
 					else if (!requestReceive.getIsValidRequest() && requestReceive.getIsCompleteRequest())
 					{
 						if (_pollFds.size() > i - 1)
 							--i;
-							// delete dataSocket;
 						createErrorPage(400, bestServer);
 					}
-					// else
-					// 	delete dataSocket;
-					
 					break ;
 				}
 			}
