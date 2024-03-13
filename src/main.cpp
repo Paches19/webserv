@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:34:17 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/13 14:37:48 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:51:26 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 		std::cout << "Error: wrong arguments" << std::endl;
 		return (1);
 	}
-	atexit(ftLeaks);
+	// atexit(ftLeaks);
 	ConfigParser	cluster;
 	try 
 	{

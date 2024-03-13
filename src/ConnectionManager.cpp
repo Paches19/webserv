@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/13 15:42:23 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:48:12 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->headerReceived = false;
 				connections[socket.getSocketFd()] = *data;
 
-				// request.printRequest();
+				request.printRequest();
 
 				return request;
 			}
@@ -160,7 +160,7 @@ void ConnectionManager::writeData(Socket& socket, HttpResponse &response)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
 		
-		// response.printResponse(responseStr);
+		response.printResponse(responseStr);
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;

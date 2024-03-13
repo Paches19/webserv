@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/01 12:18:59 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:46:00 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,7 +172,7 @@ void HttpRequest::printRequest()
 	std::cout << "Headers: " << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it)
 		std::cout << "    " << it->first << ": " << it->second << std::endl;
-	std::cout << "Body: [body content]" << std::endl;
-	std::cout << _body << std::endl;
+	// std::cout << "Body: [body content]" << std::endl;
+	// std::cout << _body << std::endl;
 	std::cout << RESET << "********************" << std::endl;
 }

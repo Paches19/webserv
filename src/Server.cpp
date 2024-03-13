@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:38:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/13 15:44:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:47:06 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,7 +167,6 @@ void Server::run(std::vector<VirtualServers> servers)
 
 void Server::processRequest(HttpRequest request, VirtualServers server)
 {
-	// Configurar la respuesta
 	// std::cout << "\nProcessing REQUEST... " << std::endl;
 	// std::cout << "    Method: " << request.getMethod() << std::endl;
 	// std::cout << "    Requested URL: " << request.getURL() << std::endl;

@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 11:33:24 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/13 15:25:33 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:47:26 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ bool Socket::open(int port, in_addr addr)
 		_address.sin_addr.s_addr = addr.s_addr;
 	_address.sin_port = htons(port);
 	_listenPort = ntohs(_address.sin_port);
-	std::cout << "OPEN puerto: " << ntohs(_address.sin_port) << std::endl;
+	std::cout << "OPEN port: " << ntohs(_address.sin_port) << std::endl;
 	
 	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_socketFd == -1)
@@ -131,7 +131,6 @@ int Socket::receive(char* buffer, int maxLength, size_t startOffset) const
 
 void Socket::close()
 {
-	std::cout << "Socket closed FD: " << this->getSocketFd() << std::endl;
 	if (_socketFd != -1)
 	{
 		::close(_socketFd);

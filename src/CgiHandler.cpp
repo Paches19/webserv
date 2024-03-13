@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/12 12:42:22 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 16:08:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,12 +152,20 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
 
-		const char* argv[] = { pathCGI.c_str(), scriptName.c_str()};
+		char const* argv[] = { pathCGI.c_str(), scriptName.c_str() };
 		int err = access(pathCGI.c_str(), X_OK);
 		if (err < 0)
 		{
 			std::cerr << RED << pathCGI << " don't found" << RESET << std::endl;  
 			write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
+			exit(1) ;
+		}
+		err = access(scriptName.c_str(), X_OK);
+		if (err < 0)
+		{
+			std::cerr << RED << scriptName << " don't found" << RESET << std::endl;  
+			write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
+			exit(1) ;
 		}
 		execve(pathCGI.c_str(), const_cast<char* const*>(argv), env);
 
@@ -168,7 +176,6 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	else // Parent process
 	{
 		char	buffer[CGI_BUFSIZE] = {0};
-		
 		waitpid(-1, NULL, 0);
 		lseek(fdOut, 0, SEEK_SET);
 		ret = 1;
@@ -179,7 +186,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 			newBody += buffer;
 		}
 	}
-
+	std::cout << "scriptName: " << scriptName << "	pathCGI: " << pathCGI <<std::endl;
 	// TURNING STDIN AND STDOUT BACK TO NORMAL
 	dup2(saveStdin, STDIN_FILENO);
 	dup2(saveStdout, STDOUT_FILENO);
