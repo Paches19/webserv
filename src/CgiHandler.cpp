@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/03/13 16:08:55 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 17:00:20 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,18 +141,20 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	lseek(fdIn, 0, SEEK_SET);
 	
 	pid = fork();
-
+	
 	if (pid == -1)
 	{
 		std::cerr << RED << "Fork crashed." << RESET << std::endl;
 		return ("Status: 500\r\n\r\n");
+
 	}
 	else if (!pid) // Child process
 	{
 		dup2(fdIn, STDIN_FILENO);
 		dup2(fdOut, STDOUT_FILENO);
 
-		char const* argv[] = { pathCGI.c_str(), scriptName.c_str() };
+		char const* argv[3] = { pathCGI.c_str(), scriptName.c_str()};
+		argv[2] = NULL;
 		int err = access(pathCGI.c_str(), X_OK);
 		if (err < 0)
 		{
@@ -160,13 +162,7 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 			write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
 			exit(1) ;
 		}
-		err = access(scriptName.c_str(), X_OK);
-		if (err < 0)
-		{
-			std::cerr << RED << scriptName << " don't found" << RESET << std::endl;  
-			write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
-			exit(1) ;
-		}
+		
 		execve(pathCGI.c_str(), const_cast<char* const*>(argv), env);
 
 		// If execve fails, it will return here and print an error message
@@ -176,7 +172,10 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	else // Parent process
 	{
 		char	buffer[CGI_BUFSIZE] = {0};
-		waitpid(-1, NULL, 0);
+
+		// waitpid(-1, NULL, 0);
+		int status;
+		wait(&status);
 		lseek(fdOut, 0, SEEK_SET);
 		ret = 1;
 		while (ret > 0)
@@ -186,11 +185,11 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 			newBody += buffer;
 		}
 	}
-	std::cout << "scriptName: " << scriptName << "	pathCGI: " << pathCGI <<std::endl;
+	
 	// TURNING STDIN AND STDOUT BACK TO NORMAL
 	dup2(saveStdin, STDIN_FILENO);
 	dup2(saveStdout, STDOUT_FILENO);
-
+	
 	fclose(fIn);
 	fclose(fOut);
 	close(fdIn);
@@ -202,6 +201,6 @@ std::string CgiHandler::executeCgi(std::string const scriptName, std::string con
 	delete[] env;
 	if (!pid)
 		exit(0);
-
+	std::cout << "scriptName: " << scriptName << "	pathCGI: " << pathCGI <<std::endl;
 	return (newBody);
 }
