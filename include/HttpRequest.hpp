@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:44:37 by adpachec          #+#    #+#             */
-/*   Updated: 2024/01/16 13:16:35 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 12:18:55 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 # define HTTPREQUEST_HPP
 
 # include "WebServer.hpp"
-# include "HttpRequest.hpp"
 
 class HttpRequest
 {
@@ -26,6 +25,7 @@ class HttpRequest
 		std::string _errorMessage;
 		bool		_isValid;
 		bool		_isComplete;
+		bool		_isKeepAlive;
 		std::map<std::string, std::string> _headers;
 
 		void _parseRequest(const std::string& rawRequest);
@@ -37,7 +37,7 @@ class HttpRequest
 		HttpRequest(const std::string& rawRequest);
 		~HttpRequest();
 		HttpRequest(const HttpRequest& copy);
-		HttpRequest& operator=(const HttpRequest& rhs);
+		HttpRequest& operator=(const HttpRequest& other);
 
 		std::string getMethod();
 		std::string getHost();
@@ -45,15 +45,18 @@ class HttpRequest
 		std::string getHttpVersion();
 		std::string getBody();
 		std::map<std::string, std::string> getHeaders();
-		bool	getIsValidRequest();
-		bool 	getIsCompleteRequest();
+		std::string getHeader(const std::string& header_name) const;
+		bool		getIsValidRequest();
+		bool 		getIsCompleteRequest();
+		bool 		getIsKeepAlive();
 		std::string	getErrorMessage();
 
 		void		setValidRequest(bool validity);
 		void		setCompleteRequest(bool complete);
 		
-
 		void		invalidRequest();
+		bool 		startsWith(const std::string& str, const std::string& prefix);
+		void		printRequest();
 };
 
 #endif // HTTPREQUEST_HPP

@@ -15,7 +15,6 @@
 
 # include "WebServer.hpp"
 # include "Location.hpp"
-# include "VirtualServers.hpp"
 # include "ConfigFile.hpp"
 
 class VirtualServers
@@ -29,42 +28,41 @@ class VirtualServers
 		bool					_autoindex;
 		std::vector<Location>	_locations;
 		unsigned long			_clientMaxBodySize;
-		std::string				_return;
 		bool					_defaultServer;
 		std::map<short, std::string>	_errorPages;
 		
 		void _createServer(std::string &config, VirtualServers &server);
-		bool _checkErrorPages();
+		void _checkServer(VirtualServers &server);
 	
 	public:
 		VirtualServers();
 		VirtualServers(std::string &config);
-		VirtualServers(const VirtualServers &copy);
+		VirtualServers(const VirtualServers &other);
 		~VirtualServers();
-		VirtualServers &operator=(const VirtualServers &copy);	
 
-		const uint16_t &getPort();
-		const std::string &getServerName();
-		const std::string &getRoot();
-		const std::string &getIndex();
-		const bool &getAutoindex();
-		const std::vector<Location> &getLocations();
-		const std::string getErrorPage(int short);
+		VirtualServers &operator=(const VirtualServers &other);	
+
+		const uint16_t 			&getPort();
+		const std::string 		&getServerName();
+		const std::string 		&getRoot();
+		const std::string 		&getIndex();
+		const bool 				&getAutoindex();
+		const std::vector<Location>	&getLocations();
+		const std::string 		getErrorPage(short i);
+		const unsigned long 	&getClientMaxBodySize();
+		const in_addr 			&getIpAddress();
+		const bool 				&getDefaultServer();
 		const std::map<short, std::string> &getErrorPages();
-		const unsigned long &getClientMaxBodySize();
-		const std::string &getReturn();
-		const in_addr &getIpAddress();
-		const bool &getDefaultServer();
 
 		void setPort(std::string parametr);
 		void setServerName(std::string parametr);
 		void setRoot(std::string parametr);
 		void setIndex(std::string parametr);
 		void setAutoindex(std::string parametr);
-		void setErrorPages(std::vector<std::string> &parametr);
+		void setErrorPage(short i, std::string parametr);
 		void setClientMaxBodySize(std::string parametr);
-		void setReturn(std::string parametr);
 		void setIpAddress(std::string parametr);
+		void setLocation(std::vector<std::string> &parametrs, long unsigned &i);
 	
 		class ErrorException : public std::exception
 		{

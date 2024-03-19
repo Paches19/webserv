@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/10 12:42:54 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 13:21:50 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 16:42:43 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,14 @@
 // Constructores y destructor de la clase canónica
 //*******************************************************************
 ConnectionManager::ConnectionManager() {}
+
 ConnectionManager::~ConnectionManager() {}
+
 ConnectionManager::ConnectionManager(const ConnectionManager& other)
 {
 	connections = other.connections;
 }
+
 ConnectionManager& ConnectionManager::operator=(const ConnectionManager& other)
 {
 	if (this != &other)
@@ -37,43 +40,48 @@ void ConnectionManager::addConnection(Socket& socket)
 	ConnectionData connData;
 
 	connections.insert(std::make_pair(socketFd, connData));
-	std::cout << " agregada con Socket FD = " << socketFd << std::endl;
+	std::cout << "    Connection added. Socket FD: " << socketFd << std::endl;
 }
 
 void ConnectionManager::removeConnection(Socket& socket, int i,
 			std::vector<struct pollfd>& _pollFds, std::vector<Socket *>& _clientSockets)
 {
-	int socketFd = _pollFds[i].fd;
+	int socketFd = socket.getSocketFd();
+
 	for (size_t j = 0; j < _clientSockets.size(); ++j)
 	{
 		if (_clientSockets[j]->getSocketFd() == socketFd)
 		{
-			std::cout << "Client socket erased " << _clientSockets[j]->getSocketFd() << std::endl;
+			Socket* aux = _clientSockets[j];
+			_clientSockets[j]->close();
+			delete aux;
 			_clientSockets.erase(_clientSockets.begin() + j);
 		}
+			
 	}
-	_pollFds.erase(_pollFds.begin() + i);
-						
-    std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
-    if (it != connections.end())
-    {
-        socket.close();
-        connections.erase(it);
-        std::cout << "\nConexión eliminada. Socket FD = " << socketFd << std::endl;
-    }
-    else
-    {
-        std::cout << "\nConexión no encontrada. Socket FD = " << socketFd << std::endl;
-    }
+	_clientSockets[0]->getSocketFd();
+	
+	if (_pollFds[i].fd == socketFd)
+		_pollFds.erase(_pollFds.begin() + i);
+	
+	std::map<int, ConnectionData>::iterator it = connections.find(socketFd);
+	if (it != connections.end())
+	{
+		connections.erase(it);
+		std::cout << "Connection deleted. Socket FD = " << socketFd << std::endl;
+	}
+	else
+		std::cout << "Connection not found. Socket FD = " << socketFd << std::endl;
+
+	
+	// if (socketFd != -1)
+	// 	socket.close();
 }
 
 HttpRequest ConnectionManager::readData(Socket& socket, int i,
 			std::vector<struct pollfd> &_pollFds, std::vector<Socket *> &_clientSockets)
 {
 	ConnectionData* data(&connections[socket.getSocketFd()]);
-
-	std::cout << "\nSocket de lectura: " << socket.getSocketFd() << std::endl;
-
 	//Si no hay hueco en el buffer aumentamos tamaño
 	if (data->readBuffer.size() - data->accumulatedBytes == 0)
 		data->readBuffer.resize(data->readBuffer.size() + 1024);
@@ -87,41 +95,27 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 
 	// Leer datos del socket
 	int bytesRead = socket.receive(&data->readBuffer[0], data->readBuffer.size(), data->accumulatedBytes);
-	// std::cout << "Bytes Read: " << bytesRead << std::endl;
-	// std::cout << "ReadBuffer: " << std::string (data->readBuffer.begin(), data->readBuffer.end())  << std::endl;
-	// data->responseSent = false;
 	if (bytesRead > 0)
 	{
 		data->accumulatedBytes += bytesRead; // Añadir a la cuenta de bytes acumulados
+
 		if (isHttpRequestComplete(data->readBuffer, data->accumulatedBytes))
 		{
 			// Procesar la solicitud completa
 			HttpRequest request(std::string(data->readBuffer.begin(), data->readBuffer.end()));
 
-			std::cout << "\nREQUEST recibida: " << std::endl;
-			std::cout << YELLOW << "Method: " << request.getMethod() << std::endl;
-			std::cout << "URL: " << request.getURL() << std::endl;
-			std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-			std::cout << "Headers: " << std::endl;
-			std::map<std::string, std::string> headers = request.getHeaders();
-			std::map<std::string, std::string>::const_iterator it;
-			for (it = headers.begin(); it != headers.end(); ++it)
-				std::cout << it->first << ": " << it->second << std::endl;
-			std::cout << "body: " << request.getBody() << std::endl;
-			std::cout << RESET << std::endl;
-			
 			if (request.getIsValidRequest())
 			{
-				connections[socket.getSocketFd()].responseSent = false;
 				request.setValidRequest(true);
 				request.setCompleteRequest(true);
-				_pollFds[i].events = POLLOUT | POLLERR | POLLHUP;
-				std::cout << "\nPOLLOUT ON" << std::endl;
 				data->readBuffer.clear();
 				data->readBuffer.resize(1024);
 				data->accumulatedBytes = 0;
 				data->headerReceived = false;
 				connections[socket.getSocketFd()] = *data;
+
+				// request.printRequest();
+
 				return request;
 			}
 			else
@@ -132,6 +126,7 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 				data->accumulatedBytes = 0;
 				data->headerReceived = false;
 				request.setValidRequest(false);
+				request.setCompleteRequest(true);
 				return request;
 			}
 		}
@@ -139,7 +134,10 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	}
 	else
 	{
-		this->removeConnection(socket, i, _pollFds, _clientSockets);
+		// this->removeConnection(socket, i, _pollFds, _clientSockets);
+		i = 0;
+		_pollFds[i].fd = 0;
+		_clientSockets[i]->getSocketFd();
 		HttpRequest invalidRequest;
 		invalidRequest.setValidRequest(false);
 		return invalidRequest;
@@ -148,53 +146,51 @@ HttpRequest ConnectionManager::readData(Socket& socket, int i,
 	return incompleteRequest;
 }
 
-void ConnectionManager::writeData(Socket& socket, int i, HttpResponse &response,
-	std::vector<struct pollfd> &_pollFds) 
+void ConnectionManager::writeData(Socket& socket, HttpResponse &response) 
 {	
 	ConnectionData data(connections[socket.getSocketFd()]);
-	// if (data.responseSent == true)
-	// 	return ;
 
 	std::string responseStr = response.buildResponse();
+	data.accumulatedBytes = responseStr.size();
+	data.writeBuffer = new char[data.accumulatedBytes];
 
-	data.writeBuffer = new char[responseStr.length() + 1];
-	std::strcpy(data.writeBuffer, responseStr.c_str());
-	data.accumulatedBytes = responseStr.length();
-	
-	std::cout << "\nENTRO writeData" << std::endl;
+	std::copy(responseStr.begin(), responseStr.end(), data.writeBuffer);
 	
 	while (data.writeBuffer && data.accumulatedBytes > 0)
 	{
 		int bytesSent = socket.send(data.writeBuffer, data.accumulatedBytes);
-		// std::cout << "\nRESPONSE enviada: " << std::endl;
-		// std::cout << CYAN << responseStr << RESET << std::endl;
+		
+		response.printResponse(responseStr);
 		if (bytesSent > 0)
 		{
 			data.accumulatedBytes -= bytesSent;
 			std::memmove(data.writeBuffer, data.writeBuffer + bytesSent, data.accumulatedBytes);
 		}
-		else if (bytesSent == -1)
+		else if (bytesSent < 0)
 		{
-			if ( data.writeBuffer)
+			if (data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
-			std::cerr << "Error de envio de response" << std::endl;
+			std::cout << "Error sending the response" << std::endl;
 		}
-		// Si todos los datos han sido enviados se vacia completamente el buffer
+		else if (bytesSent == 0)
+		{
+			std::cout << "0 BytesSent response size: " << responseStr.size() << std::endl;
+		}
 		if (data.accumulatedBytes == 0)
 		{
-			if ( data.writeBuffer)
+			if (data.writeBuffer)
 				delete[] data.writeBuffer;
 			data.writeBuffer = NULL;
+			response.setBody("");
 		}
 	}
-	connections[socket.getSocketFd()].responseSent = true;
-	_pollFds[i].events = POLLIN | POLLERR | POLLHUP;
 }
 
 bool ConnectionManager::isHttpRequestComplete(const std::vector<char>& buffer, size_t accumulatedBytes)
 {
 	const std::string endOfHeader = "\r\n\r\n";
+
 	std::vector<char>::const_iterator endOfHeaderPos =
 		std::search(buffer.begin(), buffer.end(), endOfHeader.begin(), endOfHeader.end());
 

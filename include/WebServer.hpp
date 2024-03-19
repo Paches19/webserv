@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:41:27 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:28:47 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 14:55:09 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,26 +14,29 @@
 # define WEBSERVER_HPP
 
 // Libraries
-# include <string>
-# include <map>
-# include <vector>
-# include <iostream>
-# include <fstream>
-# include <sstream>
-# include <sys/stat.h>
-# include <unistd.h>
-# include <stdint.h>
-# include <netinet/in.h>
+# include <algorithm>
 # include <arpa/inet.h>
+# include <cstdlib>
+# include <cstdio>
 # include <cstring>
+# include <dirent.h>
+# include <fstream>
+# include <fcntl.h>
+# include <iostream>
+# include <map>
+# include <netinet/in.h>
+# include <poll.h>
+# include <string>
+# include <sstream>
+# include <stdint.h>
 # include <sys/socket.h>
 # include <sys/stat.h>
-# include <errno.h>
 # include <sys/select.h>
-# include <poll.h>
-# include <algorithm>
-# include <fcntl.h>
-# include <dirent.h>
+# include <sys/types.h>
+# include <sys/wait.h>
+# include <unistd.h>
+# include <vector>
+# include <csignal>
 
 // Colours
 # define RESET          "\x1B[0m"
@@ -46,7 +49,19 @@
 # define LIGHTMAGENTA   "\x1B[95m"
 # define GREEN 			"\x1B[32m"
 
+// HTTP Methods
+# define GET_METHOD 	0
+# define POST_METHOD 	1
+# define DELETE_METHOD 	2
+
+// Types
+# define IS_DIR 		2
+# define IS_FILE 		1
+
 // Macros
-# define MAX_CONTENT_LENGTH 1000000
+# define MAX_CONTENT_LENGTH 1000000000
+# define CGI_BUFSIZE 		100000
+
+# define UPLOAD "/uploads"
 
 #endif // WEBSERVER_HPP

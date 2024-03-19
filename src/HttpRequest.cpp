@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/12 10:49:30 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/05 12:02:34 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/13 15:46:00 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,28 +19,34 @@ HttpRequest::HttpRequest(const std::string& rawRequest)
 {
 	this->_isValid = true;
 	this->_isComplete = false;
+	this->_isKeepAlive = false;
 	if (rawRequest.empty())
 		invalidRequest();
 	else
 		_parseRequest(rawRequest);
 }
+
 HttpRequest::HttpRequest() { this->_isValid = false; this->_isComplete = false; }
+
 HttpRequest::HttpRequest(const HttpRequest& copy) {	*this = copy; }
-HttpRequest& HttpRequest::operator=(const HttpRequest& rhs)
+
+HttpRequest& HttpRequest::operator=(const HttpRequest& other)
 {
-	if (this != &rhs)
+	if (this != &other)
 	{
-		this->_method = rhs._method;
-		this->_url = rhs._url;
-		this->_httpVersion = rhs._httpVersion;
-		this->_headers = rhs._headers;
-		this->_body = rhs._body;
-		this->_errorMessage = rhs._errorMessage;
-		this->_isValid = rhs._isValid;
-		this->_isComplete = rhs._isComplete;
+		this->_method = other._method;
+		this->_url = other._url;
+		this->_httpVersion = other._httpVersion;
+		this->_headers = other._headers;
+		this->_body = other._body;
+		this->_errorMessage = other._errorMessage;
+		this->_isValid = other._isValid;
+		this->_isComplete = other._isComplete;
+		this->_isKeepAlive = other._isKeepAlive;
 	}
 	return (*this);
 }
+
 HttpRequest::~HttpRequest() {};
 
 //*******************************************************************
@@ -54,6 +60,14 @@ std::string HttpRequest::getHttpVersion() {	return (this->_httpVersion); }
 
 std::map<std::string, std::string> HttpRequest::getHeaders() { return (this->_headers); }
 
+std::string HttpRequest::getHeader(const std::string& header_name) const
+{
+	std::map<std::string, std::string>::const_iterator it = _headers.find(header_name);
+	if (it != _headers.end())
+		return it->second;
+	return "";
+}
+
 std::string HttpRequest::getBody() { return (this->_body); }
 
 std::string HttpRequest::getHost()
@@ -66,6 +80,8 @@ std::string HttpRequest::getHost()
 bool HttpRequest::getIsValidRequest() { return (this->_isValid); }
 
 bool HttpRequest::getIsCompleteRequest() { return (this->_isComplete); }
+
+bool HttpRequest::getIsKeepAlive() { return (this->_isKeepAlive); }
 
 std::string HttpRequest::getErrorMessage() { return (this->_errorMessage); }
 
@@ -102,7 +118,7 @@ void HttpRequest::_parseRequest(const std::string& rawRequest)
 	if (this->_method == "POST")
 	{
 		std::string bodyStr;
-		while (getline(requestStream, line))
+		while (getline(requestStream, line) && line[0])
 			_body += line + "\n";
 	}
 }
@@ -111,9 +127,6 @@ void HttpRequest::_parseFirstLine(const std::string& line)
 {
 	std::istringstream lineStream(line);
 	lineStream >> _method >> _url >> _httpVersion;
-	if (lineStream.fail() || (_method != "GET" && _method != "POST" && _method != "DELETE") ||
-		_url == "" || _httpVersion == "")
-		return invalidRequest();
 }
 
 void HttpRequest::_parseHeaders(const std::string& headersStr)
@@ -129,6 +142,9 @@ void HttpRequest::_parseHeaders(const std::string& headersStr)
 			std::string headerValue = line.substr(colonPos + 2); // +2 para saltar el espacio después de los dos puntos
 			if (headerName == "" || headerValue == "")
 				return invalidRequest();
+			if (headerValue.find("keep-alive") != std::string::npos)
+				this->_isKeepAlive = true;
+				
 			_headers[headerName] = headerValue;
 		}
 		else
@@ -140,4 +156,23 @@ void HttpRequest::invalidRequest()
 {
 	this->_isValid = false;
 	this->_errorMessage = "Bad Request";
+}
+
+bool HttpRequest::startsWith(const std::string& str, const std::string& prefix)
+{
+    return str.substr(0, prefix.size()) == prefix;
+}
+
+void HttpRequest::printRequest()
+{
+	std::cout << "\n***** REQUEST *****" << std::endl;
+	std::cout << YELLOW << "Method: " <<_method << std::endl;
+	std::cout << "URL: " << _url << std::endl;
+	std::cout << "HTTP Version: " << _httpVersion << std::endl;
+	std::cout << "Headers: " << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it)
+		std::cout << "    " << it->first << ": " << it->second << std::endl;
+	// std::cout << "Body: [body content]" << std::endl;
+	// std::cout << _body << std::endl;
+	std::cout << RESET << "********************" << std::endl;
 }

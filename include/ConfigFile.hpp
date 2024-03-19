@@ -6,7 +6,7 @@
 /*   By: adpachec <adpachec@student.42madrid.com>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 12:40:51 by adpachec          #+#    #+#             */
-/*   Updated: 2024/02/06 12:54:37 by adpachec         ###   ########.fr       */
+/*   Updated: 2024/03/01 11:14:58 by adpachec         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 # define CONFIGFILE_HPP
 
 # include "WebServer.hpp"
-# include "ConfigFile.hpp"
 
 class ConfigFile
 {
@@ -26,18 +25,15 @@ class ConfigFile
 		ConfigFile(std::string const path);
 		ConfigFile(const ConfigFile &other);
 		~ConfigFile();
-		ConfigFile &operator=(const ConfigFile &rhs);
+		ConfigFile &operator=(const ConfigFile &other);
 		
-		std::string	getPath();
-		static int	getTypePath(std::string path);
+		std::string			getPath();
 
-		static int	checkPath(std::string path);
-		static int	checkFile(std::string path, int mode);
+		static int			checkPath(std::string path);
 		static std::string	readFile(std::string path);
-		static int 	isFileExistAndReadable(std::string path, std::string index);
-		static bool isDirectory(std::string& path);
-		static bool fileExistsAndReadable(std::string& filePath);
-		static std::string prefixPath(std::string const path);
+		static bool 		fileExistsAndReadable(const std::string& filePath);
+		static std::string 	prefixPath(std::string const path);
+		static std::string 	adjustName(std::string const name);
 };
 
 #endif // CONFIGFILE_HPP
